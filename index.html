@@ -8,7 +8,7 @@
     <style>
         body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .status-online { color: #28a745; font-weight: bold; }
+        .table-dark { background-color: #343a40; }
     </style>
 </head>
 <body>
@@ -26,7 +26,7 @@
             <div class="card text-center p-4">
                 <h5>สถานะล่าสุด</h5>
                 <h3 id="last-user">รอการแสกน...</h3>
-                <p id="last-time" class="text-muted small">-</p>
+                <p id="last-date" class="text-primary fw-bold mb-0">-</p> <p id="last-time" class="text-muted small">-</p>
             </div>
         </div>
     </div>
@@ -39,7 +39,7 @@
                     <table class="table table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th>เวลา</th>
+                                <th>วันที่</th> <th>เวลา</th>
                                 <th>ชื่อผู้ใช้งาน</th>
                                 <th>ประเภท (RFID/Finger)</th>
                                 <th>สถานะ</th>
@@ -56,9 +56,8 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getDatabase, ref, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  // --- นำค่าจาก Firebase Config มาวางตรงนี้ ---
   const firebaseConfig = {
     authDomain: "smart-access-door-lock.firebaseapp.com",
     databaseURL: "https://smart-access-door-lock-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -73,7 +72,6 @@
   const db = getDatabase(app);
   const logRef = ref(db, 'access_logs');
 
-  // ฟังเหตุการณ์เมื่อมีการเพิ่มข้อมูลใหม่ (Real-time)
   onChildAdded(logRef, (data) => {
     const val = data.val();
     updateUI(val);
@@ -83,19 +81,22 @@
     const tableBody = document.getElementById('table-body');
     const lastUser = document.getElementById('last-user');
     const lastTime = document.getElementById('last-time');
+    const lastDate = document.getElementById('last-date'); // ดึง Element วันที่
 
-    // ตรวจสอบว่ามีข้อมูลส่งมาจริงไหม และดึงค่าออกมา
-    // ถ้าใน Firebase พิมพ์ตัวเล็กตัวใหญ่ไม่ตรงกัน ให้แก้ในเครื่องหมาย ' ' ตรงนี้ครับ
+    // ดึงค่า Date เพิ่มเติม
     const name = data.name || data.Name || "Unknown";
     const time = data.timestamp || data.Time || "No Time";
+    const date = data.date || data.Date || "No Date"; // รองรับ key 'date' หรือ 'Date'
     const type = data.type || data.Type || "N/A";
 
-    // อัปเดตการ์ดด้านบน
+    // อัปเดตการ์ดแสดงสถานะล่าสุด
     lastUser.innerText = name;
+    lastDate.innerText = date;
     lastTime.innerText = time;
 
-    // เพิ่มแถวในตาราง
+    // เพิ่มแถวในตารางพร้อมข้อมูลวันที่
     const row = `<tr>
+        <td>${date}</td>
         <td>${time}</td>
         <td><strong>${name}</strong></td>
         <td><span class="badge bg-info text-dark">${type}</span></td>
