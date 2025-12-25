@@ -9,13 +9,30 @@
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, sans-serif; }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
+        .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; min-height: 250px; }
         .table-container { background: white; border-radius: 12px; padding: 20px; margin-top: 20px; }
-        /* สไตล์ Badge ในตาราง */
         .badge-in { background-color: #198754; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .badge-out { background-color: #dc3545; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
-        /* ปรับแต่งส่วนสถานะในการ์ดบน */
         #status-display { font-size: 1rem; font-weight: 600; padding: 5px 15px; border-radius: 50px; }
+        
+        /* สไตล์สำหรับรายชื่อคนในห้อง */
+        .current-names-list {
+            max-height: 150px;
+            overflow-y: auto;
+            text-align: left;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 10px;
+        }
+        .name-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 5px;
+            padding: 5px 12px;
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -27,12 +44,13 @@
     </header>
 
     <div class="row g-4">
-        <div class="col-md-7">
+        <div class="col-md-6">
             <div class="card p-4 h-100">
                 <h6 class="text-muted fw-bold mb-3">การแสกนล่าสุด</h6>
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h2 id="last-user" class="text-dark fw-bold m-0">รอข้อมูล...</h2>
-                    <span id="status-display"></span> </div>
+                    <span id="status-display"></span>
+                </div>
                 <div class="d-flex gap-2">
                     <span id="last-date" class="badge bg-light text-dark border"><i class="bi bi-calendar3 me-1"></i> -</span>
                     <span id="last-time" class="badge bg-light text-dark border"><i class="bi bi-clock me-1"></i> -</span>
@@ -40,12 +58,17 @@
             </div>
         </div>
 
-        <div class="col-md-5">
+        <div class="col-md-6">
             <div class="card p-4 h-100 stat-card text-center">
                 <h6 class="fw-bold opacity-75">จำนวนคนในห้องปัจจุบัน</h6>
-                <div class="d-flex align-items-center justify-content-center flex-grow-1">
-                    <span id="people-count" class="display-2 fw-bold">0</span>
+                <div class="d-flex align-items-center justify-content-center">
+                    <span id="people-count" class="display-3 fw-bold">0</span>
                     <span class="ms-3 fs-4">คน</span>
+                </div>
+                
+                <div id="names-container" class="current-names-list">
+                    <div class="text-white-50 small mb-2 text-center">ยังไม่มีใครอยู่ในห้อง</div>
+                    <div id="names-list"></div>
                 </div>
             </div>
         </div>
@@ -70,8 +93,7 @@
                         <th>สถานะ</th>
                     </tr>
                 </thead>
-                <tbody id="table-body">
-                    </tbody>
+                <tbody id="table-body"></tbody>
             </table>
         </div>
     </div>
@@ -81,7 +103,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyCZ0MK0LRsZLpzAclPxflIa7eWAXAdRchM",
         authDomain: "smart-access-door-lock.firebaseapp.com",
@@ -97,9 +118,9 @@
     const db = getDatabase(app);
     const logRef = ref(db, 'access_logs');
 
-    let userTracker = {}; // สำหรับนับจำนวนคน
+    // ตัวแปรสำหรับจัดการรายชื่อ
+    let peopleInRoom = []; 
 
-    // ฟังข้อมูลใหม่
     onChildAdded(logRef, (snapshot) => {
         const data = snapshot.val();
         updateUI(data);
@@ -112,6 +133,8 @@
         const lastDate = document.getElementById('last-date');
         const lastTime = document.getElementById('last-time');
         const peopleCount = document.getElementById('people-count');
+        const namesList = document.getElementById('names-list');
+        const namesContainer = document.getElementById('names-container');
 
         const name = data.name || "Unknown";
         const date = data.date || "-";
@@ -119,25 +142,41 @@
         const type = data.type || "N/A";
         const status = data.status || "In"; 
 
-        // 1. อัปเดตตัวนับคน
-        userTracker[name] = status;
-        const countIn = Object.values(userTracker).filter(s => s === "In").length;
-        peopleCount.innerText = countIn;
+        // --- 1. Logic จัดการรายชื่อเรียงตามลำดับ ---
+        if (status === "In") {
+            // ถ้าเข้ามาแล้ว และชื่อยังไม่อยู่ใน List ให้เพิ่มเข้าไป
+            if (!peopleInRoom.includes(name)) {
+                peopleInRoom.push(name);
+            }
+        } else {
+            // ถ้าออก ให้ลบชื่อนั้นออกจาก List
+            peopleInRoom = peopleInRoom.filter(p => p !== name);
+        }
 
-        // 2. อัปเดตการ์ดสถานะล่าสุด (In/Out)
+        // --- 2. อัปเดต UI จำนวนคนและรายชื่อ ---
+        peopleCount.innerText = peopleInRoom.length;
+        
+        if (peopleInRoom.length > 0) {
+            namesList.innerHTML = peopleInRoom.map((p, index) => `
+                <div class="name-item">
+                    <span>${index + 1}. ${p}</span>
+                    <small class="opacity-50">กำลังอยู่</small>
+                </div>
+            `).join('');
+            namesContainer.firstElementChild.style.display = 'none'; // ซ่อนข้อความ "ยังไม่มีใคร"
+        } else {
+            namesList.innerHTML = "";
+            namesContainer.firstElementChild.style.display = 'block'; // แสดงข้อความ "ยังไม่มีใคร"
+        }
+
+        // 3. อัปเดตการ์ดสถานะล่าสุด
         lastUser.innerText = name;
         lastDate.innerHTML = `<i class="bi bi-calendar3 me-1"></i> ${date}`;
         lastTime.innerHTML = `<i class="bi bi-clock me-1"></i> ${time}`;
+        lastStatus.innerText = status === "In" ? "เข้า (In)" : "ออก (Out)";
+        lastStatus.className = status === "In" ? "badge bg-success p-2" : "badge bg-danger p-2";
 
-        if (status === "In") {
-            lastStatus.innerText = "เข้า (In)";
-            lastStatus.className = "badge bg-success p-2"; // สีเขียว
-        } else {
-            lastStatus.innerText = "ออก (Out)";
-            lastStatus.className = "badge bg-danger p-2";  // สีแดง
-        }
-
-        // 3. เพิ่มข้อมูลลงตาราง (เอาแถวใหม่ไว้บนสุด)
+        // 4. เพิ่มลงตาราง
         const statusBadge = status === "In" 
             ? `<span class="badge-in">เข้า (In)</span>` 
             : `<span class="badge-out">ออก (Out)</span>`;
@@ -149,22 +188,14 @@
             <td><span class="badge bg-light text-secondary border">${type}</span></td>
             <td>${statusBadge}</td>
         </tr>`;
-
         tableBody.insertAdjacentHTML('afterbegin', row);
     }
 
-    // Logic ปุ่มล้างประวัติ
     document.getElementById('clear-btn').addEventListener('click', () => {
-        if (confirm("คุณต้องการลบประวัติการเข้า-ออกทั้งหมดใช่หรือไม่?")) {
+        if (confirm("ล้างประวัติทั้งหมด?")) {
             remove(logRef).then(() => {
-                document.getElementById('table-body').innerHTML = "";
-                document.getElementById('people-count').innerText = "0";
-                document.getElementById('last-user').innerText = "ล้างข้อมูลแล้ว";
-                document.getElementById('status-display').innerText = "";
-                document.getElementById('status-display').className = "";
-                userTracker = {};
-                alert("ล้างข้อมูลสำเร็จ");
-            }).catch((err) => alert("ผิดพลาด: " + err));
+                location.reload(); // รีโหลดเพื่อล้างค่าตัวแปรทั้งหมด
+            });
         }
     });
 </script>
