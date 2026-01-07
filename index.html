@@ -17,16 +17,14 @@
             --bg-color: #f8f9fa;
             --card-bg: #ffffff;
             --text-main: #212529;
-            --text-muted: #6c757d;
             --border-color: #dee2e6;
         }
 
         /* Dark Mode Colors */
         body.dark-mode {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --text-muted: #aaaaaa;
+            --bg-color: #121212; /* พื้นหลังนอก */
+            --card-bg: #1e1e1e;   /* พื้นหลังการ์ด */
+            --text-main: #ffffff;
             --border-color: #333333;
         }
 
@@ -34,7 +32,7 @@
             background-color: var(--bg-color); 
             color: var(--text-main);
             font-family: 'Kanit', sans-serif; 
-            transition: all 0.3s ease;
+            transition: background 0.3s, color 0.3s;
         }
         
         .card { 
@@ -48,10 +46,27 @@
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
         .table-container { background: var(--card-bg); border-radius: 12px; padding: 20px; margin-top: 20px; }
         
-        .table { color: var(--text-main); }
-        .dark-mode .table thead th { background-color: #2d2d2d; color: white; border-color: #444; }
-        .dark-mode .table td { border-color: #333; color: var(--text-main); }
-        .dark-mode .text-dark { color: #ffffff !important; }
+        /* แก้ไขส่วน Badge และตารางในโหมดมืด */
+        .dark-mode .badge.bg-light {
+            background-color: #2d2d2d !important; /* เทาเข้มที่อ่อนกว่าพื้นหลังเล็กน้อย */
+            color: #ffffff !important;
+            border: 1px solid #444 !important;
+        }
+
+        .dark-mode .table {
+            color: #ffffff !important;
+        }
+
+        .dark-mode .table td, .dark-mode .table th {
+            background-color: transparent !important;
+            color: #ffffff !important;
+            border-color: #333 !important;
+        }
+
+        .dark-mode .table-light {
+            background-color: #252525 !important;
+            color: #ffffff !important;
+        }
 
         /* Floating Dark Mode Button */
         #dark-mode-toggle {
@@ -59,7 +74,7 @@
             top: 20px;
             right: 20px;
             z-index: 1000;
-            padding: 10px 15px;
+            padding: 8px 16px;
             border-radius: 50px;
             cursor: pointer;
             border: none;
@@ -144,7 +159,7 @@
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
-                    <tr>
+                    <tr class="table-light">
                         <th>วันที่</th>
                         <th>เวลา</th>
                         <th>ชื่อผู้ใช้งาน</th>
@@ -162,7 +177,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // --- Logic: Dark Mode Toggle ---
+    // --- Dark Mode Logic ---
     const toggleBtn = document.getElementById('dark-mode-toggle');
     const modeIcon = document.getElementById('mode-icon');
     const modeText = document.getElementById('mode-text');
@@ -184,14 +199,9 @@
     }
 
     toggleBtn.addEventListener('click', () => {
-        if (document.body.classList.contains('dark-mode')) {
-            disableDarkMode();
-        } else {
-            enableDarkMode();
-        }
+        document.body.classList.contains('dark-mode') ? disableDarkMode() : enableDarkMode();
     });
 
-    // Check saved theme
     if (localStorage.getItem('theme') === 'dark') enableDarkMode();
 
     // --- Firebase Logic ---
