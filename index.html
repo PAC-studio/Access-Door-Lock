@@ -27,68 +27,69 @@
             font-family: 'Kanit', sans-serif; transition: 0.3s;
         }
 
+        /* Login Layout */
         #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
         #main-dashboard { display: none; }
 
-        /* ชื่อ Admin */
-        #admin-name { color: var(--text-main) !important; font-weight: bold; }
+        /* แก้ไขสีชื่อ Admin ให้ชัดเจน */
+        #admin-name { color: var(--text-main) !important; font-weight: 600; text-transform: capitalize; }
 
+        /* Card Style */
         .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-main); }
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
 
-        /* แก้ไขตาราง: บังคับสีพื้นหลังหัวตารางและตัวอักษร */
+        /* Table Fixing for Dark Mode */
         .table { color: var(--text-main) !important; border-color: var(--border-color) !important; }
-        
-        /* บังคับเขียนทับ table-light ของ Bootstrap ในโหมดมืด */
-        .dark-mode .table thead tr, 
-        .dark-mode .table thead th { 
+        .dark-mode thead th { 
             background-color: var(--table-head-bg) !important; 
             color: var(--table-head-text) !important;
             border-bottom: 2px solid #444 !important;
         }
+        .dark-mode tbody td { background-color: transparent !important; color: #e0e0e0 !important; border-color: #333 !important; }
 
-        .dark-mode .table tbody td { 
-            background-color: transparent !important;
-            color: #e0e0e0 !important; 
-            border-color: #333 !important; 
-        }
-
+        /* UI Elements */
         #dark-mode-toggle { position: fixed; top: 20px; right: 20px; z-index: 1000; border-radius: 50px; }
         .badge-in { background-color: #198754; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .badge-out { background-color: #dc3545; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .name-item { background: rgba(255, 255, 255, 0.15); border-radius: 10px; margin-bottom: 8px; padding: 8px 15px; display: flex; justify-content: space-between; }
+        
+        #stay-open-info { font-size: 0.9rem; margin-top: 5px; color: #0d6efd; font-weight: 500; }
+        .dark-mode #stay-open-info { color: #4dabf7; }
     </style>
 </head>
 <body>
 
 <div id="login-section">
     <div class="card p-4 shadow" style="width: 350px;">
-        <h3 class="text-center mb-4">🔐 Login</h3>
-        <input type="text" id="username" class="form-control mb-3" placeholder="Username">
-        <input type="password" id="password" class="form-control mb-3" placeholder="Password">
-        <button id="login-btn" class="btn btn-primary w-100">เข้าสู่ระบบ</button>
-        <p id="error-msg" class="text-danger text-center mt-2 small"></p>
+        <h3 class="text-center mb-4">🔐 Login Access</h3>
+        <input type="text" id="username" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
+        <input type="password" id="password" class="form-control mb-3" placeholder="รหัสผ่าน">
+        <button id="login-btn" class="btn btn-primary w-100 py-2">เข้าสู่ระบบ</button>
+        <p id="error-msg" class="text-danger text-center mt-3 small"></p>
     </div>
 </div>
 
 <div id="main-dashboard">
-    <button id="dark-mode-toggle" class="btn btn-light shadow">
+    <button id="dark-mode-toggle" class="btn btn-light shadow-sm">
         <i id="mode-icon" class="bi bi-moon-fill"></i> <span id="mode-text">โหมดมืด</span>
     </button>
 
     <div class="container py-4">
         <header class="d-flex justify-content-between align-items-center mb-5">
             <div>
-                <h1 class="display-6 fw-bold text-primary mb-0">IoT Smart Access</h1>
-                <p class="opacity-75">สวัสดีคุณ <span id="admin-name">...</span></p>
+                <h1 class="display-6 fw-bold text-primary mb-0">IoT Access Control</h1>
+                <p class="opacity-75">ผู้ใช้งานปัจจุบัน: <span id="admin-name">กำลังโหลด...</span></p>
             </div>
-            <button id="logout-btn" class="btn btn-outline-danger btn-sm">ออกจากระบบ</button>
+            <button id="logout-btn" class="btn btn-outline-danger btn-sm rounded-pill px-3">ออกจากระบบ</button>
         </header>
 
         <div class="card p-4 mb-4 border-start border-primary border-5">
             <div class="d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold m-0">โหมดเปิดประตูค้าง (Stay Open)</h5>
-                <div class="form-check form-switch fs-3">
+                <div>
+                    <h5 class="fw-bold m-0 text-uppercase" style="letter-spacing: 1px;">Stay Open Mode</h5>
+                    <div id="stay-open-info">โหมดปกติ</div>
+                </div>
+                <div class="form-check form-switch fs-2">
                     <input class="form-check-input" type="checkbox" id="stay-open-toggle">
                 </div>
             </div>
@@ -96,25 +97,24 @@
 
         <div class="row g-4 mb-4">
             <div class="col-md-6">
-                <div class="card p-4 h-100">
-                    <h6 class="opacity-75 fw-bold">การแสกนล่าสุด</h6>
-                    <h2 id="last-user" class="fw-bold my-2">รอข้อมูล...</h2>
-                    <div id="status-display" class="mb-2"></div>
+                <div class="card p-4 h-100 border-bottom border-primary border-3">
+                    <h6 class="opacity-75 fw-bold text-uppercase">แสกนล่าสุด</h6>
+                    <h2 id="last-user" class="fw-bold my-2 text-primary">---</h2>
                     <small id="last-time" class="opacity-50"></small>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card p-4 h-100 stat-card shadow">
-                    <h6>ในห้องปัจจุบัน</h6>
-                    <span id="people-count" class="display-4 fw-bold">0</span> คน
-                    <div id="names-list" class="mt-2"></div>
+                <div class="card p-4 h-100 stat-card shadow-lg">
+                    <h6 class="text-uppercase fw-bold opacity-75">ผู้ใช้งานในพื้นที่</h6>
+                    <div><span id="people-count" class="display-4 fw-bold">0</span> คน</div>
+                    <div id="names-list" class="mt-3"></div>
                 </div>
             </div>
         </div>
 
-        <div class="card p-4">
-            <div class="d-flex justify-content-between mb-3">
-                <h5 class="fw-bold"><i class="bi bi-clock-history me-2"></i>ประวัติย้อนหลัง</h5>
+        <div class="card p-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0"><i class="bi bi-clock-history me-2"></i>ประวัติการเข้า-ออก</h5>
                 <button id="clear-btn" class="btn btn-sm btn-outline-danger">ล้างประวัติ</button>
             </div>
             <div class="table-responsive">
@@ -123,8 +123,8 @@
                         <tr>
                             <th>วันที่</th>
                             <th>เวลา</th>
-                            <th>ชื่อ</th>
-                            <th>ประเภท</th>
+                            <th>ชื่อผู้ใช้</th>
+                            <th>อุปกรณ์</th>
                             <th>สถานะ</th>
                         </tr>
                     </thead>
@@ -149,12 +149,41 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Login
+    // --- 🌗 ระบบ Dark Mode อัตโนมัติ (6.00-18.00) ---
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const hour = new Date().getHours();
+        // ถ้าไม่เคยเลือก ให้ใช้เวลาตัดสิน (18.00-06.00 มืด)
+        let shouldBeDark = savedTheme ? (savedTheme === 'dark') : (hour >= 18 || hour < 6);
+        
+        if (shouldBeDark) enableDarkMode(); else disableDarkMode();
+    }
+
+    function enableDarkMode() {
+        document.body.classList.add('dark-mode');
+        document.getElementById('mode-icon').className = "bi bi-sun-fill";
+        document.getElementById('mode-text').innerText = "โหมดสว่าง";
+        localStorage.setItem('theme', 'dark');
+    }
+
+    function disableDarkMode() {
+        document.body.classList.remove('dark-mode');
+        document.getElementById('mode-icon').className = "bi bi-moon-fill";
+        document.getElementById('mode-text').innerText = "โหมดมืด";
+        localStorage.setItem('theme', 'light');
+    }
+
+    document.getElementById('dark-mode-toggle').onclick = () => {
+        if (document.body.classList.contains('dark-mode')) disableDarkMode(); else enableDarkMode();
+    };
+
+    // --- 🔐 ระบบ Login ---
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
-        signInWithEmailAndPassword(auth, u + "@insight.com", p).catch(() => {
-            document.getElementById('error-msg').innerText = "ชื่อหรือรหัสผ่านผิด";
+        if(!u || !p) return;
+        signInWithEmailAndPassword(auth, u + "@insight.com", p).catch(err => {
+            document.getElementById('error-msg').innerText = "Username หรือ Password ไม่ถูกต้อง";
         });
     };
 
@@ -163,7 +192,8 @@
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('main-dashboard').style.display = 'block';
             document.getElementById('admin-name').innerText = user.email.split('@')[0];
-            initApp();
+            initTheme();
+            runApp();
         } else {
             document.getElementById('login-section').style.display = 'flex';
             document.getElementById('main-dashboard').style.display = 'none';
@@ -172,12 +202,32 @@
 
     document.getElementById('logout-btn').onclick = () => signOut(auth);
 
-    function initApp() {
-        onValue(ref(db, 'door_status/stay_open'), (s) => {
-            document.getElementById('stay-open-toggle').checked = s.val() || false;
-        });
-        document.getElementById('stay-open-toggle').onchange = (e) => set(ref(db, 'door_status/stay_open'), e.target.checked);
+    // --- 🚀 ฟังก์ชันหลักของ Dashboard ---
+    function runApp() {
+        const stayOpenToggle = document.getElementById('stay-open-toggle');
+        const stayOpenInfo = document.getElementById('stay-open-info');
 
+        // 1. ติดตามสถานะ Stay Open
+        onValue(ref(db, 'door_status'), (s) => {
+            const data = s.val() || {};
+            stayOpenToggle.checked = data.stay_open || false;
+            if (data.stay_open) {
+                stayOpenInfo.innerHTML = `<i class="bi bi-unlock-fill me-1"></i> เปิดค้างโดย: <span class="text-decoration-underline">${data.opened_by || 'ระบบ'}</span>`;
+            } else {
+                stayOpenInfo.innerText = "โหมดปกติ (ล็อกอัตโนมัติ)";
+            }
+        });
+
+        // 2. สั่งเปิดค้าง
+        stayOpenToggle.onchange = (e) => {
+            const isAdmin = document.getElementById('admin-name').innerText;
+            set(ref(db, 'door_status'), {
+                stay_open: e.target.checked,
+                opened_by: e.target.checked ? isAdmin : ""
+            });
+        };
+
+        // 3. ดึง Log และนับจำนวนคน
         let peopleIn = [];
         const tableBody = document.getElementById('table-body');
         
@@ -187,35 +237,34 @@
                 <td>${d.date}</td>
                 <td>${d.timestamp}</td>
                 <td class="fw-bold">${d.name}</td>
-                <td><span class="badge bg-light text-dark border small">${d.type}</span></td>
+                <td><span class="badge bg-secondary opacity-75 small">${d.type}</span></td>
                 <td><span class="${d.status=='In'?'badge-in':'badge-out'}">${d.status}</span></td>
             </tr>`;
-            tableBody.insertAdjacentHTML('afterbegin', row);
+            tableBody.insertAdjacentHTML('afterbegin', row)
             
+            // อัปเดตสถิติ
             document.getElementById('last-user').innerText = d.name;
             document.getElementById('last-time').innerText = d.date + " " + d.timestamp;
             
-            if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); }
-            else { peopleIn = peopleIn.filter(p => p !== d.name); }
-            document.getElementById('people-count').innerText = peopleIn.length;
+            // จัดการรายชื่อคนในห้อง
+            if(d.status == "In") {
+                if(!peopleIn.includes(d.name)) peopleIn.push(d.name);
+            } else {
+                peopleIn = peopleIn.filter(p => p !== d.name);
+            }
             
-            const namesList = document.getElementById('names-list');
-            namesList.innerHTML = peopleIn.map(p => `<div class="name-item"><span>${p}</span><small>อยู่ในห้อง</small></div>`).join('');
+            document.getElementById('people-count').innerText = peopleIn.length;
+            document.getElementById('names-list').innerHTML = peopleIn.map(p => 
+                `<div class="name-item"><span>${p}</span><small><i class="bi bi-geo-alt-fill"></i></small></div>`
+            ).join('');
         });
     }
 
-    // Dark Mode Toggle
-    document.getElementById('dark-mode-toggle').onclick = () => {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        document.getElementById('mode-icon').className = isDark ? "bi bi-sun-fill" : "bi bi-moon-fill";
-        document.getElementById('mode-text').innerText = isDark ? "โหมดสว่าง" : "โหมดมืด";
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    };
-    if (localStorage.getItem('theme') === 'dark') document.getElementById('dark-mode-toggle').click();
-
+    // ล้างประวัติ
     document.getElementById('clear-btn').onclick = () => {
-        if(confirm("ลบประวัติทั้งหมด?")) remove(ref(db, 'access_logs')).then(() => location.reload());
+        if(confirm("ยืนยันการลบประวัติการเข้า-ออกทั้งหมดหรือไม่?")) {
+            remove(ref(db, 'access_logs')).then(() => location.reload());
+        }
     };
 </script>
 </body>
