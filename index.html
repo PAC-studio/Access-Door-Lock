@@ -13,11 +13,13 @@
         :root {
             --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529;
             --table-head-bg: #f8f9fa; --table-head-text: #212529;
+            --border-color: #dee2e6;
         }
 
         body.dark-mode {
             --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #ffffff;
             --table-head-bg: #2d2d2d; --table-head-text: #ffffff;
+            --border-color: #333333;
         }
 
         body { 
@@ -28,20 +30,28 @@
         #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
         #main-dashboard { display: none; }
 
-        /* แก้ไขสี Admin Name */
+        /* ชื่อ Admin */
         #admin-name { color: var(--text-main) !important; font-weight: bold; }
 
         .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-main); }
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
 
-        /* แก้ไขตารางโหมดมืด */
-        .table { color: var(--text-main) !important; }
-        .dark-mode thead th { 
+        /* แก้ไขตาราง: บังคับสีพื้นหลังหัวตารางและตัวอักษร */
+        .table { color: var(--text-main) !important; border-color: var(--border-color) !important; }
+        
+        /* บังคับเขียนทับ table-light ของ Bootstrap ในโหมดมืด */
+        .dark-mode .table thead tr, 
+        .dark-mode .table thead th { 
             background-color: var(--table-head-bg) !important; 
             color: var(--table-head-text) !important;
-            border-bottom: 2px solid #444;
+            border-bottom: 2px solid #444 !important;
         }
-        .dark-mode tbody td { color: #e0e0e0 !important; border-color: #333 !important; }
+
+        .dark-mode .table tbody td { 
+            background-color: transparent !important;
+            color: #e0e0e0 !important; 
+            border-color: #333 !important; 
+        }
 
         #dark-mode-toggle { position: fixed; top: 20px; right: 20px; z-index: 1000; border-radius: 50px; }
         .badge-in { background-color: #198754; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
@@ -94,7 +104,7 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card p-4 h-100 stat-card">
+                <div class="card p-4 h-100 stat-card shadow">
                     <h6>ในห้องปัจจุบัน</h6>
                     <span id="people-count" class="display-4 fw-bold">0</span> คน
                     <div id="names-list" class="mt-2"></div>
@@ -104,13 +114,19 @@
 
         <div class="card p-4">
             <div class="d-flex justify-content-between mb-3">
-                <h5 class="fw-bold">ประวัติย้อนหลัง</h5>
+                <h5 class="fw-bold"><i class="bi bi-clock-history me-2"></i>ประวัติย้อนหลัง</h5>
                 <button id="clear-btn" class="btn btn-sm btn-outline-danger">ล้างประวัติ</button>
             </div>
             <div class="table-responsive">
                 <table class="table align-middle">
                     <thead>
-                        <tr><th>วันที่</th><th>เวลา</th><th>ชื่อ</th><th>ประเภท</th><th>สถานะ</th></tr>
+                        <tr>
+                            <th>วันที่</th>
+                            <th>เวลา</th>
+                            <th>ชื่อ</th>
+                            <th>ประเภท</th>
+                            <th>สถานะ</th>
+                        </tr>
                     </thead>
                     <tbody id="table-body"></tbody>
                 </table>
@@ -133,7 +149,7 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // --- Login Logic ---
+    // Login
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
@@ -157,32 +173,49 @@
     document.getElementById('logout-btn').onclick = () => signOut(auth);
 
     function initApp() {
-        // Stay Open Logic
         onValue(ref(db, 'door_status/stay_open'), (s) => {
             document.getElementById('stay-open-toggle').checked = s.val() || false;
         });
         document.getElementById('stay-open-toggle').onchange = (e) => set(ref(db, 'door_status/stay_open'), e.target.checked);
 
-        // Logs Logic
         let peopleIn = [];
+        const tableBody = document.getElementById('table-body');
+        
         onChildAdded(ref(db, 'access_logs'), (s) => {
             const d = s.val();
-            const row = `<tr><td>${d.date}</td><td>${d.timestamp}</td><td>${d.name}</td><td>${d.type}</td><td><span class="${d.status=='In'?'badge-in':'badge-out'}">${d.status}</span></td></tr>`;
-            document.getElementById('table-body').insertAdjacentHTML('afterbegin', row);
+            const row = `<tr>
+                <td>${d.date}</td>
+                <td>${d.timestamp}</td>
+                <td class="fw-bold">${d.name}</td>
+                <td><span class="badge bg-light text-dark border small">${d.type}</span></td>
+                <td><span class="${d.status=='In'?'badge-in':'badge-out'}">${d.status}</span></td>
+            </tr>`;
+            tableBody.insertAdjacentHTML('afterbegin', row);
             
-            // Update Stats
             document.getElementById('last-user').innerText = d.name;
             document.getElementById('last-time').innerText = d.date + " " + d.timestamp;
             
             if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); }
             else { peopleIn = peopleIn.filter(p => p !== d.name); }
             document.getElementById('people-count').innerText = peopleIn.length;
+            
+            const namesList = document.getElementById('names-list');
+            namesList.innerHTML = peopleIn.map(p => `<div class="name-item"><span>${p}</span><small>อยู่ในห้อง</small></div>`).join('');
         });
     }
 
     // Dark Mode Toggle
     document.getElementById('dark-mode-toggle').onclick = () => {
         document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        document.getElementById('mode-icon').className = isDark ? "bi bi-sun-fill" : "bi bi-moon-fill";
+        document.getElementById('mode-text').innerText = isDark ? "โหมดสว่าง" : "โหมดมืด";
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    };
+    if (localStorage.getItem('theme') === 'dark') document.getElementById('dark-mode-toggle').click();
+
+    document.getElementById('clear-btn').onclick = () => {
+        if(confirm("ลบประวัติทั้งหมด?")) remove(ref(db, 'access_logs')).then(() => location.reload());
     };
 </script>
 </body>
