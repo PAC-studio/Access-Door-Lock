@@ -9,92 +9,84 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
-        :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; }
+        :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --accent-blue: #0d6efd; }
         body.dark-mode { --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #ffffff; }
-        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; margin: 0; padding: 0; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; }
         
-        /* แก้ไขจุดนี้: ซ่อนหน้า Dashboard ให้สนิท */
-        #main-dashboard { display: none !important; }
-        #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; background-color: var(--bg-color); }
-
         .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
         
-        .dark-mode .history-card { background-color: #262626 !important; }
+        /* ตารางสีเทาในโหมดมืด */
         .dark-mode .table { --bs-table-bg: #333333 !important; color: #ffffff !important; border-color: #444 !important; }
         .dark-mode .table thead th { background-color: #444444 !important; color: #ffffff !important; }
 
-        .user-item { display: flex; align-items: center; margin-bottom: 10px; background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 50px; }
-        .user-avatar { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold; color: #fff; }
+        /* ลิสต์รายชื่อแบบโปรไฟล์กลมๆ (ใช้ตัวอักษรแทน Emoji) */
+        .user-item { display: flex; align-items: center; margin-bottom: 10px; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 50px; }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 0.85rem; font-weight: 600; color: #fff; text-transform: uppercase; border: 1.5px solid rgba(255,255,255,0.3); }
         
-        #last-user { color: #ffffff !important; font-size: 2.2rem !important; font-weight: 600; }
-        .info-sub { font-size: 1rem; color: #d1d1d1; margin-top: 5px; }
-
-        #dark-mode-toggle { position: absolute; top: 15px; right: 15px; border-radius: 50px; z-index: 1000; }
+        #last-user { color: #6c757d !important; font-size: 1.6rem !important; }
+        #live-clock { font-size: 1.3rem; font-weight: 600; color: #0d6efd; }
+        .dark-mode #live-clock { color: #4dabf7; }
+        
+        header { position: relative; }
+        #dark-mode-toggle { position: absolute; top: 0; right: 0; border-radius: 50px; }
+        
+        /* แก้ไขสี Placeholder สำหรับ iOS */
+        input::placeholder { color: #888 !important; opacity: 1 !important; }
+        input::-webkit-input-placeholder { color: #888 !important; }
     </style>
 </head>
 <body>
 
-<div id="login-section">
+<div id="login-section" class="d-flex align-items-center justify-content-center" style="height:100vh;">
     <div class="card p-4 text-center shadow-lg" style="width: 350px;">
-        <h3 class="fw-bold mb-4"><i class="bi bi-lock-fill text-primary"></i> Login Access</h3>
+        <h3 class="fw-bold mb-3"><i class="bi bi-shield-lock-fill text-primary"></i> Login Access</h3>
         <input type="text" id="username" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
         <input type="password" id="password" class="form-control mb-3" placeholder="รหัสผ่าน">
-        <button id="login-btn" class="btn btn-primary w-100 fw-bold py-2">เข้าสู่ระบบ</button>
+        <button id="login-btn" class="btn btn-primary w-100 fw-bold">เข้าสู่ระบบ</button>
         <p id="error-msg" class="text-danger mt-2 small"></p>
     </div>
 </div>
 
-<div id="main-dashboard">
-    <button id="dark-mode-toggle" class="btn btn-light border shadow-sm">
-        <i id="mode-icon" class="bi bi-moon-fill"></i> <span id="mode-text">โหมดมืด</span>
-    </button>
-    
+<div id="main-dashboard" style="display:none;">
     <div class="container py-4">
-        <header class="mb-4 pt-2 d-flex justify-content-between align-items-center border-bottom pb-3">
-            <div>
-                <h1 class="h3 fw-bold text-primary m-0">Door Lock Dashboard</h1>
-                <div id="live-clock" class="fw-bold text-primary"><span id="clock-display">00:00:00</span></div>
-            </div>
-            <div class="text-end">
-                <div class="small opacity-75">User: <span id="admin-name" class="text-success fw-bold">---</span></div>
-                <button id="logout-btn" class="btn btn-danger btn-sm rounded-pill px-3 mt-1">ออกจากระบบ</button>
-            </div>
+        <header class="mb-4">
+            <button id="dark-mode-toggle" class="btn btn-light border"><i id="mode-icon" class="bi bi-moon-fill"></i> <span id="mode-text">โหมดมืด</span></button>
+            <h1 class="h3 fw-bold text-primary">Access Entry Door Lock Dashboard</h1>
+            <div id="live-clock" class="mt-2"><i class="bi bi-clock-fill me-1"></i> <span id="clock-display">--:--:--</span></div>
+            <div class="small text-muted mt-1">ผู้ใช้งาน: <span id="admin-name" class="fw-bold text-success">---</span></div>
+            <button id="logout-btn" class="btn btn-danger btn-sm mt-2 rounded-pill px-3">ออกจากระบบ</button>
         </header>
 
         <div class="row g-4 mb-4">
-            <div class="col-md-7">
-                <div class="card p-4 h-100 border-start border-primary border-5">
-                    <h6 class="fw-bold text-muted small text-uppercase">แสกนครั้งล่าสุด</h6>
-                    <div id="last-user" class="my-2 text-white">---</div>
-                    <div class="info-sub">
-                        <i class="bi bi-calendar3 me-1"></i> <span id="last-date">---</span> |
-                        อุปกรณ์: <span id="last-device" style="color:#ffffff;">---</span>
-                    </div>
+            <div class="col-md-6">
+                <div class="card p-4 h-100 border-bottom border-primary border-3">
+                    <h6 class="fw-bold text-muted small">แสกนครั้งล่าสุด <i class="bi bi-clock-history ms-1"></i></h6>
+                    <h2 id="last-user" class="fw-bold my-2">---</h2>
+                    <small id="last-time" class="opacity-50"></small>
                 </div>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-6">
                 <div class="card p-4 h-100 stat-card">
-                    <h6 class="fw-bold text-white-50 small text-uppercase">จำนวนคนในห้อง</h6>
-                    <div class="display-4 fw-bold my-2"><span id="people-count">0</span> คน</div>
-                    <div id="user-list-container"></div>
+                    <h6 class="fw-bold text-white-50 small">จำนวนคนในห้อง</h6>
+                    <div class="display-6 fw-bold mb-3"><span id="people-count">0</span> คน</div>
+                    <hr class="opacity-25">
+                    <h6 class="fw-bold small mb-3"><i class="bi bi-people-fill me-1"></i> รายชื่อที่อยู่ในห้อง:</h6>
+                    <div id="user-list-container">
+                        </div>
                 </div>
             </div>
         </div>
 
-        <div class="card p-4 history-card">
-            <div class="d-flex justify-content-between mb-3">
-                <h5 class="fw-bold"><i class="bi bi-journal-text"></i> ประวัติเข้า-ออก</h5>
-                <button id="clear-btn" class="btn btn-sm btn-outline-danger">ล้างประวัติ</button>
-            </div>
+        <div class="card p-4 shadow-sm history-card">
+            <h5 class="fw-bold mb-3 small"><i class="bi bi-list-ul me-2"></i>ประวัติการเข้า-ออก</h5>
             <div class="table-responsive">
-                <table class="table text-center">
-                    <thead>
-                        <tr><th>วันที่</th><th>เวลา</th><th>ชื่อผู้ใช้</th><th>อุปกรณ์</th><th>สถานะ</th></tr>
-                    </thead>
+                <table class="table align-middle text-center small">
+                    <thead><tr><th>วันที่</th><th>เวลา</th><th>ชื่อผู้ใช้</th><th>อุปกรณ์</th><th>สถานะ</th></tr></thead>
                     <tbody id="table-body"></tbody>
                 </table>
             </div>
+            <button id="clear-btn" class="btn btn-sm btn-outline-danger mt-2 w-auto">ล้างประวัติ</button>
         </div>
     </div>
 </div>
@@ -113,70 +105,73 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // ตรวจสอบสถานะการล็อกอินเพื่อสลับหน้า
+    // Theme Logic
+    const toggle = document.getElementById('dark-mode-toggle');
+    const updateThemeUI = (isDark) => {
+        document.body.classList.toggle('dark-mode', isDark);
+        document.getElementById('mode-icon').className = isDark ? "bi bi-sun-fill" : "bi bi-moon-fill";
+        document.getElementById('mode-text').innerText = isDark ? "โหมดสว่าง" : "โหมดมืด";
+    };
+    toggle.onclick = () => {
+        const isDark = !document.body.classList.contains('dark-mode');
+        updateThemeUI(isDark);
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    };
+    if(localStorage.getItem('theme') === 'dark') updateThemeUI(true);
+    
+    setInterval(() => document.getElementById('clock-display').innerText = new Date().toLocaleTimeString('th-TH',{hour12:false}), 1000);
+
+    // Auth & Main logic
     onAuthStateChanged(auth, (user) => {
-        const loginSec = document.getElementById('login-section');
-        const dashSec = document.getElementById('main-dashboard');
-        
         if (user) {
-            loginSec.setAttribute('style', 'display: none !important');
-            dashSec.setAttribute('style', 'display: block !important');
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('main-dashboard').style.display = 'block';
             document.getElementById('admin-name').innerText = user.email.split('@')[0];
             runApp();
         } else {
-            loginSec.setAttribute('style', 'display: flex !important');
-            dashSec.setAttribute('style', 'display: none !important');
+            document.getElementById('login-section').style.display = 'flex';
+            document.getElementById('main-dashboard').style.display = 'none';
         }
     });
 
-    // ปุ่ม Login
     document.getElementById('login-btn').onclick = () => {
-        const user = document.getElementById('username').value;
-        const pass = document.getElementById('password').value;
-        if(!user || !pass) return;
-        
-        signInWithEmailAndPassword(auth, user + "@insight.com", pass)
-        .catch((err) => {
-            console.error(err);
-            document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
-        });
+        signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
+        .catch(() => document.getElementById('error-msg').innerText = "ข้อมูลไม่ถูกต้อง");
     };
-
     document.getElementById('logout-btn').onclick = () => signOut(auth);
 
     function runApp() {
         let peopleIn = [];
         onChildAdded(ref(db, 'access_logs'), (s) => {
             const d = s.val();
-            const row = `<tr>
-                <td>${d.date}</td><td>${d.timestamp}</td>
-                <td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td>
-                <td><span class="badge ${d.status=='In'?'bg-success':'bg-danger'}">${d.status}</span></td>
-            </tr>`;
+            const row = `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${d.status=='In'?'bg-success':'bg-danger'}">${d.status}</span></td></tr>`;
             document.getElementById('table-body').insertAdjacentHTML('afterbegin', row);
             
             document.getElementById('last-user').innerText = d.name;
-            document.getElementById('last-date').innerText = d.date + " " + d.timestamp;
-            document.getElementById('last-device').innerText = d.type;
+            document.getElementById('last-time').innerText = d.date + " " + d.timestamp;
             
             if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } 
             else { peopleIn = peopleIn.filter(p => p !== d.name); }
             
             document.getElementById('people-count').innerText = peopleIn.length;
+            
+            // อัปเดตลิสต์รายชื่อแบบใช้อักษรแรกแทน Emoji
             document.getElementById('user-list-container').innerHTML = peopleIn.map(name => `
                 <div class="user-item">
-                    <div class="user-avatar" style="background:#555">${name.charAt(0)}</div>
-                    <span class="fw-bold">${name}</span>
+                    <div class="user-avatar" style="background:${getColorFromName(name)}">${name.charAt(0)}</div>
+                    <span class="fw-bold" style="font-size:0.9rem;">${name}</span>
                 </div>
             `).join('');
         });
     }
 
-    // Theme & Clock
-    document.getElementById('dark-mode-toggle').onclick = () => {
-        document.body.classList.toggle('dark-mode');
-    };
-    setInterval(() => document.getElementById('clock-display').innerText = new Date().toLocaleTimeString('th-TH'), 1000);
+    function getColorFromName(name) {
+        const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800', '#795548'];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        return colors[Math.abs(hash) % colors.length];
+    }
+
     document.getElementById('clear-btn').onclick = () => { if(confirm("ล้างประวัติ?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
 </script>
 </body>
