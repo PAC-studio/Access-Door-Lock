@@ -29,9 +29,19 @@
         .card-label { font-size: 1rem; font-weight: 600; text-transform: uppercase; color: #6c757d; }
         .dark-mode .card-label { color: #ffffff !important; }
 
+        /* --- แก้ไขตารางเป็นสีเทาในโหมดมืดตามที่สั่ง --- */
         .dark-mode .history-card { background-color: #2d2d2d !important; }
-        .dark-mode .table { --bs-table-bg: #ffffff !important; color: #212529 !important; border-radius: 8px; overflow: hidden; }
-        .dark-mode .table thead th { background-color: #eeeeee !important; color: #212529 !important; border-bottom: 2px solid #ddd !important; }
+        .dark-mode .table { 
+            --bs-table-bg: #323232 !important; 
+            color: #ffffff !important; 
+            border-radius: 8px; 
+            overflow: hidden; 
+        }
+        .dark-mode .table thead th { 
+            background-color: #454545 !important; 
+            color: #ffffff !important; 
+            border-bottom: 2px solid #555 !important; 
+        }
         
         #last-user { color: #6c757d !important; font-size: 1.8rem !important; } 
 
@@ -43,7 +53,7 @@
 </head>
 <body>
 
-<div class="modal fade" id="welcomeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="welcomeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow-lg border-0" style="border-radius: 15px;">
       <div class="modal-header border-0 justify-content-center pt-4">
@@ -224,7 +234,6 @@
             
             document.getElementById('people-count').innerText = peopleIn.length;
             
-            // อัปเดตรายชื่อเป็นรูปโปรไฟล์สีๆ แบบวงกลมตามที่สั่ง
             document.getElementById('names-list').innerHTML = `
                 <div class="d-flex flex-wrap gap-2 mt-2">
                     ${peopleIn.map(name => `
