@@ -47,6 +47,7 @@
         .badge-in { background-color: #198754; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .badge-out { background-color: #dc3545; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .name-item { background: rgba(255, 255, 255, 0.15); border-radius: 10px; margin-bottom: 8px; padding: 8px 15px; display: flex; justify-content: space-between; }
+        .project-desc { font-size: 0.95rem; font-weight: 300; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -67,10 +68,11 @@
     </button>
 
     <div class="container py-4">
-        <header class="d-flex justify-content-between align-items-center mb-4">
+        <header class="d-flex justify-content-between align-items-start mb-4">
             <div>
-                <h1 class="display-6 fw-bold text-primary mb-0">Access Entry Door Lock Dashboard</h1>
-                <p class="opacity-75">ผู้ใช้งานปัจจุบัน: <span id="admin-name">กำลังโหลด...</span></p>
+                <h1 class="display-6 fw-bold text-primary mb-1">Access Entry Door Lock Dashboard</h1>
+                <p class="project-desc opacity-75 mb-2">IoT-Based Door Lock System with Real-time Dashboard Monitoring</p>
+                <p class="small">ผู้ใช้งานปัจจุบัน: <span id="admin-name">กำลังโหลด...</span></p>
             </div>
             <button id="logout-btn" class="btn btn-outline-danger btn-sm rounded-pill px-3">ออกจากระบบ</button>
         </header>
@@ -216,4 +218,4 @@
     };
 </script>
 </body>
-</html>ห
+</html>
