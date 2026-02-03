@@ -12,7 +12,6 @@
     <style>
         :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --border-color: #dee2e6; }
         
-        /* 🌗 Dark Mode บังคับทุกจุด */
         body.dark-mode { 
             --bg-color: #121212; 
             --card-bg: #1e1e1e; 
@@ -27,6 +26,14 @@
             transition: 0.3s; 
         }
         
+        /* สไตล์ช่อง Login ในโหมดมืด (กันสีเหลือง) */
+        .dark-mode .form-control {
+            background-color: #2b2b2b !important;
+            border-color: #444 !important;
+            color: white !important;
+        }
+        .dark-mode .form-control::placeholder { color: #888; }
+
         #dark-mode-toggle { 
             position: absolute; top: 15px; right: 15px; z-index: 1100; 
             border-radius: 50px; padding: 5px 15px; 
@@ -43,30 +50,12 @@
         }
         
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
-        
-        /* ปรับขนาดและสีหัวข้อ (แสกนครั้งล่าสุด / จำนวนคนในห้อง) */
         .card-label { font-size: 1.1rem; font-weight: 600; text-transform: uppercase; color: #6c757d; }
-        .dark-mode .card-label { color: #ffffff !important; } /* เปลี่ยนเป็นสีขาวในโหมดมืด */
+        .dark-mode .card-label { color: #ffffff !important; }
 
-        /* --- 🛠 แก้ไขแถบตารางโหมดมืดตามที่พี่สั่ง --- */
         .dark-mode .history-card { background-color: #2d2d2d !important; }
-        
-        .dark-mode .table { 
-            --bs-table-bg: transparent !important; 
-            color: #e0e0e0 !important; 
-            border-color: #444 !important;
-        }
-
-        .dark-mode .table thead th { 
-            background-color: #444444 !important; /* พื้นหลังเทาเข้ม */
-            color: #ffffff !important;            /* ตัวหนังสือขาว */
-            border-bottom: 2px solid #555 !important;
-        }
-
-        .dark-mode .table tbody td { 
-            border-color: #444 !important; 
-        }
-        /* -------------------------------------- */
+        .dark-mode .table { --bs-table-bg: transparent !important; color: #e0e0e0 !important; border-color: #444 !important; }
+        .dark-mode .table thead th { background-color: #444444 !important; color: #ffffff !important; border-bottom: 2px solid #555 !important; }
         
         .badge-in { background-color: #198754; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .badge-out { background-color: #dc3545; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
@@ -76,21 +65,19 @@
         .dark-mode #live-clock { color: #4dabf7; }
         
         header { padding-right: 120px; } 
-        @media (max-width: 576px) { 
-            header { padding-right: 0; margin-top: 45px; } 
-            #live-clock { font-size: 1.2rem; }
-        }
+        @media (max-width: 576px) { header { padding-right: 0; margin-top: 45px; } }
     </style>
 </head>
 <body>
 
 <div id="login-section">
-    <div class="card p-4 shadow" style="width: 350px;">
-        <h3 class="text-center mb-4">🔐 Login Access</h3>
-        <input type="text" id="username" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
-        <input type="password" id="password" class="form-control mb-3" placeholder="รหัสผ่าน">
-        <button id="login-btn" class="btn btn-primary w-100 py-2">เข้าสู่ระบบ</button>
-        <p id="error-msg" class="text-danger text-center mt-3 small"></p>
+    <div class="card p-4 shadow text-center" style="width: 350px;">
+        <h3 class="fw-bold mb-1">🔐 Login</h3>
+        <p class="small opacity-75 mb-4">Access Entry Door Lock</p>
+        <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
+        <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
+        <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold">เข้าสู่ระบบ</button>
+        <p id="error-msg" class="text-danger mt-3 small"></p>
     </div>
 </div>
 
@@ -139,15 +126,7 @@
             </div>
             <div class="table-responsive">
                 <table class="table align-middle">
-                    <thead>
-                        <tr>
-                            <th>วันที่</th>
-                            <th>เวลา</th>
-                            <th>ชื่อผู้ใช้</th>
-                            <th>อุปกรณ์</th>
-                            <th>สถานะ</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>วันที่</th><th>เวลา</th><th>ชื่อผู้ใช้</th><th>อุปกรณ์</th><th>สถานะ</th></tr></thead>
                     <tbody id="table-body"></tbody>
                 </table>
             </div>
@@ -168,50 +147,50 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // --- ⏰ นาฬิกา Real-time ทันที ---
+    // --- ⏰ นาฬิกา ---
     function updateClock() {
         const now = new Date();
-        const h = String(now.getHours()).padStart(2, '0');
-        const m = String(now.getMinutes()).padStart(2, '0');
-        const s = String(now.getSeconds()).padStart(2, '0');
-        document.getElementById('clock-display').innerText = `${h}:${m}:${s}`;
+        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH', { hour12: false });
     }
     updateClock();
     setInterval(updateClock, 1000);
 
-    // --- 🌗 ระบบ Theme ---
+    // --- 🌗 ระบบ Theme อัตโนมัติ (ทำงานทันทีที่โหลดหน้า) ---
     const enableDarkMode = () => { 
         document.body.classList.add('dark-mode'); 
-        document.getElementById('mode-icon').className = "bi bi-sun-fill"; 
-        document.getElementById('mode-text').innerText = "โหมดสว่าง"; 
+        const icon = document.getElementById('mode-icon');
+        const text = document.getElementById('mode-text');
+        if(icon) icon.className = "bi bi-sun-fill"; 
+        if(text) text.innerText = "โหมดสว่าง"; 
     };
     const disableDarkMode = () => { 
         document.body.classList.remove('dark-mode'); 
-        document.getElementById('mode-icon').className = "bi bi-moon-fill"; 
-        document.getElementById('mode-text').innerText = "โหมดมืด"; 
+        const icon = document.getElementById('mode-icon');
+        const text = document.getElementById('mode-text');
+        if(icon) icon.className = "bi bi-moon-fill"; 
+        if(text) text.innerText = "โหมดมืด"; 
     };
 
-    function checkTheme() {
+    function initTheme() {
         const saved = localStorage.getItem('theme');
         const hour = new Date().getHours();
         if (saved === 'dark' || (saved === null && (hour >= 18 || hour < 6))) enableDarkMode();
         else disableDarkMode();
     }
+    
+    // รัน Theme ทันทีไม่ต้องรอ Login
+    initTheme();
 
     document.getElementById('dark-mode-toggle').onclick = () => {
-        if (document.body.classList.contains('dark-mode')) { 
-            disableDarkMode(); localStorage.setItem('theme', 'light'); 
-        } else { 
-            enableDarkMode(); localStorage.setItem('theme', 'dark'); 
-        }
+        if (document.body.classList.contains('dark-mode')) { disableDarkMode(); localStorage.setItem('theme', 'light'); }
+        else { enableDarkMode(); localStorage.setItem('theme', 'dark'); }
     };
 
-    // --- 🔐 ระบบ Login/Logout ---
+    // --- 🔐 Login/Logout ---
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
-        signInWithEmailAndPassword(auth, u + "@insight.com", p)
-        .catch(() => document.getElementById('error-msg').innerText = "รหัสผ่านไม่ถูกต้อง");
+        signInWithEmailAndPassword(auth, u + "@insight.com", p).catch(() => document.getElementById('error-msg').innerText = "รหัสผ่านไม่ถูกต้อง");
     };
 
     document.getElementById('logout-btn').onclick = () => signOut(auth);
@@ -221,7 +200,6 @@
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = user.email.split('@')[0]; 
-            checkTheme();
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
@@ -229,7 +207,6 @@
         }
     });
 
-    // --- 🚀 รับข้อมูลจาก Firebase ---
     function runApp() {
         let peopleIn = [];
         const tableBody = document.getElementById('table-body');
@@ -237,26 +214,16 @@
             const d = s.val();
             const row = `<tr><td>${d.date || '-'}</td><td>${d.timestamp || '-'}</td><td class="fw-bold">${d.name}</td><td>${d.type}</td><td><span class="${d.status=='In'?'badge-in':'badge-out'}">${d.status}</span></td></tr>`;
             tableBody.insertAdjacentHTML('afterbegin', row);
-            
             document.getElementById('last-user').innerText = d.name;
             document.getElementById('last-time').innerText = (d.date || '') + " " + (d.timestamp || '');
-            
-            if(d.status == "In") { 
-                if(!peopleIn.includes(d.name)) peopleIn.push(d.name); 
-            } else { 
-                peopleIn = peopleIn.filter(p => p !== d.name); 
-            }
-            
+            if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } 
+            else { peopleIn = peopleIn.filter(p => p !== d.name); }
             document.getElementById('people-count').innerText = peopleIn.length;
-            document.getElementById('names-list').innerHTML = peopleIn.map(p => 
-                `<div class="name-item"><span>${p}</span><i class="bi bi-person-check"></i></div>`
-            ).join('');
+            document.getElementById('names-list').innerHTML = peopleIn.map(p => `<div class="name-item"><span>${p}</span><i class="bi bi-person-check"></i></div>`).join('');
         });
     }
 
-    document.getElementById('clear-btn').onclick = () => { 
-        if(confirm("คุณต้องการล้างประวัติทั้งหมดใช่หรือไม่?")) remove(ref(db, 'access_logs')).then(() => location.reload()); 
-    };
+    document.getElementById('clear-btn').onclick = () => { if(confirm("ล้างประวัติ?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
 </script>
 </body>
 </html>
