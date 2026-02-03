@@ -20,9 +20,12 @@
         .badge-out { background-color: #dc3545; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .name-item { background: rgba(255, 255, 255, 0.15); border-radius: 10px; margin-bottom: 8px; padding: 8px 15px; display: flex; justify-content: space-between; }
         .dark-mode .table { color: white !important; }
+        #live-clock { font-size: 1.2rem; font-weight: 500; color: #0d6efd; }
+        .dark-mode #live-clock { color: #4dabf7; }
     </style>
 </head>
 <body>
+
 <div id="login-section">
     <div class="card p-4 shadow" style="width: 350px;">
         <h3 class="text-center mb-4">🔐 Login Access</h3>
@@ -32,23 +35,39 @@
         <p id="error-msg" class="text-danger text-center mt-3 small"></p>
     </div>
 </div>
+
 <div id="main-dashboard">
     <button id="dark-mode-toggle" class="btn btn-light shadow-sm">
         <i id="mode-icon" class="bi bi-moon-fill"></i> <span id="mode-text">โหมดมืด</span>
     </button>
+
     <div class="container py-4">
-        <header class="mb-4">
-            <h1 class="display-6 fw-bold text-primary mb-1">Access Entry Door Lock Dashboard</h1>
-            <p class="opacity-75 mb-2">IoT-Based Door Lock System with Real-time Dashboard Monitoring</p>
-            <p class="small">ผู้ใช้งาน: <span id="admin-name" class="fw-bold">---</span></p>
+        <header class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1 class="display-6 fw-bold text-primary mb-1">Access Entry Door Lock Dashboard</h1>
+                <p class="opacity-75 mb-2">IoT-Based Door Lock System with Real-time Dashboard Monitoring</p>
+                <div id="live-clock" class="mb-2"><i class="bi bi-clock me-2"></i><span id="clock-display">00:00:00</span></div>
+                <p class="small">ผู้ใช้งานปัจจุบัน: <span id="admin-name" class="fw-bold">---</span></p>
+            </div>
+            <button id="logout-btn" class="btn btn-outline-danger btn-sm rounded-pill px-3">ออกจากระบบ</button>
         </header>
+
         <div class="row g-4 mb-4">
             <div class="col-md-6"><div class="card p-4 h-100 border-bottom border-primary border-3"><h6>แสกนล่าสุด</h6><h2 id="last-user" class="fw-bold text-primary">---</h2><small id="last-time" class="opacity-50"></small></div></div>
-            <div class="col-md-6"><div class="card p-4 h-100 stat-card shadow-lg"><h6>ในพื้นที่</h6><div><span id="people-count" class="display-4 fw-bold">0</span> คน</div><div id="names-list" class="mt-3"></div></div></div>
+            <div class="col-md-6"><div class="card p-4 h-100 stat-card shadow-lg"><h6>จำนวนคนในพื้นที่</h6><div><span id="people-count" class="display-4 fw-bold">0</span> คน</div><div id="names-list" class="mt-3"></div></div></div>
         </div>
+
         <div class="card p-4 shadow-sm">
-            <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-bold m-0">ประวัติเข้า-ออก</h5><button id="clear-btn" class="btn btn-sm btn-outline-danger">ล้างประวัติ</button></div>
-            <div class="table-responsive"><table class="table align-middle"><thead><tr><th>วันที่</th><th>เวลา</th><th>ชื่อ</th><th>อุปกรณ์</th><th>สถานะ</th></tr></thead><tbody id="table-body"></tbody></table></div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0"><i class="bi bi-clock-history me-2"></i>ประวัติการเข้า-ออก</h5>
+                <button id="clear-btn" class="btn btn-sm btn-outline-danger">ล้างประวัติ</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>วันที่</th><th>เวลา</th><th>ชื่อผู้ใช้</th><th>อุปกรณ์</th><th>สถานะ</th></tr></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -58,19 +77,43 @@
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getDatabase, ref, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = { apiKey: "AIzaSyCZ0MK0LRsZLpzAclPxflIa7eWAXAdRchM", databaseURL: "https://smart-access-door-lock-default-rtdb.asia-southeast1.firebasedatabase.app" };
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCZ0MK0LRsZLpzAclPxflIa7eWAXAdRchM", 
+        databaseURL: "https://smart-access-door-lock-default-rtdb.asia-southeast1.firebasedatabase.app" 
+    };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    const enableDarkMode = () => { document.body.classList.add('dark-mode'); document.getElementById('mode-icon').className = "bi bi-sun-fill"; document.getElementById('mode-text').innerText = "โหมดสว่าง"; };
-    const disableDarkMode = () => { document.body.classList.remove('dark-mode'); document.getElementById('mode-icon').className = "bi bi-moon-fill"; document.getElementById('mode-text').innerText = "โหมดมืด"; };
+    // --- ⏰ ฟังก์ชันนาฬิกา Real-time ---
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('th-TH', { hour12: false });
+        document.getElementById('clock-display').innerText = timeString;
+    }
+    setInterval(updateClock, 1000);
 
-    function checkTimeForTheme() {
+    // --- 🌗 ระบบ Theme ---
+    const enableDarkMode = () => { 
+        document.body.classList.add('dark-mode'); 
+        document.getElementById('mode-icon').className = "bi bi-sun-fill"; 
+        document.getElementById('mode-text').innerText = "โหมดสว่าง"; 
+    };
+    const disableDarkMode = () => { 
+        document.body.classList.remove('dark-mode'); 
+        document.getElementById('mode-icon').className = "bi bi-moon-fill"; 
+        document.getElementById('mode-text').innerText = "โหมดมืด"; 
+    };
+
+    function checkTheme() {
         const saved = localStorage.getItem('theme');
         const hour = new Date().getHours();
-        if (saved === 'dark' || (saved === null && (hour >= 18 || hour < 6))) enableDarkMode();
-        else disableDarkMode();
+        // ถ้าเป็นสี่ทุ่ม (22.00) และยังไม่เคยเลือกโหมดเอง หรือเลือก dark ไว้ ให้เปิด dark
+        if (saved === 'dark' || (saved === null && (hour >= 18 || hour < 6))) {
+            enableDarkMode();
+        } else {
+            disableDarkMode();
+        }
     }
 
     document.getElementById('dark-mode-toggle').onclick = () => {
@@ -78,30 +121,46 @@
         else { enableDarkMode(); localStorage.setItem('theme', 'dark'); }
     };
 
+    // --- 🔐 Login/Logout ---
     document.getElementById('login-btn').onclick = () => {
-        signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value).catch(() => document.getElementById('error-msg').innerText = "รหัสผิด");
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+        signInWithEmailAndPassword(auth, u + "@insight.com", p).catch(() => document.getElementById('error-msg').innerText = "Username หรือ Password ไม่ถูกต้อง");
     };
 
+    document.getElementById('logout-btn').onclick = () => signOut(auth);
+
     onAuthStateChanged(auth, (user) => {
-        if (user) { document.getElementById('login-section').style.display = 'none'; document.getElementById('main-dashboard').style.display = 'block'; document.getElementById('admin-name').innerText = user.email.split('@')[0]; checkTimeForTheme(); runApp(); }
-        else { document.getElementById('login-section').style.display = 'flex'; document.getElementById('main-dashboard').style.display = 'none'; }
+        if (user) { 
+            document.getElementById('login-section').style.display = 'none'; 
+            document.getElementById('main-dashboard').style.display = 'block'; 
+            document.getElementById('admin-name').innerText = user.email.split('@')[0]; 
+            checkTheme();
+            updateClock();
+            runApp(); 
+        } else { 
+            document.getElementById('login-section').style.display = 'flex'; 
+            document.getElementById('main-dashboard').style.display = 'none'; 
+        }
     });
 
+    // --- 🚀 Data Logic ---
     function runApp() {
         let peopleIn = [];
+        const tableBody = document.getElementById('table-body');
         onChildAdded(ref(db, 'access_logs'), (s) => {
             const d = s.val();
-            const row = `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td>${d.type}</td><td><span class="${d.status=='In'?'badge-in':'badge-out'}">${d.status}</span></td></tr>`;
-            document.getElementById('table-body').insertAdjacentHTML('afterbegin', row);
+            const row = `<tr><td>${d.date || '---'}</td><td>${d.timestamp || '---'}</td><td class="fw-bold">${d.name}</td><td>${d.type}</td><td><span class="${d.status=='In'?'badge-in':'badge-out'}">${d.status}</span></td></tr>`;
+            tableBody.insertAdjacentHTML('afterbegin', row);
             document.getElementById('last-user').innerText = d.name;
-            document.getElementById('last-time').innerText = d.date + " " + d.timestamp;
+            document.getElementById('last-time').innerText = (d.date || '') + " " + (d.timestamp || '');
             if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } else { peopleIn = peopleIn.filter(p => p !== d.name); }
             document.getElementById('people-count').innerText = peopleIn.length;
             document.getElementById('names-list').innerHTML = peopleIn.map(p => `<div class="name-item"><span>${p}</span></div>`).join('');
         });
     }
-    document.getElementById('clear-btn').onclick = () => { if(confirm("ลบไหม?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
-    document.getElementById('logout-btn').onclick = () => signOut(auth);
+
+    document.getElementById('clear-btn').onclick = () => { if(confirm("ต้องการล้างประวัติทั้งหมดใช่หรือไม่?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
 </script>
 </body>
 </html>
