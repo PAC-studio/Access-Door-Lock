@@ -29,9 +29,23 @@
         .card-label { font-size: 1rem; font-weight: 600; text-transform: uppercase; color: #6c757d; }
         .dark-mode .card-label { color: #ffffff !important; }
 
+        /* --- จุดที่แก้ไข: ตารางประวัติเป็นสีเทาอ่อน ตัวหนังสือสีขาว ในโหมดมืด --- */
         .dark-mode .history-card { background-color: #2d2d2d !important; }
-        .dark-mode .table { --bs-table-bg: #ffffff !important; color: #212529 !important; border-radius: 8px; overflow: hidden; }
-        .dark-mode .table thead th { background-color: #eeeeee !important; color: #212529 !important; border-bottom: 2px solid #ddd !important; }
+        .dark-mode .table { 
+            --bs-table-bg: #4a4a4a !important; 
+            color: #ffffff !important; 
+            border-radius: 8px; 
+            overflow: hidden; 
+        }
+        .dark-mode .table thead th { 
+            background-color: #5a5a5a !important; 
+            color: #ffffff !important; 
+            border-bottom: 2px solid #666 !important; 
+        }
+        .dark-mode .table tbody td { 
+            color: #ffffff !important; 
+            border-bottom: 1px solid #555 !important;
+        }
         
         #last-user { color: #6c757d !important; font-size: 1.8rem !important; } 
 
@@ -224,7 +238,6 @@
             
             document.getElementById('people-count').innerText = peopleIn.length;
             
-            // อัปเดตรายชื่อเป็นรูปโปรไฟล์สีๆ แบบวงกลมตามที่สั่ง
             document.getElementById('names-list').innerHTML = `
                 <div class="d-flex flex-wrap gap-2 mt-2">
                     ${peopleIn.map(name => `
