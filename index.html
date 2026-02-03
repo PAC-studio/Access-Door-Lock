@@ -11,17 +11,36 @@
         :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --border-color: #dee2e6; }
         body.dark-mode { --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #ffffff; --border-color: #333333; }
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; }
+        
+        /* ปรับแต่งปุ่ม Toggle ใหม่ไม่ให้ทับกับอะไร */
+        #dark-mode-toggle { 
+            position: absolute; 
+            top: 15px; 
+            right: 15px; 
+            z-index: 1100; 
+            border-radius: 50px;
+            padding: 5px 15px;
+        }
+
         #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
-        #main-dashboard { display: none; }
+        #main-dashboard { display: none; position: relative; }
+        
         .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-main); }
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
-        #dark-mode-toggle { position: fixed; top: 20px; right: 20px; z-index: 1000; border-radius: 50px; }
+        
         .badge-in { background-color: #198754; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .badge-out { background-color: #dc3545; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; }
         .name-item { background: rgba(255, 255, 255, 0.15); border-radius: 10px; margin-bottom: 8px; padding: 8px 15px; display: flex; justify-content: space-between; }
+        
         .dark-mode .table { color: white !important; }
-        #live-clock { font-size: 1.2rem; font-weight: 500; color: #0d6efd; }
+        #live-clock { font-size: 1.4rem; font-weight: 600; color: #0d6efd; letter-spacing: 1px; }
         .dark-mode #live-clock { color: #4dabf7; }
+        
+        /* ปรับขนาดส่วนหัวให้รองรับปุ่ม */
+        header { padding-right: 100px; } 
+        @media (max-width: 576px) {
+            header { padding-right: 0; margin-top: 40px; }
+        }
     </style>
 </head>
 <body>
@@ -37,24 +56,41 @@
 </div>
 
 <div id="main-dashboard">
-    <button id="dark-mode-toggle" class="btn btn-light shadow-sm">
+    <button id="dark-mode-toggle" class="btn btn-light shadow-sm border">
         <i id="mode-icon" class="bi bi-moon-fill"></i> <span id="mode-text">โหมดมืด</span>
     </button>
 
     <div class="container py-4">
-        <header class="d-flex justify-content-between align-items-start mb-4">
-            <div>
-                <h1 class="display-6 fw-bold text-primary mb-1">Access Entry Door Lock Dashboard</h1>
-                <p class="opacity-75 mb-2">IoT-Based Door Lock System with Real-time Dashboard Monitoring</p>
-                <div id="live-clock" class="mb-2"><i class="bi bi-clock me-2"></i><span id="clock-display">00:00:00</span></div>
-                <p class="small">ผู้ใช้งานปัจจุบัน: <span id="admin-name" class="fw-bold">---</span></p>
+        <header class="mb-4">
+            <h1 class="h2 fw-bold text-primary mb-1">Access Entry Door Lock Dashboard</h1>
+            <p class="opacity-75 mb-3 small">IoT-Based Door Lock System with Real-time Monitoring</p>
+            
+            <div class="d-flex justify-content-between align-items-end border-top pt-3">
+                <div>
+                    <div id="live-clock"><i class="bi bi-clock-fill me-2"></i><span id="clock-display">--:--:--</span></div>
+                    <div class="small mt-1">ผู้ใช้งาน: <span id="admin-name" class="fw-bold text-success">---</span></div>
+                </div>
+                <button id="logout-btn" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i> ออกจากระบบ
+                </button>
             </div>
-            <button id="logout-btn" class="btn btn-outline-danger btn-sm rounded-pill px-3">ออกจากระบบ</button>
         </header>
 
         <div class="row g-4 mb-4">
-            <div class="col-md-6"><div class="card p-4 h-100 border-bottom border-primary border-3"><h6>แสกนล่าสุด</h6><h2 id="last-user" class="fw-bold text-primary">---</h2><small id="last-time" class="opacity-50"></small></div></div>
-            <div class="col-md-6"><div class="card p-4 h-100 stat-card shadow-lg"><h6>จำนวนคนในพื้นที่</h6><div><span id="people-count" class="display-4 fw-bold">0</span> คน</div><div id="names-list" class="mt-3"></div></div></div>
+            <div class="col-md-6">
+                <div class="card p-4 h-100 border-bottom border-primary border-3">
+                    <h6 class="text-muted fw-bold text-uppercase small">แสกนล่าสุด</h6>
+                    <h2 id="last-user" class="fw-bold text-primary my-2">---</h2>
+                    <small id="last-time" class="opacity-50"></small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-4 h-100 stat-card shadow-lg">
+                    <h6 class="text-uppercase fw-bold small opacity-75">จำนวนคนในพื้นที่</h6>
+                    <div><span id="people-count" class="display-4 fw-bold">0</span> คน</div>
+                    <div id="names-list" class="mt-3"></div>
+                </div>
+            </div>
         </div>
 
         <div class="card p-4 shadow-sm">
@@ -85,12 +121,16 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // --- ⏰ ฟังก์ชันนาฬิกา Real-time ---
+    // --- ⏰ นาฬิกาแบบ Instant (ไม่ดีเลย์) ---
     function updateClock() {
         const now = new Date();
-        const timeString = now.toLocaleTimeString('th-TH', { hour12: false });
-        document.getElementById('clock-display').innerText = timeString;
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('clock-display').innerText = `${h}:${m}:${s}`;
     }
+    // เรียกทันที 1 ครั้งก่อนเริ่ม Interval
+    updateClock();
     setInterval(updateClock, 1000);
 
     // --- 🌗 ระบบ Theme ---
@@ -108,12 +148,8 @@
     function checkTheme() {
         const saved = localStorage.getItem('theme');
         const hour = new Date().getHours();
-        // ถ้าเป็นสี่ทุ่ม (22.00) และยังไม่เคยเลือกโหมดเอง หรือเลือก dark ไว้ ให้เปิด dark
-        if (saved === 'dark' || (saved === null && (hour >= 18 || hour < 6))) {
-            enableDarkMode();
-        } else {
-            disableDarkMode();
-        }
+        if (saved === 'dark' || (saved === null && (hour >= 18 || hour < 6))) enableDarkMode();
+        else disableDarkMode();
     }
 
     document.getElementById('dark-mode-toggle').onclick = () => {
@@ -123,9 +159,8 @@
 
     // --- 🔐 Login/Logout ---
     document.getElementById('login-btn').onclick = () => {
-        const u = document.getElementById('username').value;
-        const p = document.getElementById('password').value;
-        signInWithEmailAndPassword(auth, u + "@insight.com", p).catch(() => document.getElementById('error-msg').innerText = "Username หรือ Password ไม่ถูกต้อง");
+        signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
+        .catch(() => document.getElementById('error-msg').innerText = "รหัสผ่านไม่ถูกต้อง");
     };
 
     document.getElementById('logout-btn').onclick = () => signOut(auth);
@@ -136,7 +171,6 @@
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = user.email.split('@')[0]; 
             checkTheme();
-            updateClock();
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
@@ -144,23 +178,22 @@
         }
     });
 
-    // --- 🚀 Data Logic ---
     function runApp() {
         let peopleIn = [];
-        const tableBody = document.getElementById('table-body');
         onChildAdded(ref(db, 'access_logs'), (s) => {
             const d = s.val();
-            const row = `<tr><td>${d.date || '---'}</td><td>${d.timestamp || '---'}</td><td class="fw-bold">${d.name}</td><td>${d.type}</td><td><span class="${d.status=='In'?'badge-in':'badge-out'}">${d.status}</span></td></tr>`;
-            tableBody.insertAdjacentHTML('afterbegin', row);
+            const row = `<tr><td>${d.date || '-'}</td><td>${d.timestamp || '-'}</td><td class="fw-bold">${d.name}</td><td>${d.type}</td><td><span class="${d.status=='In'?'badge-in':'badge-out'}">${d.status}</span></td></tr>`;
+            document.getElementById('table-body').insertAdjacentHTML('afterbegin', row);
             document.getElementById('last-user').innerText = d.name;
             document.getElementById('last-time').innerText = (d.date || '') + " " + (d.timestamp || '');
-            if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } else { peopleIn = peopleIn.filter(p => p !== d.name); }
+            if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } 
+            else { peopleIn = peopleIn.filter(p => p !== d.name); }
             document.getElementById('people-count').innerText = peopleIn.length;
-            document.getElementById('names-list').innerHTML = peopleIn.map(p => `<div class="name-item"><span>${p}</span></div>`).join('');
+            document.getElementById('names-list').innerHTML = peopleIn.map(p => `<div class="name-item"><span>${p}</span><i class="bi bi-person-check"></i></div>`).join('');
         });
     }
 
-    document.getElementById('clear-btn').onclick = () => { if(confirm("ต้องการล้างประวัติทั้งหมดใช่หรือไม่?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
+    document.getElementById('clear-btn').onclick = () => { if(confirm("ล้างประวัติ?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
 </script>
 </body>
 </html>
