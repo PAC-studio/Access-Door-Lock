@@ -13,7 +13,6 @@
         body.dark-mode { --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #ffffff; --border-color: #333333; }
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; }
         
-        /* แก้ Placeholder บน iPhone/iPad */
         input::placeholder { color: #888 !important; opacity: 1 !important; }
         input::-webkit-input-placeholder { color: #888 !important; opacity: 1 !important; }
         .dark-mode input::placeholder { color: #bbb !important; }
@@ -30,12 +29,10 @@
         .card-label { font-size: 1rem; font-weight: 600; text-transform: uppercase; color: #6c757d; }
         .dark-mode .card-label { color: #ffffff !important; }
 
-        /* --- จุดที่แก้ไข: ตารางประวัติเป็นสีขาวในโหมดมืด --- */
         .dark-mode .history-card { background-color: #2d2d2d !important; }
         .dark-mode .table { --bs-table-bg: #ffffff !important; color: #212529 !important; border-radius: 8px; overflow: hidden; }
         .dark-mode .table thead th { background-color: #eeeeee !important; color: #212529 !important; border-bottom: 2px solid #ddd !important; }
         
-        /* --- จุดที่แก้ไข: แสกนล่าสุดเป็นสีเทาและขนาดเล็กลง --- */
         #last-user { color: #6c757d !important; font-size: 1.8rem !important; } 
 
         #live-clock { font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 1px; }
@@ -202,6 +199,13 @@
         }
     });
 
+    function getColorFromName(name) {
+        const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800', '#795548'];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        return colors[Math.abs(hash) % colors.length];
+    }
+
     function runApp() {
         let peopleIn = [];
         const tableBody = document.getElementById('table-body');
@@ -219,7 +223,21 @@
             else { peopleIn = peopleIn.filter(p => p !== d.name); }
             
             document.getElementById('people-count').innerText = peopleIn.length;
-            document.getElementById('names-list').innerText = "รายชื่อในพื้นที่: " + (peopleIn.length > 0 ? peopleIn.join(', ') : '-');
+            
+            // อัปเดตรายชื่อเป็นรูปโปรไฟล์สีๆ แบบวงกลมตามที่สั่ง
+            document.getElementById('names-list').innerHTML = `
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    ${peopleIn.map(name => `
+                        <div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill pe-3" style="border: 1px solid rgba(255,255,255,0.2);">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle me-2" 
+                                 style="width: 32px; height: 32px; background: ${getColorFromName(name)}; font-size: 0.8rem; font-weight: bold; color: white;">
+                                 ${name.charAt(0).toUpperCase()}
+                            </div>
+                            <span style="font-size: 0.85rem;">${name}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         });
     }
 
