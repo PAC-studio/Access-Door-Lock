@@ -131,9 +131,10 @@
             <p class="opacity-75 mb-3 small">IoT-Based Door Lock System with Real-time Monitoring</p>
             <div class="d-flex justify-content-between align-items-end border-top pt-3">
                 <div>
-                    <div id="live-clock">
-                        <i class="bi bi-clock-fill me-2"></i><span id="clock-display">--:--:--</span>
-                        <div style="font-size: 0.9rem; margin-left: 28px; color: #6c757d;" id="date-display">--- --/--/----</div>
+                    <div id="live-clock" class="d-flex align-items-baseline">
+                        <i class="bi bi-clock-fill me-2"></i>
+                        <span id="clock-display">--:--:--</span>
+                        <span style="font-size: 0.95rem; margin-left: 12px; color: #6c757d; font-weight: 400;" id="date-display">--- --/--/----</span>
                     </div>
                     <div class="small mt-1">ผู้ใช้งานปัจจุบัน: <span id="admin-name" class="fw-bold text-success">---</span></div>
                 </div>
@@ -278,13 +279,15 @@
     function formatLogDate(dateStr) {
         try {
             const parts = dateStr.split('/');
-            // สมมติว่า dateStr มาเป็น D/M/YYYY หรือ DD/MM/YYYY
-            const d = String(parts[0]).padStart(2, '0');
-            const m = String(parts[1]).padStart(2, '0');
-            const y = parts[2];
-            const dateObj = new Date(y, parts[1]-1, parts[0]);
+            const dayNum = parseInt(parts[0]);
+            const monthNum = parseInt(parts[1]) - 1;
+            const yearNum = parseInt(parts[2]);
+            const dateObj = new Date(yearNum, monthNum, dayNum);
+            
             const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-            return `${days[dateObj.getDay()]} ${d}/${m}/${y}`;
+            const d = String(dayNum).padStart(2, '0');
+            const m = String(monthNum + 1).padStart(2, '0');
+            return `${days[dateObj.getDay()]} ${d}/${m}/${yearNum}`;
         } catch(e) { return dateStr; }
     }
 
