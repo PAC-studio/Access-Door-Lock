@@ -32,7 +32,7 @@
 
         .dark-mode .history-card { background-color: #2d2d2d !important; }
         
-        /* แก้ไขตัวหนังสือในตารางโหมดมืดให้เป็นสีขาวตามสั่ง */
+        /* ตัวหนังสือในตารางโหมดมืด */
         .dark-mode .table { --bs-table-bg: #4a4a4a !important; color: #ffffff !important; border-radius: 8px; overflow: hidden; }
         .dark-mode .table thead th { background-color: #5a5a5a !important; color: #ffffff !important; border-bottom: 2px solid #666 !important; }
         .dark-mode .table tbody td { color: #ffffff !important; }
@@ -41,10 +41,12 @@
         .info-detail { font-size: 1.1rem; font-weight: 400; color: #495057; }
         .dark-mode .info-detail { color: #dee2e6; }
 
-        /* ปรับเส้นใต้สีเทาให้จางลงในโหมดสว่างตามที่พี่สั่งครับ */
+        /* ปรับเส้นใต้สีเทาให้จางลงในโหมดสว่าง */
         body:not(.dark-mode) .border-secondary { border-color: rgba(108, 117, 125, 0.3) !important; }
 
-        /* สไตล์วงกลมสีรายชื่อ */
+        /* แก้ไขสีชื่อผู้แสกนล่าสุดให้เป็นเทาอ่อนสว่างขึ้นตามสั่งครับ */
+        #last-user-text { color: #adb5bd !important; font-size: 1.8rem !important; }
+
         .user-avatar {
             width: 32px; height: 32px;
             display: flex; align-items: center; justify-content: center;
@@ -149,7 +151,7 @@
             <div class="col-md-6">
                 <div class="card p-4 h-100 border-bottom border-secondary border-3">
                     <h6 class="card-label">แสกนครั้งล่าสุด</h6>
-                    <h2 class="fw-bold my-2" style="color: #6c757d !important; font-size: 1.8rem !important;">
+                    <h2 id="last-user-text" class="fw-bold my-2">
                         <i class="bi bi-calendar3 me-2"></i><span id="last-user">---</span>
                     </h2>
                     <div id="last-detail-box" class="info-detail mt-2">
