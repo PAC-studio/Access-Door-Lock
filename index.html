@@ -41,6 +41,9 @@
         .info-detail { font-size: 1.1rem; font-weight: 400; color: #495057; }
         .dark-mode .info-detail { color: #dee2e6; }
 
+        /* ปรับเส้นใต้สีเทาให้จางลงในโหมดสว่างตามที่พี่สั่งครับ */
+        body:not(.dark-mode) .border-secondary { border-color: rgba(108, 117, 125, 0.3) !important; }
+
         /* สไตล์วงกลมสีรายชื่อ */
         .user-avatar {
             width: 32px; height: 32px;
