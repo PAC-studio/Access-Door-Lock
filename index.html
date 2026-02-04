@@ -46,14 +46,11 @@
             border-bottom: 1px solid #555 !important;
         }
         
-        #last-user { color: #6c757d !important; font-size: 1.8rem !important; } 
-
         #live-clock { font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 1px; }
         .dark-mode #live-clock { color: #4dabf7; }
         header { padding-right: 120px; } 
         @media (max-width: 576px) { header { padding-right: 0; margin-top: 45px; } }
         
-        /* สไตล์เพิ่มเติมสำหรับจุดที่สั่ง */
         .info-detail { font-size: 1.1rem; font-weight: 400; color: #495057; }
         .dark-mode .info-detail { color: #dee2e6; }
     </style>
@@ -116,6 +113,7 @@
                     </h2>
                     <div id="last-detail-box" class="info-detail mt-2">
                         <span id="last-time">---</span>
+                        <span id="last-status-badge" class="badge ms-2">---</span>
                         <div class="mt-1 small opacity-75">อุปกรณ์: <span id="last-device-type">---</span></div>
                     </div>
                 </div>
@@ -238,10 +236,15 @@
             const row = `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`;
             tableBody.insertAdjacentHTML('afterbegin', row);
             
-            // อัปเดตข้อมูลส่วนแสกนล่าสุดตามคำสั่ง
+            // อัปเดตข้อมูลแสกนล่าสุด
             document.getElementById('last-user').innerText = d.name;
             document.getElementById('last-time').innerText = d.date + " | " + d.timestamp;
             document.getElementById('last-device-type').innerText = d.type;
+            
+            // อัปเดตสถานะ Badge คนล่าสุด
+            const statusBadge = document.getElementById('last-status-badge');
+            statusBadge.innerText = d.status;
+            statusBadge.className = `badge ms-2 ${badgeClass}`;
             
             if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } 
             else { peopleIn = peopleIn.filter(p => p !== d.name); }
