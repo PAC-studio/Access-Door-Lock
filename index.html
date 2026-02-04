@@ -42,7 +42,6 @@
 
         body:not(.dark-mode) .border-secondary { border-color: rgba(108, 117, 125, 0.3) !important; }
 
-        /* ปรับสีชื่อคนเข้าล่าสุดให้เข้มขึ้นในโหมดสว่าง และขาวขึ้นในโหมดมืด */
         #last-user-text { color: #495057 !important; font-size: 1.8rem !important; }
         .dark-mode #last-user-text { color: #dee2e6 !important; }
 
@@ -54,12 +53,26 @@
             border-radius: 50%; color: white; font-weight: bold; font-size: 0.85rem;
         }
 
-        /* Welcome Section Custom Styling */
         #welcome-section h4 { letter-spacing: 0.5px; }
         .dark-mode #welcome-section h4 { color: #e0e0e0 !important; }
     </style>
 </head>
 <body>
+
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-body text-center p-5">
+        <div class="mb-3">
+            <i class="bi bi-person-check-fill text-primary" style="font-size: 4rem;"></i>
+        </div>
+        <h2 class="fw-bold mt-3 mb-2">ยินดีต้อนรับคุณ <span id="welcome-user-name" class="text-success">---</span></h2>
+        <p class="text-secondary">คุณได้เข้าสู่ระบบจัดการประตูอัจฉริยะเรียบร้อยแล้ว</p>
+        <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-pill mt-4 shadow-sm" data-bs-dismiss="modal">ตกลง</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="modal fade" id="userListModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -228,6 +241,12 @@
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = userName; 
+
+            // แสดงชื่อผู้ใช้ใน Pop-up และสั่งให้แสดงผล
+            document.getElementById('welcome-user-name').innerText = userName;
+            const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+            welcomeModal.show();
+
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
