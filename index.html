@@ -52,9 +52,6 @@
             display: flex; align-items: center; justify-content: center;
             border-radius: 50%; color: white; font-weight: bold; font-size: 0.85rem;
         }
-
-        #welcome-section h4 { letter-spacing: 0.5px; }
-        .dark-mode #welcome-section h4 { color: #e0e0e0 !important; }
     </style>
 </head>
 <body>
@@ -130,13 +127,6 @@
     </button>
     <div class="container py-4">
         <header class="mb-4">
-            <div id="welcome-section" class="mb-3">
-                <h4 class="fw-bold text-secondary mb-0">
-                    <i class="bi bi-hand-thumbs-up-fill text-warning me-2"></i>ยินดีต้อนรับกลับมา!
-                </h4>
-                <p class="small opacity-50">ยินดีต้อนรับสู่ระบบจัดการประตูอัจฉริยะของคุณ</p>
-            </div>
-
             <h1 class="h2 fw-bold text-primary mb-1">Access Entry Door Lock Dashboard</h1>
             <p class="opacity-75 mb-3 small">IoT-Based Door Lock System with Real-time Monitoring</p>
             <div class="d-flex justify-content-between align-items-end border-top pt-3">
@@ -242,7 +232,7 @@
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = userName; 
 
-            // แสดงชื่อผู้ใช้ใน Pop-up และสั่งให้แสดงผล
+            // แสดงชื่อผู้ใช้ใน Pop-up ทันทีหลัง Login
             document.getElementById('welcome-user-name').innerText = userName;
             const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
             welcomeModal.show();
