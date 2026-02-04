@@ -275,19 +275,18 @@
         return colors[Math.abs(hash) % colors.length];
     }
 
-    // ฟังก์ชันจัดรูปแบบวันที่ในประวัติ (WED 04/02/2026)
     function formatLogDate(dateStr) {
         try {
             const parts = dateStr.split('/');
-            const dayNum = parseInt(parts[0]);
-            const monthNum = parseInt(parts[1]) - 1;
-            const yearNum = parseInt(parts[2]);
-            const dateObj = new Date(yearNum, monthNum, dayNum);
+            const dayNum = String(parts[0]).padStart(2, '0');
+            const monthNum = String(parts[1]).padStart(2, '0');
+            const yearNum = parts[2];
             
+            // ใช้รูปแบบ YYYY-MM-DD เพื่อความแม่นยำในการหาชื่อวัน
+            const dateObj = new Date(`${yearNum}-${monthNum}-${dayNum}`);
             const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-            const d = String(dayNum).padStart(2, '0');
-            const m = String(monthNum + 1).padStart(2, '0');
-            return `${days[dateObj.getDay()]} ${d}/${m}/${yearNum}`;
+            
+            return `${days[dateObj.getDay()]} ${dayNum}/${monthNum}/${yearNum}`;
         } catch(e) { return dateStr; }
     }
 
