@@ -206,7 +206,7 @@
 
     document.getElementById('login-btn').onclick = () => {
         signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
-        .catch(() => document.getElementById('error-msg').innerText = ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+        .catch(() => document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
     };
 
     document.getElementById('logout-btn').onclick = () => { signOut(auth); };
