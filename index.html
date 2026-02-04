@@ -53,6 +53,10 @@
             display: flex; align-items: center; justify-content: center;
             border-radius: 50%; color: white; font-weight: bold; font-size: 0.85rem;
         }
+
+        /* Welcome Section Custom Styling */
+        #welcome-section h4 { letter-spacing: 0.5px; }
+        .dark-mode #welcome-section h4 { color: #e0e0e0 !important; }
     </style>
 </head>
 <body>
@@ -109,10 +113,17 @@
 
 <div id="main-dashboard">
     <button id="dark-mode-toggle" class="btn btn-light shadow-sm border">
-        <i id="mode-icon" class="bi bi-moon-fill"></i> <span id="mode-text">โหมดมืด</span>
+        <i id="mode-icon" class="bi bi-sun-fill"></i> <span id="mode-text">โหมดสว่าง</span>
     </button>
     <div class="container py-4">
         <header class="mb-4">
+            <div id="welcome-section" class="mb-3">
+                <h4 class="fw-bold text-secondary mb-0">
+                    <i class="bi bi-hand-thumbs-up-fill text-warning me-2"></i>ยินดีต้อนรับกลับมา!
+                </h4>
+                <p class="small opacity-50">ยินดีต้อนรับสู่ระบบจัดการประตูอัจฉริยะของคุณ</p>
+            </div>
+
             <h1 class="h2 fw-bold text-primary mb-1">Access Entry Door Lock Dashboard</h1>
             <p class="opacity-75 mb-3 small">IoT-Based Door Lock System with Real-time Monitoring</p>
             <div class="d-flex justify-content-between align-items-end border-top pt-3">
