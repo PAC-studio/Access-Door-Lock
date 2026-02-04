@@ -42,9 +42,10 @@
 
         body:not(.dark-mode) .border-secondary { border-color: rgba(108, 117, 125, 0.3) !important; }
 
-        #last-user-text { color: #adb5bd !important; font-size: 1.8rem !important; }
+        /* ปรับสีชื่อคนเข้าล่าสุดให้เข้มขึ้นในโหมดสว่าง และขาวขึ้นในโหมดมืด */
+        #last-user-text { color: #495057 !important; font-size: 1.8rem !important; }
+        .dark-mode #last-user-text { color: #dee2e6 !important; }
 
-        /* ปรับสีตัวหนังสือรายชื่อในแถบสีน้ำเงินให้เป็นสีขาว Opacity 0.85 ตามที่พี่สั่งครับ */
         .user-list-item { color: #ffffff !important; opacity: 0.85 !important; font-weight: 500; }
 
         .user-avatar {
