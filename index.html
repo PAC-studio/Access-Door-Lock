@@ -98,8 +98,8 @@
 
 <div id="login-section">
     <div class="card p-4 shadow text-center" style="width: 350px;">
-        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2"></i>Login Access</h3>
-        <p class="small opacity-75 mb-4">IoT Door Lock System</p>
+        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2"></i>Login</h3>
+        <p class="small opacity-75 mb-4">Access Entry Door Lock Dashboard</p>
         <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
         <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
         <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold">เข้าสู่ระบบ</button>
@@ -206,7 +206,7 @@
 
     document.getElementById('login-btn').onclick = () => {
         signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
-        .catch(() => document.getElementById('error-msg').innerText = "รหัสผ่านไม่ถูกต้อง");
+        .catch(() => document.getElementById('error-msg').innerText = ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
     };
 
     document.getElementById('logout-btn').onclick = () => { signOut(auth); };
@@ -317,7 +317,7 @@
         document.getElementById('user-specific-detail').style.display = 'none';
     };
 
-    document.getElementById('clear-btn').onclick = () => { if(confirm("คุณต้องการล้างประวัติทั้งหมด?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
+    document.getElementById('clear-btn').onclick = () => { if(confirm("คุณต้องการล้างประวัติทั้งหมดหรือไม่?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
 </script>
 </body>
 </html>
