@@ -148,9 +148,9 @@
                         <i class="bi bi-person-circle me-2"></i><span id="last-user">---</span>
                     </h2>
                     <div id="last-detail-box" class="info-detail mt-2">
-                        <span id="last-date" class="fw-normal">---</span>
+                        <span id="last-date">---</span>
                         <span class="mx-1">|</span>
-                        <span id="last-time" class="fw-normal">---</span>
+                        <span id="last-time">---</span>
                         <span id="last-status-badge" class="badge ms-2">---</span>
                         <div class="mt-1 small opacity-75">อุปกรณ์: <span id="last-device-type">---</span></div>
                     </div>
@@ -284,7 +284,7 @@
                 tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
                 
                 document.getElementById('last-user').innerText = d.name;
-                document.getElementById('last-date').innerText = d.date; // แก้ไขดึงวันที่แยกออกมา
+                document.getElementById('last-date').innerText = d.date; // แก้ไขให้ดึงวันที่มาโชว์
                 document.getElementById('last-time').innerText = d.timestamp;
                 document.getElementById('last-device-type').innerText = d.type;
                 const statusBadge = document.getElementById('last-status-badge');
