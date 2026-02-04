@@ -32,7 +32,6 @@
 
         .dark-mode .history-card { background-color: #2d2d2d !important; }
         
-        /* ตัวหนังสือในตารางโหมดมืด */
         .dark-mode .table { --bs-table-bg: #4a4a4a !important; color: #ffffff !important; border-radius: 8px; overflow: hidden; }
         .dark-mode .table thead th { background-color: #5a5a5a !important; color: #ffffff !important; border-bottom: 2px solid #666 !important; }
         .dark-mode .table tbody td { color: #ffffff !important; }
@@ -41,11 +40,12 @@
         .info-detail { font-size: 1.1rem; font-weight: 400; color: #495057; }
         .dark-mode .info-detail { color: #dee2e6; }
 
-        /* ปรับเส้นใต้สีเทาให้จางลงในโหมดสว่าง */
         body:not(.dark-mode) .border-secondary { border-color: rgba(108, 117, 125, 0.3) !important; }
 
-        /* แก้ไขสีชื่อผู้แสกนล่าสุดให้เป็นเทาอ่อนสว่างขึ้นตามสั่งครับ */
         #last-user-text { color: #adb5bd !important; font-size: 1.8rem !important; }
+
+        /* ปรับสีตัวหนังสือในแถบสีน้ำเงินให้เป็นสีขาวสว่างตามสั่ง */
+        .user-list-item { color: #ffffff !important; opacity: 1 !important; font-weight: 500; }
 
         .user-avatar {
             width: 32px; height: 32px;
@@ -64,11 +64,9 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="user-selection-list" class="list-group list-group-flush mb-4">
-            </div>
+        <div id="user-selection-list" class="list-group list-group-flush mb-4"></div>
         <div id="user-specific-detail" style="display: none;">
             <button class="btn btn-sm btn-secondary mb-3" onclick="backToUserList()"><i class="bi bi-arrow-left"></i> กลับไปรายชื่อ</button>
-            
             <div class="card p-3 mb-3 border-0 bg-opacity-10 bg-primary shadow-sm">
                 <div class="d-flex align-items-center mb-2">
                     <div id="spec-user-avatar" class="user-avatar me-3" style="width: 50px; height: 50px; font-size: 1.2rem;"></div>
@@ -85,7 +83,6 @@
                     <strong><i class="bi bi-cpu me-1"></i> อุปกรณ์:</strong> <span id="spec-last-device">---</span>
                 </div>
             </div>
-
             <div class="table-responsive">
                 <table class="table table-sm text-center">
                     <thead><tr><th>วันที่</th><th>เวลา</th><th>อุปกรณ์</th><th>สถานะ</th></tr></thead>
@@ -171,7 +168,7 @@
                             <span class="fs-4">คน</span>
                         </div>
                     </div>
-                    <div id="names-list" class="mt-2 small opacity-75"></div>
+                    <div id="names-list" class="mt-2"></div>
                 </div>
             </div>
         </div>
@@ -290,11 +287,11 @@
             document.getElementById('names-list').innerHTML = `
                 <div class="d-flex flex-wrap gap-2 mt-2">
                     ${peopleIn.map(name => `
-                        <div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill pe-3" style="border: 1px solid rgba(255,255,255,0.2);">
+                        <div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill pe-3" style="border: 1px solid rgba(255,255,255,0.25);">
                             <div class="user-avatar me-2" style="background: ${getColorFromName(name)};">
                                  ${name.charAt(0).toUpperCase()}
                             </div>
-                            <span style="font-size: 0.85rem;">${name}</span>
+                            <span class="user-list-item">${name}</span>
                         </div>
                     `).join('')}
                 </div>
@@ -318,22 +315,16 @@
     window.showUserDetail = (name) => {
         document.getElementById('user-selection-list').style.display = 'none';
         document.getElementById('user-specific-detail').style.display = 'block';
-        
         const userLogs = allLogs.filter(l => l.name === name);
         const lastLog = userLogs[userLogs.length - 1];
-        
         document.getElementById('spec-user-name').innerText = name;
         document.getElementById('spec-user-avatar').innerText = name.charAt(0).toUpperCase();
         document.getElementById('spec-user-avatar').style.background = getColorFromName(name);
-        
         const sBadge = document.getElementById('spec-user-status');
         sBadge.innerText = lastLog.status;
         sBadge.className = `badge ${lastLog.status === 'In' ? 'bg-success' : 'bg-danger'}`;
-        
-        // ข้อมูลแสกนล่าสุดของบุคคลนี้
         document.getElementById('spec-last-time').innerText = `${lastLog.date} (${lastLog.timestamp})`;
         document.getElementById('spec-last-device').innerText = lastLog.type;
-        
         const hBody = document.getElementById('user-history-body');
         hBody.innerHTML = userLogs.slice().reverse().map(l => `
             <tr>
