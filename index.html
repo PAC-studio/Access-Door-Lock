@@ -44,8 +44,8 @@
 
         #last-user-text { color: #adb5bd !important; font-size: 1.8rem !important; }
 
-        /* ปรับสีตัวหนังสือในแถบสีน้ำเงินให้เป็นสีขาวสว่างตามสั่ง */
-        .user-list-item { color: #ffffff !important; opacity: 1 !important; font-weight: 500; }
+        /* ปรับสีตัวหนังสือรายชื่อในแถบสีน้ำเงินให้เป็นสีขาว Opacity 0.85 ตามที่พี่สั่งครับ */
+        .user-list-item { color: #ffffff !important; opacity: 0.85 !important; font-weight: 500; }
 
         .user-avatar {
             width: 32px; height: 32px;
@@ -90,25 +90,6 @@
                 </table>
             </div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="welcomeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-lg border-0" style="border-radius: 15px;">
-      <div class="modal-header border-0 justify-content-center pt-4">
-        <h5 class="modal-title fw-bold text-primary text-center">
-            <i class="bi bi-check-circle-fill me-2"></i>เข้าสู่ระบบสำเร็จ!
-        </h5>
-      </div>
-      <div class="modal-body text-center py-4">
-        <p class="fs-5 mb-0">ยินดีต้อนรับเข้าสู่ Access Entry Door Lock Dashboard</p>
-        <p class="fs-4 fw-bold text-success mt-2">คุณ <span id="welcome-user">---</span></p>
-      </div>
-      <div class="modal-footer border-0 justify-content-center pb-4">
-        <button type="button" class="btn btn-primary px-5 rounded-pill fw-bold" data-bs-dismiss="modal">ตกลง</button>
       </div>
     </div>
   </div>
@@ -164,7 +145,7 @@
                     <div class="d-flex align-items-center">
                         <i class="bi bi-people-fill me-3" style="font-size: 2.5rem;"></i>
                         <div>
-                            <span id="people-count" class="display-5 fw-bold">0</span> 
+                            <span id="people-count" class="display-5 fw-bold">0</span>
                             <span class="fs-4">คน</span>
                         </div>
                     </div>
@@ -216,8 +197,7 @@
 
     const enableDarkMode = () => { document.body.classList.add('dark-mode'); document.getElementById('mode-icon').className = "bi bi-sun-fill"; document.getElementById('mode-text').innerText = "โหมดสว่าง"; };
     const disableDarkMode = () => { document.body.classList.remove('dark-mode'); document.getElementById('mode-icon').className = "bi bi-moon-fill"; document.getElementById('mode-text').innerText = "โหมดมืด"; };
-    if (localStorage.getItem('theme') === 'dark') enableDarkMode();
-
+    
     document.getElementById('dark-mode-toggle').onclick = () => {
         if (document.body.classList.contains('dark-mode')) { disableDarkMode(); localStorage.setItem('theme', 'light'); }
         else { enableDarkMode(); localStorage.setItem('theme', 'dark'); }
@@ -228,7 +208,7 @@
         .catch(() => document.getElementById('error-msg').innerText = "รหัสผ่านไม่ถูกต้อง");
     };
 
-    document.getElementById('logout-btn').onclick = () => { sessionStorage.removeItem('hasShownWelcome'); signOut(auth); };
+    document.getElementById('logout-btn').onclick = () => { signOut(auth); };
 
     onAuthStateChanged(auth, (user) => {
         if (user) { 
@@ -236,11 +216,6 @@
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = userName; 
-            if (!sessionStorage.getItem('hasShownWelcome')) {
-                document.getElementById('welcome-user').innerText = userName;
-                new bootstrap.Modal(document.getElementById('welcomeModal')).show();
-                sessionStorage.setItem('hasShownWelcome', 'true');
-            }
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
@@ -341,7 +316,7 @@
         document.getElementById('user-specific-detail').style.display = 'none';
     };
 
-    document.getElementById('clear-btn').onclick = () => { if(confirm("ต้องการล้างประวัติ?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
+    document.getElementById('clear-btn').onclick = () => { if(confirm("คุณต้องการล้างประวัติทั้งหมด?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
 </script>
 </body>
 </html>
