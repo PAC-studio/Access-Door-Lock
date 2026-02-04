@@ -14,7 +14,6 @@
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; }
         
         input::placeholder { color: #888 !important; opacity: 1 !important; }
-        input::-webkit-input-placeholder { color: #888 !important; opacity: 1 !important; }
         .dark-mode input::placeholder { color: #bbb !important; }
 
         .dark-mode .modal-content { background-color: #1e1e1e; color: white; border: 1px solid #444; }
@@ -30,21 +29,9 @@
         .dark-mode .card-label { color: #ffffff !important; }
 
         .dark-mode .history-card { background-color: #2d2d2d !important; }
-        .dark-mode .table { 
-            --bs-table-bg: #4a4a4a !important; 
-            color: #ffffff !important; 
-            border-radius: 8px; 
-            overflow: hidden; 
-        }
-        .dark-mode .table thead th { 
-            background-color: #5a5a5a !important; 
-            color: #ffffff !important; 
-            border-bottom: 2px solid #666 !important; 
-        }
-        .dark-mode .table tbody td { 
-            color: #ffffff !important; 
-            border-bottom: 1px solid #555 !important;
-        }
+        .dark-mode .table { --bs-table-bg: #4a4a4a !important; color: #ffffff !important; border-radius: 8px; overflow: hidden; }
+        .dark-mode .table thead th { background-color: #5a5a5a !important; color: #ffffff !important; border-bottom: 2px solid #666 !important; }
+        .dark-mode .table tbody td { color: #ffffff !important; border-bottom: 1px solid #555 !important; }
         
         #live-clock { font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 1px; }
         .dark-mode #live-clock { color: #4dabf7; }
@@ -61,7 +48,9 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow-lg border-0" style="border-radius: 15px;">
       <div class="modal-header border-0 justify-content-center pt-4">
-        <h5 class="modal-title fw-bold text-primary">🔐 เข้าสู่ระบบสำเร็จ!</h5>
+        <h5 class="modal-title fw-bold text-primary text-center">
+            <i class="bi bi-check-circle-fill me-2"></i>เข้าสู่ระบบสำเร็จ!
+        </h5>
       </div>
       <div class="modal-body text-center py-4">
         <p class="fs-5 mb-0">ยินดีต้อนรับเข้าสู่ Access Entry Door Lock Dashboard</p>
@@ -76,7 +65,7 @@
 
 <div id="login-section">
     <div class="card p-4 shadow text-center" style="width: 350px;">
-        <h3 class="fw-bold mb-1">🔐 Login Access</h3>
+        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2"></i>Login Access</h3>
         <p class="small opacity-75 mb-4">IoT Door Lock System</p>
         <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
         <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
@@ -236,12 +225,10 @@
             const row = `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`;
             tableBody.insertAdjacentHTML('afterbegin', row);
             
-            // อัปเดตข้อมูลแสกนล่าสุด
             document.getElementById('last-user').innerText = d.name;
             document.getElementById('last-time').innerText = d.date + " | " + d.timestamp;
             document.getElementById('last-device-type').innerText = d.type;
             
-            // อัปเดตสถานะ Badge คนล่าสุด
             const statusBadge = document.getElementById('last-status-badge');
             statusBadge.innerText = d.status;
             statusBadge.className = `badge ms-2 ${badgeClass}`;
