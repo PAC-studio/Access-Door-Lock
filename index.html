@@ -39,6 +39,7 @@
             color: #bbb !important;
         }
 
+        /* Modal Styles */
         .dark-mode .modal-content {
             background-color: #1e1e1e;
             color: white;
@@ -183,8 +184,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="user-selection-list" class="list-group list-group-flush mb-4">
-            </div>
+        <div id="user-selection-list" class="list-group list-group-flush mb-4"></div>
         <div id="user-specific-detail" style="display: none;">
             <button class="btn btn-sm btn-secondary mb-3" onclick="backToUserList()">
                 <i class="bi bi-arrow-left"></i> กลับไปรายชื่อ
@@ -198,7 +198,7 @@
                     </div>
                 </div>
                 <div class="mt-2 pt-2 border-top border-secondary border-opacity-25 small">
-                    <strong>แสกนล่าสุดเมื่อ:</strong> <span id="spec-last-time">---</span> <br>
+                    <strong>แสกนล่าสุด:</strong> <span id="spec-last-time">---</span> <br>
                     <strong>แสกนด้วยอุปกรณ์:</strong> <span id="spec-last-device">---</span>
                 </div>
             </div>
@@ -234,7 +234,7 @@
         <p class="fs-4 fw-bold text-success mt-2">คุณ <span id="welcome-user">---</span></p>
       </div>
       <div class="modal-footer border-0 justify-content-center pb-4">
-        <button type="button" class="btn btn-primary px-5 rounded-pill fw-bold" data-bs-modal="modal" data-bs-target="#welcomeModal" onclick="bootstrap.Modal.getInstance(document.getElementById('welcomeModal')).hide();">ตกลง</button>
+        <button type="button" class="btn btn-primary px-5 rounded-pill fw-bold" data-bs-dismiss="modal">ตกลง</button>
       </div>
     </div>
   </div>
@@ -244,13 +244,9 @@
     <div class="card p-4 shadow text-center" style="width: 350px;">
         <h3 class="fw-bold mb-1">🔐 Login Access</h3>
         <p class="small opacity-75 mb-4">IoT Door Lock System</p>
-        <div class="text-start">
-            <label class="small fw-bold mb-1">ชื่อผู้ใช้</label>
-            <input type="text" id="username" class="form-control mb-3 py-2" placeholder="กรอกชื่อผู้ใช้">
-            <label class="small fw-bold mb-1">รหัสผ่าน</label>
-            <input type="password" id="password" class="form-control mb-3 py-2" placeholder="กรอกรหัสผ่าน">
-        </div>
-        <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold mt-2">เข้าสู่ระบบ</button>
+        <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
+        <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
+        <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold">เข้าสู่ระบบ</button>
         <p id="error-msg" class="text-danger mt-3 small"></p>
     </div>
 </div>
@@ -308,9 +304,9 @@
                 <h5 class="fw-bold m-0"><i class="bi bi-clock-history me-2"></i>ประวัติการเข้า-ออก</h5>
                 <div>
                     <button class="btn btn-sm btn-primary me-2 px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#userListModal">
-                        <i class="bi bi-person-badge me-1"></i> User
+                        <i class="bi bi-person-badge"></i> User
                     </button>
-                    <button id="clear-btn" class="btn btn-sm btn-outline-danger px-3 shadow-sm">ล้างประวัติ</button>
+                    <button id="clear-btn" class="btn btn-sm btn-outline-danger">ล้างประวัติ</button>
                 </div>
             </div>
             <div class="table-responsive">
@@ -348,8 +344,7 @@
     let allLogs = [];
 
     function updateClock() {
-        const now = new Date();
-        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH', { hour12: false });
+        document.getElementById('clock-display').innerText = new Date().toLocaleTimeString('th-TH', { hour12: false });
     }
     updateClock();
     setInterval(updateClock, 1000);
@@ -366,11 +361,7 @@
         document.getElementById('mode-text').innerText = "โหมดมืด";
     };
 
-    if (localStorage.getItem('theme') === 'dark') {
-        enableDarkMode();
-    } else {
-        disableDarkMode();
-    }
+    if (localStorage.getItem('theme') === 'dark') enableDarkMode();
 
     document.getElementById('dark-mode-toggle').onclick = () => {
         if (document.body.classList.contains('dark-mode')) {
@@ -383,12 +374,8 @@
     };
 
     document.getElementById('login-btn').onclick = () => {
-        const u = document.getElementById('username').value;
-        const p = document.getElementById('password').value;
-        signInWithEmailAndPassword(auth, u + "@insight.com", p)
-            .catch(() => {
-                document.getElementById('error-msg').innerText = "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
-            });
+        signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
+        .catch(() => document.getElementById('error-msg').innerText = "รหัสผ่านไม่ถูกต้อง");
     };
 
     document.getElementById('logout-btn').onclick = () => {
@@ -402,11 +389,9 @@
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = userName; 
-            
             if (!sessionStorage.getItem('hasShownWelcome')) {
                 document.getElementById('welcome-user').innerText = userName;
-                const modal = new bootstrap.Modal(document.getElementById('welcomeModal'));
-                modal.show();
+                new bootstrap.Modal(document.getElementById('welcomeModal')).show();
                 sessionStorage.setItem('hasShownWelcome', 'true');
             }
             runApp(); 
@@ -419,9 +404,7 @@
     function getColorFromName(name) {
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800', '#795548'];
         let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        }
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
         return colors[Math.abs(hash) % colors.length];
     }
 
@@ -439,16 +422,7 @@
                 uniqueUsers.add(d.name);
                 
                 const badgeClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
-                
-                tableBody.insertAdjacentHTML('afterbegin', `
-                    <tr>
-                        <td>${d.date}</td>
-                        <td>${d.timestamp}</td>
-                        <td class="fw-bold">${d.name}</td>
-                        <td><small>${d.type}</small></td>
-                        <td><span class="badge ${badgeClass}">${d.status}</span></td>
-                    </tr>
-                `);
+                tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
                 
                 document.getElementById('last-user').innerText = d.name;
                 document.getElementById('last-time').innerText = d.date + " | " + d.timestamp;
@@ -530,10 +504,8 @@
     };
 
     document.getElementById('clear-btn').onclick = () => {
-        if(confirm("คุณต้องการล้างประวัติการเข้า-ออกทั้งหมดใช่หรือไม่?")) {
-            remove(ref(db, 'access_logs')).then(() => {
-                location.reload();
-            });
+        if(confirm("ต้องการล้างประวัติการเข้า-ออกทั้งหมดใช่หรือไม่?")) {
+            remove(ref(db, 'access_logs')).then(() => location.reload());
         }
     };
 </script>
