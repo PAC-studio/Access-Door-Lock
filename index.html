@@ -31,8 +31,11 @@
         .dark-mode .card-label { color: #ffffff !important; }
 
         .dark-mode .history-card { background-color: #2d2d2d !important; }
+        
+        /* แก้ไขตัวหนังสือในตารางโหมดมืดให้เป็นสีขาวตามสั่ง */
         .dark-mode .table { --bs-table-bg: #4a4a4a !important; color: #ffffff !important; border-radius: 8px; overflow: hidden; }
         .dark-mode .table thead th { background-color: #5a5a5a !important; color: #ffffff !important; border-bottom: 2px solid #666 !important; }
+        .dark-mode .table tbody td { color: #ffffff !important; }
         
         #live-clock { font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 1px; }
         .info-detail { font-size: 1.1rem; font-weight: 400; color: #495057; }
@@ -141,7 +144,7 @@
 
         <div class="row g-4 mb-4">
             <div class="col-md-6">
-                <div class="card p-4 h-100 border-bottom border-primary border-3">
+                <div class="card p-4 h-100 border-bottom border-secondary border-3">
                     <h6 class="card-label">แสกนครั้งล่าสุด</h6>
                     <h2 class="fw-bold my-2" style="color: #6c757d !important; font-size: 1.8rem !important;">
                         <i class="bi bi-calendar3 me-2"></i><span id="last-user">---</span>
