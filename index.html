@@ -64,7 +64,7 @@
             <i class="bi bi-person-check-fill text-primary" style="font-size: 4rem;"></i>
         </div>
         <h2 class="fw-bold mt-3 mb-2">ยินดีต้อนรับคุณ <span id="welcome-user-name" class="text-success">---</span></h2>
-        <p class="text-secondary">คุณได้เข้าสู่ Access Entry Door Lock Dashboard เรียบร้อยแล้ว</p>
+        <p class="text-secondary">คุณได้เข้าสู่ระบบจัดการประตูอัจฉริยะเรียบร้อยแล้ว</p>
         <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-pill mt-4 shadow-sm" data-bs-dismiss="modal">ตกลง</button>
       </div>
     </div>
@@ -131,7 +131,10 @@
             <p class="opacity-75 mb-3 small">IoT-Based Door Lock System with Real-time Monitoring</p>
             <div class="d-flex justify-content-between align-items-end border-top pt-3">
                 <div>
-                    <div id="live-clock"><i class="bi bi-clock-fill me-2"></i><span id="clock-display">--:--:--</span></div>
+                    <div id="live-clock">
+                        <i class="bi bi-clock-fill me-2"></i><span id="clock-display">--:--:--</span>
+                        <div style="font-size: 0.9rem; margin-left: 28px; color: #6c757d;" id="date-display">--- --/--/----</div>
+                    </div>
                     <div class="small mt-1">ผู้ใช้งานปัจจุบัน: <span id="admin-name" class="fw-bold text-success">---</span></div>
                 </div>
                 <button id="logout-btn" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm">
@@ -206,7 +209,6 @@
     let allLogs = [];
     let serverOffset = 0;
 
-    // ระบบ Sync เวลา Server
     function syncTime() {
         const offsetRef = ref(db, ".info/serverTimeOffset");
         onValue(offsetRef, (snap) => {
@@ -214,14 +216,21 @@
         });
     }
 
+    function formatCustomDate(dateObj) {
+        const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const dayName = days[dateObj.getDay()];
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const y = dateObj.getFullYear();
+        return `${dayName} ${d}/${m}/${y}`;
+    }
+
     function updateClock() {
-        const serverTime = Date.now() + serverOffset;
-        document.getElementById('clock-display').innerText = new Date(serverTime).toLocaleTimeString('th-TH', { 
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
+        const serverTime = new Date(Date.now() + serverOffset);
+        document.getElementById('clock-display').innerText = serverTime.toLocaleTimeString('th-TH', { 
+            hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
         });
+        document.getElementById('date-display').innerText = formatCustomDate(serverTime);
     }
     
     syncTime();
@@ -248,11 +257,9 @@
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = userName; 
-
             document.getElementById('welcome-user-name').innerText = userName;
             const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
             welcomeModal.show();
-
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
@@ -267,6 +274,20 @@
         return colors[Math.abs(hash) % colors.length];
     }
 
+    // ฟังก์ชันจัดรูปแบบวันที่ในประวัติ (WED 04/02/2026)
+    function formatLogDate(dateStr) {
+        try {
+            const parts = dateStr.split('/');
+            // สมมติว่า dateStr มาเป็น D/M/YYYY หรือ DD/MM/YYYY
+            const d = String(parts[0]).padStart(2, '0');
+            const m = String(parts[1]).padStart(2, '0');
+            const y = parts[2];
+            const dateObj = new Date(y, parts[1]-1, parts[0]);
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            return `${days[dateObj.getDay()]} ${d}/${m}/${y}`;
+        } catch(e) { return dateStr; }
+    }
+
     function runApp() {
         onValue(ref(db, 'access_logs'), (snapshot) => {
             allLogs = [];
@@ -279,11 +300,13 @@
                 const d = child.val();
                 allLogs.push(d);
                 userSet.add(d.name);
+                const formattedDate = formatLogDate(d.date);
                 const badgeClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
-                tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
+                
+                tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${formattedDate}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
                 
                 document.getElementById('last-user').innerText = d.name;
-                document.getElementById('last-time').innerText = d.date + " | " + d.timestamp;
+                document.getElementById('last-time').innerText = formattedDate + " | " + d.timestamp;
                 document.getElementById('last-device-type').innerText = d.type;
                 const statusBadge = document.getElementById('last-status-badge');
                 statusBadge.innerText = d.status;
@@ -329,18 +352,21 @@
         document.getElementById('user-specific-detail').style.display = 'block';
         const userLogs = allLogs.filter(l => l.name === name);
         const lastLog = userLogs[userLogs.length - 1];
+        const lastFmtDate = formatLogDate(lastLog.date);
+        
         document.getElementById('spec-user-name').innerText = name;
         document.getElementById('spec-user-avatar').innerText = name.charAt(0).toUpperCase();
         document.getElementById('spec-user-avatar').style.background = getColorFromName(name);
         const sBadge = document.getElementById('spec-user-status');
         sBadge.innerText = lastLog.status;
         sBadge.className = `badge ${lastLog.status === 'In' ? 'bg-success' : 'bg-danger'}`;
-        document.getElementById('spec-last-time').innerText = `${lastLog.date} (${lastLog.timestamp})`;
+        document.getElementById('spec-last-time').innerText = `${lastFmtDate} (${lastLog.timestamp})`;
         document.getElementById('spec-last-device').innerText = lastLog.type;
+        
         const hBody = document.getElementById('user-history-body');
         hBody.innerHTML = userLogs.slice().reverse().map(l => `
             <tr>
-                <td>${l.date}</td>
+                <td>${formatLogDate(l.date)}</td>
                 <td>${l.timestamp}</td>
                 <td><small>${l.type}</small></td>
                 <td><span class="badge ${l.status==='In'?'bg-success':'bg-danger'}">${l.status}</span></td>
