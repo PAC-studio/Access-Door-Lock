@@ -36,8 +36,9 @@
         .dark-mode .table thead th { background-color: #5a5a5a !important; color: #ffffff !important; border-bottom: 2px solid #666 !important; }
         .dark-mode .table tbody td { color: #ffffff !important; }
         
-        #live-clock { font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 1px; }
-        #live-date { font-size: 1rem; color: #6c757d; margin-bottom: 5px; }
+        /* ปรับแต่งส่วนแสดงเวลาและวันที่ให้ขนาดเท่ากันและอยู่บรรทัดเดียวกัน */
+        .clock-wrapper { display: flex; align-items: center; gap: 15px; font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 0.5px; }
+        #live-date { color: #6c757d; font-weight: 500; }
         .dark-mode #live-date { color: #adb5bd; }
         
         .info-detail { font-size: 1.1rem; font-weight: 400; color: #495057; }
@@ -134,8 +135,10 @@
             <p class="opacity-75 mb-3 small">IoT-Based Door Lock System with Real-time Monitoring</p>
             <div class="d-flex justify-content-between align-items-end border-top pt-3">
                 <div>
-                    <div id="live-date">---</div>
-                    <div id="live-clock"><i class="bi bi-clock-fill me-2"></i><span id="clock-display">--:--:--</span></div>
+                    <div class="clock-wrapper">
+                        <div id="live-clock"><i class="bi bi-clock-fill me-2"></i><span id="clock-display">--:--:--</span></div>
+                        <div id="live-date">---</div>
+                    </div>
                     <div class="small mt-1">ผู้ใช้งานปัจจุบัน: <span id="admin-name" class="fw-bold text-success">---</span></div>
                 </div>
                 <button id="logout-btn" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm">
@@ -210,7 +213,6 @@
     let allLogs = [];
     let serverOffset = 0;
 
-    // ระบบ Sync เวลา Server
     function syncTime() {
         const offsetRef = ref(db, ".info/serverTimeOffset");
         onValue(offsetRef, (snap) => {
@@ -222,20 +224,13 @@
         const serverTime = Date.now() + serverOffset;
         const now = new Date(serverTime);
         
-        // อัปเดต วัน และ วันที่ (ค.ศ.)
-        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        // ใช้ en-GB เพื่อบังคับให้ปีเป็น ค.ศ. ในขณะที่ภาษาเป็นไทย
-        document.getElementById('live-date').innerText = now.toLocaleDateString('th-TH', { 
-            weekday: 'long', 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric' 
-        }).replace(/พ\.ศ\./g, "").trim(); 
-        
-        // จัดการเรื่องปี ค.ศ. ให้ชัวร์
-        const yearCE = now.getFullYear();
-        const dateString = now.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' });
-        document.getElementById('live-date').innerText = `${dateString} ค.ศ. ${yearCE}`;
+        // รูปแบบ Wednesday 4 February 2026 (ภาษาอังกฤษตามที่พี่ระบุ)
+        const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+        const day = now.getDate();
+        const month = now.toLocaleDateString('en-US', { month: 'long' });
+        const year = now.getFullYear();
+
+        document.getElementById('live-date').innerText = `${dayName} ${day} ${month} ${year}`;
 
         document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH', { 
             hour12: false,
@@ -285,7 +280,7 @@
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800', '#795548'];
         let hash = 0;
         for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        return colors[Abs(hash) % colors.length];
+        return colors[Math.abs(hash) % colors.length];
     }
 
     function runApp() {
@@ -302,14 +297,10 @@
                 userSet.add(d.name);
                 const badgeClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
                 
-                // แปลงปี พ.ศ. ในข้อมูล (ถ้ามี) ให้เป็น ค.ศ. สำหรับการแสดงผลในตาราง
                 let displayDate = d.date;
                 if(displayDate.includes("256") || displayDate.includes("257")) {
                     let parts = displayDate.split('/');
-                    if(parts.length === 3) {
-                        let ceYear = parseInt(parts[2]) - 543;
-                        displayDate = `${parts[0]}/${parts[1]}/${ceYear}`;
-                    }
+                    if(parts.length === 3) displayDate = `${parts[0]}/${parts[1]}/${parseInt(parts[2])-543}`;
                 }
 
                 tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${displayDate}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
@@ -369,9 +360,9 @@
         sBadge.className = `badge ${lastLog.status === 'In' ? 'bg-success' : 'bg-danger'}`;
         
         let displayDate = lastLog.date;
-        if(displayDate.includes("256") || displayDate.includes("257")) {
-            let parts = displayDate.split('/');
-            if(parts.length === 3) displayDate = `${parts[0]}/${parts[1]}/${parseInt(parts[2])-543}`;
+        if(displayDate.includes("256")) {
+            let p = displayDate.split('/');
+            displayDate = `${p[0]}/${p[1]}/${parseInt(p[2])-543}`;
         }
         
         document.getElementById('spec-last-time').innerText = `${displayDate} (${lastLog.timestamp})`;
