@@ -36,7 +36,6 @@
         .dark-mode .table thead th { background-color: #5a5a5a !important; color: #ffffff !important; border-bottom: 2px solid #666 !important; }
         .dark-mode .table tbody td { color: #ffffff !important; }
         
-        /* ปรับแต่งส่วนแสดงเวลาและวันที่ให้ขนาดเท่ากันและอยู่บรรทัดเดียวกัน */
         .clock-wrapper { display: flex; align-items: center; gap: 15px; font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 0.5px; }
         #live-date { color: #6c757d; font-weight: 500; }
         .dark-mode #live-date { color: #adb5bd; }
@@ -64,9 +63,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-body text-center p-5">
-        <div class="mb-3">
-            <i class="bi bi-person-check-fill text-primary" style="font-size: 4rem;"></i>
-        </div>
+        <div class="mb-3"><i class="bi bi-person-check-fill text-primary" style="font-size: 4rem;"></i></div>
         <h2 class="fw-bold mt-3 mb-2">ยินดีต้อนรับคุณ <span id="welcome-user-name" class="text-success">---</span></h2>
         <p class="text-secondary">คุณได้เข้าสู่ระบบจัดการประตูอัจฉริยะเรียบร้อยแล้ว</p>
         <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-pill mt-4 shadow-sm" data-bs-dismiss="modal">ตกลง</button>
@@ -213,43 +210,53 @@
     let allLogs = [];
     let serverOffset = 0;
 
+    // --- ส่วนที่แก้ไข: Dark Mode ตามเวลา 06:00 - 18:00 ---
+    const enableDarkMode = () => { 
+        document.body.classList.add('dark-mode'); 
+        document.getElementById('mode-icon').className = "bi bi-sun-fill"; 
+        document.getElementById('mode-text').innerText = "โหมดสว่าง"; 
+    };
+    const disableDarkMode = () => { 
+        document.body.classList.remove('dark-mode'); 
+        document.getElementById('mode-icon').className = "bi bi-moon-fill"; 
+        document.getElementById('mode-text').innerText = "โหมดมืด"; 
+    };
+
+    function autoThemeByTime() {
+        const now = new Date();
+        const hour = now.getHours();
+        if (hour >= 6 && hour < 18) { disableDarkMode(); } 
+        else { enableDarkMode(); }
+    }
+    autoThemeByTime();
+    setInterval(autoThemeByTime, 60000); // เช็คทุกนาที
+
+    document.getElementById('dark-mode-toggle').onclick = () => {
+        if (document.body.classList.contains('dark-mode')) { disableDarkMode(); }
+        else { enableDarkMode(); }
+    };
+    // --------------------------------------------------
+
     function syncTime() {
         const offsetRef = ref(db, ".info/serverTimeOffset");
-        onValue(offsetRef, (snap) => {
-            serverOffset = snap.val() || 0;
-        });
+        onValue(offsetRef, (snap) => { serverOffset = snap.val() || 0; });
     }
 
     function updateClock() {
         const serverTime = Date.now() + serverOffset;
         const now = new Date(serverTime);
-        
-        // รูปแบบ Wednesday 4 February 2026 (ภาษาอังกฤษตามที่พี่ระบุ)
         const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
         const day = now.getDate();
         const month = now.toLocaleDateString('en-US', { month: 'long' });
         const year = now.getFullYear();
-
         document.getElementById('live-date').innerText = `${dayName} ${day} ${month} ${year}`;
-
         document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH', { 
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
+            hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
         });
     }
     
     syncTime();
     setInterval(updateClock, 1000);
-
-    const enableDarkMode = () => { document.body.classList.add('dark-mode'); document.getElementById('mode-icon').className = "bi bi-sun-fill"; document.getElementById('mode-text').innerText = "โหมดสว่าง"; };
-    const disableDarkMode = () => { document.body.classList.remove('dark-mode'); document.getElementById('mode-icon').className = "bi bi-moon-fill"; document.getElementById('mode-text').innerText = "โหมดมืด"; };
-    
-    document.getElementById('dark-mode-toggle').onclick = () => {
-        if (document.body.classList.contains('dark-mode')) { disableDarkMode(); localStorage.setItem('theme', 'light'); }
-        else { enableDarkMode(); localStorage.setItem('theme', 'dark'); }
-    };
 
     document.getElementById('login-btn').onclick = () => {
         signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
@@ -264,11 +271,9 @@
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = userName; 
-
             document.getElementById('welcome-user-name').innerText = userName;
             const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
             welcomeModal.show();
-
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
@@ -290,61 +295,35 @@
             tableBody.innerHTML = '';
             let peopleIn = [];
             let userSet = new Set();
-
             snapshot.forEach((child) => {
                 const d = child.val();
                 allLogs.push(d);
                 userSet.add(d.name);
                 const badgeClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
-                
                 let displayDate = d.date;
                 if(displayDate.includes("256") || displayDate.includes("257")) {
                     let parts = displayDate.split('/');
                     if(parts.length === 3) displayDate = `${parts[0]}/${parts[1]}/${parseInt(parts[2])-543}`;
                 }
-
                 tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${displayDate}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
-                
                 document.getElementById('last-user').innerText = d.name;
                 document.getElementById('last-time').innerText = displayDate + " | " + d.timestamp;
                 document.getElementById('last-device-type').innerText = d.type;
                 const statusBadge = document.getElementById('last-status-badge');
                 statusBadge.innerText = d.status;
                 statusBadge.className = `badge ms-2 ${badgeClass}`;
-
                 if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } 
                 else { peopleIn = peopleIn.filter(p => p !== d.name); }
             });
-
             document.getElementById('people-count').innerText = peopleIn.length;
             updateUserModalList(Array.from(userSet));
-
-            document.getElementById('names-list').innerHTML = `
-                <div class="d-flex flex-wrap gap-2 mt-2">
-                    ${peopleIn.map(name => `
-                        <div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill pe-3" style="border: 1px solid rgba(255,255,255,0.25);">
-                            <div class="user-avatar me-2" style="background: ${getColorFromName(name)};">
-                                 ${name.charAt(0).toUpperCase()}
-                            </div>
-                            <span class="user-list-item">${name}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+            document.getElementById('names-list').innerHTML = `<div class="d-flex flex-wrap gap-2 mt-2">${peopleIn.map(name => `<div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill pe-3" style="border: 1px solid rgba(255,255,255,0.25);"><div class="user-avatar me-2" style="background: ${getColorFromName(name)};">${name.charAt(0).toUpperCase()}</div><span class="user-list-item">${name}</span></div>`).join('')}</div>`;
         });
     }
 
     function updateUserModalList(users) {
         const listDiv = document.getElementById('user-selection-list');
-        listDiv.innerHTML = users.map(u => `
-            <button class="list-group-item list-group-item-action fw-bold d-flex justify-content-between align-items-center py-3" onclick="showUserDetail('${u}')">
-                <div class="d-flex align-items-center">
-                    <div class="user-avatar me-3" style="background: ${getColorFromName(u)};">${u.charAt(0).toUpperCase()}</div>
-                    <span>${u}</span>
-                </div>
-                <i class="bi bi-chevron-right small opacity-50"></i>
-            </button>
-        `).join('');
+        listDiv.innerHTML = users.map(u => `<button class="list-group-item list-group-item-action fw-bold d-flex justify-content-between align-items-center py-3" onclick="showUserDetail('${u}')"><div class="d-flex align-items-center"><div class="user-avatar me-3" style="background: ${getColorFromName(u)};">${u.charAt(0).toUpperCase()}</div><span>${u}</span></div><i class="bi bi-chevron-right small opacity-50"></i></button>`).join('');
     }
 
     window.showUserDetail = (name) => {
@@ -358,30 +337,15 @@
         const sBadge = document.getElementById('spec-user-status');
         sBadge.innerText = lastLog.status;
         sBadge.className = `badge ${lastLog.status === 'In' ? 'bg-success' : 'bg-danger'}`;
-        
-        let displayDate = lastLog.date;
-        if(displayDate.includes("256")) {
-            let p = displayDate.split('/');
-            displayDate = `${p[0]}/${p[1]}/${parseInt(p[2])-543}`;
-        }
-        
-        document.getElementById('spec-last-time').innerText = `${displayDate} (${lastLog.timestamp})`;
+        let dDate = lastLog.date;
+        if(dDate.includes("256")) { let p = dDate.split('/'); dDate = `${p[0]}/${p[1]}/${parseInt(p[2])-543}`; }
+        document.getElementById('spec-last-time').innerText = `${dDate} (${lastLog.timestamp})`;
         document.getElementById('spec-last-device').innerText = lastLog.type;
         const hBody = document.getElementById('user-history-body');
         hBody.innerHTML = userLogs.slice().reverse().map(l => {
-            let dDate = l.date;
-            if(dDate.includes("256")) {
-                let p = dDate.split('/');
-                dDate = `${p[0]}/${p[1]}/${parseInt(p[2])-543}`;
-            }
-            return `
-            <tr>
-                <td>${dDate}</td>
-                <td>${l.timestamp}</td>
-                <td><small>${l.type}</small></td>
-                <td><span class="badge ${l.status==='In'?'bg-success':'bg-danger'}">${l.status}</span></td>
-            </tr>
-        `}).join('');
+            let dd = l.date; if(dd.includes("256")) { let p = dd.split('/'); dd = `${p[0]}/${p[1]}/${parseInt(p[2])-543}`; }
+            return `<tr><td>${dd}</td><td>${l.timestamp}</td><td><small>${l.type}</small></td><td><span class="badge ${l.status==='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>`
+        }).join('');
     };
 
     window.backToUserList = () => {
