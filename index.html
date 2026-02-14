@@ -10,7 +10,7 @@
     
     <style>
         :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --border-color: #dee2e6; }
-        /* ปรับ Dark Mode ให้ดำสนิทตามที่สั่ง */
+        /* ปรับ Dark Mode ให้เข้มตามสั่ง */
         body.dark-mode { --bg-color: #0a0a0a; --card-bg: #161616; --text-main: #e0e0e0; --border-color: #333333; }
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; }
         
@@ -18,60 +18,64 @@
         .dark-mode input::placeholder { color: #bbb !important; }
 
         .dark-mode .modal-content { background-color: #1e1e1e; color: white; border: 1px solid #444; }
-        .dark-mode .form-control, .dark-mode .form-select { background-color: #2b2b2b !important; border-color: #444 !important; color: white !important; }
+        .dark-mode .form-control { background-color: #2b2b2b !important; border-color: #444 !important; color: white !important; }
         .dark-mode .list-group-item { background-color: #2b2b2b; color: white; border-color: #444; }
+        .dark-mode .list-group-item:hover { background-color: #383838; }
+
+        /* ปรับสีตารางในโหมดมืดให้เป็นสีขาวตามสั่ง */
+        .dark-mode .table { color: #ffffff !important; }
+        .dark-mode .table thead th { background-color: #333 !important; color: #fff !important; }
+        .dark-mode .table tbody td { color: #ffffff !important; }
 
         /* จัดตำแหน่งปุ่มด้านบน */
-        .header-actions { position: absolute; top: 15px; right: 15px; z-index: 1100; display: flex; gap: 8px; }
-        .btn-round { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; }
-        #dark-mode-toggle { border-radius: 50px; padding: 5px 15px; position: static; }
+        .header-actions { position: absolute; top: 15px; right: 15px; z-index: 1100; display: flex; gap: 10px; }
+        .btn-circle { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; }
+        #dark-mode-toggle { position: static; border-radius: 50px; padding: 5px 15px; }
 
         #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
         #main-dashboard { display: none; position: relative; }
         
         .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-main); }
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
+        .card-label { font-size: 1rem; font-weight: 600; text-transform: uppercase; color: #6c757d; }
+        .dark-mode .card-label { color: #ffffff !important; }
+
+        .dark-mode .history-card { background-color: #2d2d2d !important; }
         
         .clock-wrapper { display: flex; align-items: center; gap: 15px; font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 0.5px; }
-        .user-avatar { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; font-size: 0.85rem; }
+        #live-date { color: #6c757d; font-weight: 500; }
+        .dark-mode #live-date { color: #adb5bd; }
+        
+        .info-detail { font-size: 1.1rem; font-weight: 400; color: #495057; }
+        .dark-mode .info-detail { color: #dee2e6; }
 
-        /* UI สำหรับการ Enroll แสกนนิ้ว */
+        #last-user-text { color: #495057 !important; font-size: 1.8rem !important; }
+        .dark-mode #last-user-text { color: #dee2e6 !important; }
+
+        .user-avatar { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; font-size: 0.85rem; }
+        
+        /* สไตล์หน้าโหลดแสกน */
         #enroll-overlay { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; color: white; border-radius: 12px; }
     </style>
 </head>
 <body>
-
-<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
-      <div class="modal-body text-center p-5">
-        <div class="mb-3"><i class="bi bi-person-check-fill text-primary" style="font-size: 4rem;"></i></div>
-        <h2 class="fw-bold mt-3 mb-2">ยินดีต้อนรับคุณ <span id="welcome-user-name" class="text-success">---</span></h2>
-        <p class="text-secondary">คุณได้เข้าสู่ Access Entry Door Lock Dashboard เรียบร้อยแล้ว!</p>
-        <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-pill mt-4 shadow-sm" data-bs-dismiss="modal">ตกลง</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div class="modal fade" id="userListModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content overflow-hidden">
       <div id="enroll-overlay">
           <div class="spinner-border text-primary mb-3"></div>
-          <h5 id="enroll-status">กรุณาวางนิ้วบนเซนเซอร์...</h5>
-          <p id="enroll-step" class="small">ขั้นตอนที่ 1/2</p>
+          <h5 id="enroll-status">กำลังรอกดการแสกน...</h5>
       </div>
-
       <div class="modal-header">
-        <h5 class="modal-title fw-bold"><i class="bi bi-people-fill me-2"></i>จัดการสมาชิกและผู้ใช้งาน</h5>
+        <h5 class="modal-title fw-bold"><i class="bi bi-people-fill me-2"></i>จัดการสมาชิก</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="enroll-form" class="card p-3 mb-4 bg-light bg-opacity-10 border shadow-sm">
+        <div id="enroll-section" class="card p-3 mb-4 bg-primary bg-opacity-10 border border-primary">
             <h6 class="fw-bold mb-3">เพิ่มสมาชิกใหม่</h6>
             <div class="row g-2">
-                <div class="col-md-4"><input type="text" id="new-user-name" class="form-control" placeholder="ชื่อเล่น/ชื่อจริง"></div>
+                <div class="col-md-4"><input type="text" id="new-user-name" class="form-control" placeholder="ชื่อสมาชิก"></div>
                 <div class="col-md-4">
                     <select id="new-user-type" class="form-select" onchange="toggleEnrollMode()">
                         <option value="Keypad">รหัสผ่าน (Keypad)</option>
@@ -79,23 +83,26 @@
                         <option value="RFID">บัตร (RFID)</option>
                     </select>
                 </div>
-                <div class="col-md-4" id="pass-input-div"><input type="password" id="new-user-pass" class="form-control" placeholder="รหัสผ่าน 6 หลัก"></div>
+                <div class="col-md-4" id="pass-div"><input type="password" id="new-user-pass" class="form-control" placeholder="รหัส 6 ตัว"></div>
                 <div class="col-12 mt-2">
-                    <button id="enroll-btn" class="btn btn-success w-100 fw-bold" onclick="startEnroll()">บันทึกข้อมูลและลงทะเบียน</button>
+                    <button class="btn btn-primary w-100 fw-bold" onclick="startEnroll()">บันทึก/เริ่มแสกน</button>
                 </div>
             </div>
         </div>
 
         <div id="user-selection-list" class="list-group list-group-flush mb-4"></div>
         <div id="user-specific-detail" style="display: none;">
-            <button class="btn btn-sm btn-secondary mb-3" onclick="backToUserList()"><i class="bi bi-arrow-left"></i> กลับไปรายชื่อ</button>
+            <div class="d-flex justify-content-between mb-3">
+                <button class="btn btn-sm btn-secondary" onclick="backToUserList()"><i class="bi bi-arrow-left"></i> กลับไปรายชื่อ</button>
+                <button class="btn btn-sm btn-danger" id="delete-user-btn"><i class="bi bi-trash"></i> ลบสมาชิกนี้</button>
+            </div>
             <div class="card p-3 mb-3 border-0 bg-opacity-10 bg-primary shadow-sm">
                 <div class="d-flex align-items-center mb-2">
                     <div id="spec-user-avatar" class="user-avatar me-3" style="width: 50px; height: 50px; font-size: 1.2rem;"></div>
                     <div>
                         <h4 class="fw-bold mb-0" id="spec-user-name">---</h4>
                         <span id="spec-user-status" class="badge mt-1">---</span>
-                        <div id="spec-user-info" class="small text-muted mt-1">รหัส/UID: ---</div>
+                        <div id="spec-user-info" class="small text-muted mt-1">ข้อมูล: ---</div>
                     </div>
                 </div>
                 <hr class="my-2 opacity-25">
@@ -115,6 +122,19 @@
   </div>
 </div>
 
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-body text-center p-5">
+        <div class="mb-3"><i class="bi bi-person-check-fill text-primary" style="font-size: 4rem;"></i></div>
+        <h2 class="fw-bold mt-3 mb-2">ยินดีต้อนรับคุณ <span id="welcome-user-name" class="text-success">---</span></h2>
+        <p class="text-secondary">คุณได้เข้าสู่ Access Entry Door Lock Dashboard เรียบร้อยแล้ว!</p>
+        <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-pill mt-4" data-bs-dismiss="modal">ตกลง</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="login-section">
     <div class="card p-4 shadow text-center" style="width: 350px;">
         <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2"></i>Login</h3>
@@ -128,7 +148,7 @@
 
 <div id="main-dashboard">
     <div class="header-actions">
-        <button class="btn btn-primary btn-round shadow-sm" data-bs-toggle="modal" data-bs-target="#userListModal">
+        <button class="btn btn-primary btn-circle shadow-sm" data-bs-toggle="modal" data-bs-target="#userListModal">
             <i class="bi bi-person-plus-fill"></i>
         </button>
         <button id="dark-mode-toggle" class="btn btn-light shadow-sm border">
@@ -215,50 +235,47 @@
     const db = getDatabase(app);
 
     let allLogs = [];
+    let serverOffset = 0;
     let registeredUsers = {};
 
-    // --- ระบบ Enroll ---
+    // --- ระบบเพิ่มสมาชิก (Enroll) ---
     window.toggleEnrollMode = () => {
         const type = document.getElementById('new-user-type').value;
-        document.getElementById('pass-input-div').style.display = (type === 'Keypad') ? 'block' : 'none';
-        document.getElementById('enroll-btn').innerText = (type === 'Keypad') ? 'บันทึกข้อมูล' : 'เริ่มขั้นตอนการแสกน';
+        document.getElementById('pass-div').style.display = (type === 'Keypad') ? 'block' : 'none';
     };
 
     window.startEnroll = async () => {
         const name = document.getElementById('new-user-name').value;
         const type = document.getElementById('new-user-type').value;
         const pass = document.getElementById('new-user-pass').value;
-        if(!name) return alert("กรุณาใส่ชื่อสมาชิก");
+        if(!name) return alert("ใส่ชื่อด้วย");
 
         if(type === 'Keypad') {
             await set(ref(db, `users/${name}`), { name, type, info: pass });
-            alert("บันทึกสมาชิกเรียบร้อย");
+            alert("บันทึกสำเร็จ");
         } else {
-            const overlay = document.getElementById('enroll-overlay');
-            const status = document.getElementById('enroll-status');
-            overlay.style.display = 'flex';
-            status.innerText = "กำลังส่งคำสั่งไปที่เครื่อง...";
-            
-            await set(ref(db, 'system/enroll_cmd'), { name, type, step: 1, status: 'pending' });
-            
-            // ตรวจสอบการอัปเดตจาก Firebase (จำลอง/บอร์ดส่งกลับมา)
-            const cmdRef = ref(db, 'system/enroll_cmd');
-            onValue(cmdRef, (snap) => {
-                const data = snap.val();
-                if(!data) return;
-                if(data.status === 'step2') {
-                    status.innerText = "แสกนครั้งที่ 1 สำเร็จ! กรุณาวางนิ้วอีกครั้ง...";
-                    document.getElementById('enroll-step').innerText = "ขั้นตอนที่ 2/2";
-                } else if(data.status === 'success') {
-                    overlay.style.display = 'none';
-                    alert("ลงทะเบียนสำเร็จ!");
-                    remove(cmdRef);
+            document.getElementById('enroll-overlay').style.display = 'flex';
+            await set(ref(db, 'system/enroll'), { name, type, status: 'request' });
+            onValue(ref(db, 'system/enroll/status'), (snap) => {
+                if(snap.val() === 'success') {
+                    document.getElementById('enroll-overlay').style.display = 'none';
+                    alert("แสกนสำเร็จ");
                 }
             });
         }
     };
 
-    // --- Dark Mode เดิม ---
+    // --- ระบบลบชื่อ ---
+    document.getElementById('delete-user-btn').onclick = () => {
+        const name = document.getElementById('spec-user-name').innerText;
+        if(confirm(`ลบคุณ ${name} หรือไม่?`)) {
+            remove(ref(db, `users/${name}`)).then(() => {
+                backToUserList();
+            });
+        }
+    };
+
+    // --- ของเดิมทั้งหมด (ห้ามแก้) ---
     const enableDarkMode = () => { 
         document.body.classList.add('dark-mode'); 
         document.getElementById('mode-icon').className = "bi bi-sun-fill"; 
@@ -270,15 +287,38 @@
         document.getElementById('mode-text').innerText = "โหมดมืด"; 
     };
 
+    function autoThemeByTime() {
+        const now = new Date();
+        const hour = now.getHours();
+        if (hour >= 6 && hour < 18) { disableDarkMode(); } 
+        else { enableDarkMode(); }
+    }
+    autoThemeByTime();
+
     document.getElementById('dark-mode-toggle').onclick = () => {
-        document.body.classList.contains('dark-mode') ? disableDarkMode() : enableDarkMode();
+        if (document.body.classList.contains('dark-mode')) { disableDarkMode(); }
+        else { enableDarkMode(); }
     };
 
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH');
+    function syncTime() {
+        const offsetRef = ref(db, ".info/serverTimeOffset");
+        onValue(offsetRef, (snap) => { serverOffset = snap.val() || 0; });
     }
+
+    function updateClock() {
+        const serverTime = Date.now() + serverOffset;
+        const now = new Date(serverTime);
+        const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+        const day = now.getDate();
+        const month = now.toLocaleDateString('en-US', { month: 'long' });
+        const year = now.getFullYear();
+        document.getElementById('live-date').innerText = `${dayName} ${day} ${month} ${year}`;
+        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH', { 
+            hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+    }
+    
+    syncTime();
     setInterval(updateClock, 1000);
 
     document.getElementById('login-btn').onclick = () => {
@@ -294,6 +334,9 @@
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
             document.getElementById('admin-name').innerText = userName; 
+            document.getElementById('welcome-user-name').innerText = userName;
+            const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+            welcomeModal.show();
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
@@ -302,14 +345,14 @@
     });
 
     function getColorFromName(name) {
-        const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3'];
+        const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800', '#795548'];
         let hash = 0;
         for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
         return colors[Math.abs(hash) % colors.length];
     }
 
     function runApp() {
-        // ดึงข้อมูล User ที่ลงทะเบียนไว้
+        // ดึงรายชื่อ User
         onValue(ref(db, 'users'), (snap) => {
             registeredUsers = snap.val() || {};
             updateUserModalList(Object.keys(registeredUsers));
@@ -324,9 +367,14 @@
                 const d = child.val();
                 allLogs.push(d);
                 const badgeClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
-                tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
+                let displayDate = d.date;
+                if(displayDate.includes("256") || displayDate.includes("257")) {
+                    let parts = displayDate.split('/');
+                    if(parts.length === 3) displayDate = `${parts[0]}/${parts[1]}/${parseInt(parts[2])-543}`;
+                }
+                tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${displayDate}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
                 document.getElementById('last-user').innerText = d.name;
-                document.getElementById('last-time').innerText = d.date + " | " + d.timestamp;
+                document.getElementById('last-time').innerText = displayDate + " | " + d.timestamp;
                 document.getElementById('last-device-type').innerText = d.type;
                 const statusBadge = document.getElementById('last-status-badge');
                 statusBadge.innerText = d.status;
@@ -347,31 +395,29 @@
     window.showUserDetail = (name) => {
         const userData = registeredUsers[name] || {};
         document.getElementById('user-selection-list').style.display = 'none';
-        document.getElementById('enroll-form').style.display = 'none';
+        document.getElementById('enroll-section').style.display = 'none';
         document.getElementById('user-specific-detail').style.display = 'block';
+        const userLogs = allLogs.filter(l => l.name === name);
+        const lastLog = userLogs[userLogs.length - 1] || {status:'-', date:'-', timestamp:'-', type:'-'};
         document.getElementById('spec-user-name').innerText = name;
         document.getElementById('spec-user-avatar').innerText = name.charAt(0).toUpperCase();
         document.getElementById('spec-user-avatar').style.background = getColorFromName(name);
-        document.getElementById('spec-user-info').innerText = `รหัส/UID: ${userData.info || 'แสกนผ่านอุปกรณ์'}`;
-        
-        const userLogs = allLogs.filter(l => l.name === name);
-        const lastLog = userLogs[userLogs.length - 1] || { status: 'Unknown', timestamp: 'N/A', date: '' };
+        document.getElementById('spec-user-info').innerText = `รหัส/UID: ${userData.info || 'N/A'}`;
         const sBadge = document.getElementById('spec-user-status');
         sBadge.innerText = lastLog.status;
         sBadge.className = `badge ${lastLog.status === 'In' ? 'bg-success' : 'bg-danger'}`;
-        document.getElementById('spec-last-time').innerText = `${lastLog.date} ${lastLog.timestamp}`;
-        
+        document.getElementById('spec-last-time').innerText = `${lastLog.date} (${lastLog.timestamp})`;
         const hBody = document.getElementById('user-history-body');
         hBody.innerHTML = userLogs.slice().reverse().map(l => `<tr><td>${l.date}</td><td>${l.timestamp}</td><td><small>${l.type}</small></td><td><span class="badge ${l.status==='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>`).join('');
     };
 
     window.backToUserList = () => {
         document.getElementById('user-selection-list').style.display = 'block';
-        document.getElementById('enroll-form').style.display = 'block';
+        document.getElementById('enroll-section').style.display = 'block';
         document.getElementById('user-specific-detail').style.display = 'none';
     };
 
-    document.getElementById('clear-btn').onclick = () => { if(confirm("คุณต้องการล้างประวัติทั้งหมดหรือไม่?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
+    document.getElementById('clear-btn').onclick = () => { if(confirm("ล้างประวัติ?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
 </script>
 </body>
 </html>
