@@ -21,19 +21,20 @@
         .dark-mode .list-group-item { background-color: #2b2b2b; color: white; border-color: #444; }
         .dark-mode .list-group-item:hover { background-color: #383838; }
 
-        /* จัดตำแหน่งปุ่มด้านบนใหม่ */
-        .top-actions { position: absolute; top: 15px; right: 15px; z-index: 1100; display: flex; gap: 8px; align-items: center; }
-        #dark-mode-toggle { position: static; border-radius: 50px; padding: 5px 15px; }
-        .btn-action-top { border-radius: 50px; padding: 5px 15px; }
-        .profile-trigger { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 2px solid #0d6efd; object-fit: cover; background: #ddd; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
+        /* จัดตำแหน่ง Profile และโหมดมืด */
+        .header-top-right { position: absolute; top: 15px; right: 15px; z-index: 1100; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        .profile-box { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .profile-img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #0d6efd; background: #ddd; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; overflow: hidden; }
+        .profile-name-label { font-size: 0.75rem; font-weight: 600; color: #198754; margin-top: 2px; }
 
-        #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
+        #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         #main-dashboard { display: none; position: relative; }
         
         .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-main); }
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
         .card-label { font-size: 1rem; font-weight: 600; text-transform: uppercase; color: #6c757d; }
         .dark-mode .card-label { color: #ffffff !important; }
+
         .dark-mode .history-card { background-color: #2d2d2d !important; }
         .dark-mode .table { --bs-table-bg: #4a4a4a !important; color: #ffffff !important; border-radius: 8px; overflow: hidden; }
         .dark-mode .table thead th { background-color: #5a5a5a !important; color: #ffffff !important; border-bottom: 2px solid #666 !important; }
@@ -48,14 +49,9 @@
         body:not(.dark-mode) .border-secondary { border-color: rgba(108, 117, 125, 0.3) !important; }
         #last-user-text { color: #495057 !important; font-size: 1.8rem !important; }
         .dark-mode #last-user-text { color: #dee2e6 !important; }
-        .user-list-item { color: #ffffff !important; opacity: 0.85 !important; font-weight: 500; }
 
-        .user-avatar {
-            width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; color: white; font-weight: bold; font-size: 0.85rem;
-            object-fit: cover;
-        }
+        .user-list-item { color: #ffffff !important; opacity: 0.85 !important; font-weight: 500; }
+        .user-avatar { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -64,38 +60,33 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold"><i class="bi bi-person-circle me-2"></i>โปรไฟล์ส่วนตัว</h5>
+        <h5 class="modal-title fw-bold">จัดการโปรไฟล์</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
-        <div class="text-center mb-4">
-            <div id="profile-preview-container" class="mx-auto mb-3 shadow-sm" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 3px solid #0d6efd; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white;"></div>
-            <input type="file" id="profile-upload" hidden accept="image/*">
-            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="document.getElementById('profile-upload').click()">เปลี่ยนรูปโปรไฟล์</button>
+      <div class="modal-body text-center">
+        <div id="p-preview" class="mx-auto mb-3" style="width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; border: 3px solid #0d6efd; overflow: hidden;"></div>
+        <input type="file" id="p-upload" hidden accept="image/*">
+        <button class="btn btn-sm btn-outline-primary mb-3" onclick="document.getElementById('p-upload').click()">เปลี่ยนรูปโปรไฟล์</button>
+        <div class="text-start">
+            <label class="small fw-bold mb-1">ชื่อที่แสดง</label>
+            <input type="text" id="p-display-name" class="form-control mb-2">
+            <label class="small fw-bold mb-1">รหัสผ่านใหม่</label>
+            <input type="password" id="p-new-password" class="form-control mb-3" placeholder="ปล่อยว่างหากไม่ต้องการเปลี่ยน">
         </div>
-        <div class="mb-3">
-            <label class="small fw-bold mb-1">ชื่อผู้ใช้ (Display Name)</label>
-            <input type="text" id="edit-display-name" class="form-control">
-        </div>
-        <div class="mb-3">
-            <label class="small fw-bold mb-1">รหัสผ่านใหม่ (ทิ้งว่างถ้าไม่เปลี่ยน)</label>
-            <input type="password" id="edit-password" class="form-control" placeholder="******">
-        </div>
-        <hr>
-        <h6 class="fw-bold text-primary mb-3">ข้อมูลการเข้ารหัสส่วนตัว</h6>
-        <div class="mb-3">
-            <label class="small fw-bold mb-1">ประเภทอุปกรณ์</label>
-            <select id="edit-my-type" class="form-select">
-                <option value="Fingerprint">Fingerprint</option>
-                <option value="RFID Card">RFID Card</option>
-                <option value="Keypad">Keypad</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label class="small fw-bold mb-1">ข้อมูลรหัส/Key</label>
-            <input type="text" id="edit-my-info" class="form-control" placeholder="เช่น ID บัตร หรือ ลำดับนิ้ว">
-        </div>
-        <button class="btn btn-primary w-100 fw-bold py-2 mt-2" onclick="saveMyProfile()">บันทึกข้อมูล</button>
+        <button class="btn btn-primary w-100 fw-bold" onclick="saveProfile()">บันทึกข้อมูล</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-body text-center p-5">
+        <div class="mb-3"><i class="bi bi-person-check-fill text-primary" style="font-size: 4rem;"></i></div>
+        <h2 class="fw-bold mt-3 mb-2">ยินดีต้อนรับคุณ <span id="welcome-user-name" class="text-success">---</span></h2>
+        <p class="text-secondary">คุณได้เข้าสู่ Access Entry Door Lock Dashboard เรียบร้อยแล้ว!</p>
+        <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-pill mt-4 shadow-sm" data-bs-dismiss="modal">ตกลง</button>
       </div>
     </div>
   </div>
@@ -109,23 +100,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="user-selection-list">
-            <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-                <span class="small opacity-75">คลิกที่รายชื่อเพื่อดูประวัติ</span>
-                <button class="btn btn-sm btn-success rounded-pill px-3" onclick="showAddUserForm()"><i class="bi bi-plus-lg me-1"></i>เพิ่มสมาชิก</button>
-            </div>
-            <div id="list-container" class="list-group list-group-flush mb-4"></div>
-        </div>
-
-        <div id="add-user-form" style="display: none;">
-            <button class="btn btn-sm btn-secondary mb-3" onclick="hideAddUserForm()"><i class="bi bi-arrow-left"></i> กลับ</button>
-            <h5 class="fw-bold mb-3">สร้างสมาชิกใหม่</h5>
-            <div class="mb-3"><input type="text" id="new-user-name" class="form-control" placeholder="ชื่อสมาชิก"></div>
-            <div class="mb-3"><input type="email" id="new-user-email" class="form-control" placeholder="อีเมล (เช่น member1@insight.com)"></div>
-            <div class="mb-3"><input type="password" id="new-user-pass" class="form-control" placeholder="รหัสผ่านเข้าหน้าจอ"></div>
-            <button class="btn btn-success w-100 fw-bold" onclick="createNewMember()">สร้างสมาชิก</button>
-        </div>
-
+        <div id="user-selection-list" class="list-group list-group-flush mb-4"></div>
         <div id="user-specific-detail" style="display: none;">
             <button class="btn btn-sm btn-secondary mb-3" onclick="backToUserList()"><i class="bi bi-arrow-left"></i> กลับไปรายชื่อ</button>
             <div class="card p-3 mb-3 border-0 bg-opacity-10 bg-primary shadow-sm">
@@ -157,25 +132,35 @@
 </div>
 
 <div id="login-section">
-    <div class="card p-4 shadow text-center" style="width: 350px;">
+    <div id="login-box" class="card p-4 shadow text-center" style="width: 350px;">
         <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2"></i>Login</h3>
         <p class="small opacity-75 mb-4">Access Entry Door Lock Dashboard</p>
         <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
         <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
-        <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold">เข้าสู่ระบบ</button>
+        <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold mb-2">เข้าสู่ระบบ</button>
+        <button class="btn btn-link btn-sm text-decoration-none" onclick="toggleAuth()">ยังไม่มีบัญชี? สมัครสมาชิก</button>
         <p id="error-msg" class="text-danger mt-3 small"></p>
+    </div>
+    <div id="signup-box" class="card p-4 shadow text-center" style="width: 350px; display: none;">
+        <h3 class="fw-bold mb-1"><i class="bi bi-person-plus-fill me-2"></i>Register</h3>
+        <p class="small opacity-75 mb-4">สมัครสมาชิกเพื่อเข้าใช้งาน</p>
+        <input type="text" id="reg-username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
+        <input type="password" id="reg-password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
+        <button id="signup-btn" class="btn btn-success w-100 py-2 fw-bold mb-2">สมัครสมาชิก</button>
+        <button class="btn btn-link btn-sm text-decoration-none" onclick="toggleAuth()">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</button>
+        <p id="reg-error-msg" class="text-danger mt-3 small"></p>
     </div>
 </div>
 
 <div id="main-dashboard">
-    <div class="top-actions">
-        <button id="dark-mode-toggle" class="btn btn-light shadow-sm border">
+    <div class="header-top-right">
+        <button id="dark-mode-toggle" class="btn btn-light shadow-sm border btn-sm">
             <i id="mode-icon" class="bi bi-sun-fill"></i> <span id="mode-text">โหมดสว่าง</span>
         </button>
-        <button class="btn btn-primary btn-action-top shadow-sm" data-bs-toggle="modal" data-bs-target="#userListModal">
-            <i class="bi bi-person-badge me-1"></i> User
-        </button>
-        <div id="my-profile-btn" class="profile-trigger shadow-sm" data-bs-toggle="modal" data-bs-target="#profileModal">?</div>
+        <div class="profile-box" data-bs-toggle="modal" data-bs-target="#profileModal">
+            <div id="profile-img-div" class="profile-img shadow-sm">?</div>
+            <div id="profile-name-under" class="profile-name-label">---</div>
+        </div>
     </div>
 
     <div class="container py-4">
@@ -188,7 +173,6 @@
                         <div id="live-clock"><i class="bi bi-clock-fill me-2"></i><span id="clock-display">--:--:--</span></div>
                         <div id="live-date">---</div>
                     </div>
-                    <div class="small mt-1">ผู้ใช้งานปัจจุบัน: <span id="admin-name" class="fw-bold text-success">---</span></div>
                 </div>
                 <button id="logout-btn" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm">
                     <i class="bi bi-box-arrow-right me-1"></i> ออกจากระบบ
@@ -229,6 +213,9 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold m-0"><i class="bi bi-clock-history me-2"></i>ประวัติการเข้า-ออก</h5>
                 <div>
+                    <button class="btn btn-sm btn-primary me-2 px-3" data-bs-toggle="modal" data-bs-target="#userListModal">
+                        <i class="bi bi-person-badge me-1"></i> User
+                    </button>
                     <button id="clear-btn" class="btn btn-sm btn-outline-danger px-3">ล้างประวัติ</button>
                 </div>
             </div>
@@ -245,8 +232,8 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, updatePassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, remove, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, remove, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyCZ0MK0LRsZLpzAclPxflIa7eWAXAdRchM", 
@@ -258,9 +245,14 @@
 
     let allLogs = [];
     let serverOffset = 0;
-    let currentUserData = null;
 
-    // --- ส่วนที่แก้ไข: Dark Mode ---
+    window.toggleAuth = () => {
+        const login = document.getElementById('login-box');
+        const signup = document.getElementById('signup-box');
+        login.style.display = login.style.display === 'none' ? 'block' : 'none';
+        signup.style.display = signup.style.display === 'none' ? 'block' : 'none';
+    };
+
     const enableDarkMode = () => { 
         document.body.classList.add('dark-mode'); 
         document.getElementById('mode-icon').className = "bi bi-sun-fill"; 
@@ -279,7 +271,6 @@
         else { enableDarkMode(); }
     }
     autoThemeByTime();
-    setInterval(autoThemeByTime, 60000);
 
     document.getElementById('dark-mode-toggle').onclick = () => {
         if (document.body.classList.contains('dark-mode')) { disableDarkMode(); }
@@ -287,27 +278,28 @@
     };
 
     function syncTime() {
-        const offsetRef = ref(db, ".info/serverTimeOffset");
-        onValue(offsetRef, (snap) => { serverOffset = snap.val() || 0; });
+        onValue(ref(db, ".info/serverTimeOffset"), (snap) => { serverOffset = snap.val() || 0; });
     }
 
     function updateClock() {
         const serverTime = Date.now() + serverOffset;
         const now = new Date(serverTime);
-        const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
-        const day = now.getDate();
-        const month = now.toLocaleDateString('en-US', { month: 'long' });
-        const year = now.getFullYear();
-        document.getElementById('live-date').innerText = `${dayName} ${day} ${month} ${year}`;
-        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH', { 
-            hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
+        document.getElementById('live-date').innerText = `${now.toLocaleDateString('en-US', { weekday: 'long' })} ${now.getDate()} ${now.toLocaleDateString('en-US', { month: 'long' })} ${now.getFullYear()}`;
+        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH', { hour12: false });
     }
-    
-    syncTime();
-    setInterval(updateClock, 1000);
+    syncTime(); setInterval(updateClock, 1000);
 
-    // Login
+    // สมัครสมาชิก
+    document.getElementById('signup-btn').onclick = () => {
+        const user = document.getElementById('reg-username').value;
+        const pass = document.getElementById('reg-password').value;
+        createUserWithEmailAndPassword(auth, user + "@insight.com", pass)
+        .then((cred) => {
+            set(ref(db, 'users_profile/' + cred.user.uid), { displayName: user });
+            alert("สมัครสมาชิกสำเร็จ!"); location.reload();
+        }).catch(e => document.getElementById('reg-error-msg').innerText = e.message);
+    };
+
     document.getElementById('login-btn').onclick = () => {
         signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
         .catch(() => document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
@@ -317,38 +309,29 @@
 
     onAuthStateChanged(auth, (user) => {
         if (user) { 
-            const userId = user.uid;
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
             
-            // ดึงข้อมูลโปรไฟล์ผู้ใช้จาก DB
-            onValue(ref(db, `users_profile/${userId}`), (snap) => {
+            onValue(ref(db, 'users_profile/' + user.uid), (snap) => {
                 const data = snap.val() || {};
-                currentUserData = data;
-                const displayName = data.displayName || user.email.split('@')[0];
-                document.getElementById('admin-name').innerText = displayName;
-                document.getElementById('welcome-user-name').innerText = displayName;
-                document.getElementById('edit-display-name').value = displayName;
-                document.getElementById('edit-my-type').value = data.type || "Fingerprint";
-                document.getElementById('edit-my-info').value = data.info || "";
-
-                // อัปเดต UI โปรไฟล์
-                const profileBtn = document.getElementById('my-profile-btn');
-                const preview = document.getElementById('profile-preview-container');
-                if (data.photoURL) {
-                    const img = `<img src="${data.photoURL}" class="user-avatar" style="width:100%; height:100%">`;
-                    profileBtn.innerHTML = img;
-                    preview.innerHTML = img;
+                const name = data.displayName || user.email.split('@')[0];
+                document.getElementById('profile-name-under').innerText = name;
+                document.getElementById('welcome-user-name').innerText = name;
+                document.getElementById('p-display-name').value = name;
+                const imgDiv = document.getElementById('profile-img-div');
+                const preview = document.getElementById('p-preview');
+                if(data.photo) {
+                    imgDiv.innerHTML = `<img src="${data.photo}" style="width:100%;height:100%;object-fit:cover;">`;
+                    preview.innerHTML = `<img src="${data.photo}" style="width:100%;height:100%;object-fit:cover;">`;
                 } else {
-                    const char = displayName.charAt(0).toUpperCase();
-                    const color = getColorFromName(displayName);
-                    profileBtn.innerHTML = char;
-                    profileBtn.style.background = color;
-                    preview.innerHTML = char;
-                    preview.style.background = color;
+                    const color = getColorFromName(name);
+                    imgDiv.innerText = name.charAt(0).toUpperCase(); imgDiv.style.background = color;
+                    preview.innerText = name.charAt(0).toUpperCase(); preview.style.background = color;
                 }
             });
 
+            const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+            welcomeModal.show();
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
@@ -356,57 +339,19 @@
         }
     });
 
-    // อัปโหลดรูป (Base64 แบบง่าย)
-    document.getElementById('profile-upload').onchange = (e) => {
+    document.getElementById('p-upload').onchange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const base64 = event.target.result;
-                update(ref(db, `users_profile/${auth.currentUser.uid}`), { photoURL: base64 });
-            };
-            reader.readAsDataURL(file);
-        }
+        const reader = new FileReader();
+        reader.onload = (el) => update(ref(db, 'users_profile/' + auth.currentUser.uid), { photo: el.target.result });
+        reader.readAsDataURL(file);
     };
 
-    window.saveMyProfile = async () => {
-        const newName = document.getElementById('edit-display-name').value;
-        const newPass = document.getElementById('edit-password').value;
-        const newType = document.getElementById('edit-my-type').value;
-        const newInfo = document.getElementById('edit-my-info').value;
-
-        try {
-            await update(ref(db, `users_profile/${auth.currentUser.uid}`), {
-                displayName: newName,
-                type: newType,
-                info: newInfo
-            });
-            if (newPass) await updatePassword(auth.currentUser, newPass);
-            alert("บันทึกข้อมูลแล้ว!");
-            location.reload();
-        } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
-    };
-
-    window.showAddUserForm = () => {
-        document.getElementById('user-selection-list').style.display = 'none';
-        document.getElementById('add-user-form').style.display = 'block';
-    };
-
-    window.hideAddUserForm = () => {
-        document.getElementById('user-selection-list').style.display = 'block';
-        document.getElementById('add-user-form').style.display = 'none';
-    };
-
-    window.createNewMember = async () => {
-        const name = document.getElementById('new-user-name').value;
-        const email = document.getElementById('new-user-email').value;
-        const pass = document.getElementById('new-user-pass').value;
-        if (!name || !email || !pass) return alert("กรุณากรอกให้ครบ");
-        
-        // หมายเหตุ: การสร้าง User ใหม่จากหน้าเว็บต้องระวังเรื่อง Auth State 
-        // ในระบบจริงแนะนำให้ทำผ่าน Cloud Functions หรือ Admin SDK
-        alert("ส่งคำขอสร้างสมาชิกไปยังระบบแล้ว (จำลอง)");
-        hideAddUserForm();
+    window.saveProfile = async () => {
+        const name = document.getElementById('p-display-name').value;
+        const pass = document.getElementById('p-new-password').value;
+        await update(ref(db, 'users_profile/' + auth.currentUser.uid), { displayName: name });
+        if(pass) await updatePassword(auth.currentUser, pass);
+        alert("บันทึกสำเร็จ!");
     };
 
     function getColorFromName(name) {
@@ -438,8 +383,7 @@
                 document.getElementById('last-time').innerText = displayDate + " | " + d.timestamp;
                 document.getElementById('last-device-type').innerText = d.type;
                 const statusBadge = document.getElementById('last-status-badge');
-                statusBadge.innerText = d.status;
-                statusBadge.className = `badge ms-2 ${badgeClass}`;
+                statusBadge.innerText = d.status; statusBadge.className = `badge ms-2 ${badgeClass}`;
                 if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } 
                 else { peopleIn = peopleIn.filter(p => p !== d.name); }
             });
@@ -450,7 +394,7 @@
     }
 
     function updateUserModalList(users) {
-        const listDiv = document.getElementById('list-container');
+        const listDiv = document.getElementById('user-selection-list');
         listDiv.innerHTML = users.map(u => `<button class="list-group-item list-group-item-action fw-bold d-flex justify-content-between align-items-center py-3" onclick="showUserDetail('${u}')"><div class="d-flex align-items-center"><div class="user-avatar me-3" style="background: ${getColorFromName(u)};">${u.charAt(0).toUpperCase()}</div><span>${u}</span></div><i class="bi bi-chevron-right small opacity-50"></i></button>`).join('');
     }
 
@@ -458,7 +402,7 @@
         document.getElementById('user-selection-list').style.display = 'none';
         document.getElementById('user-specific-detail').style.display = 'block';
         const userLogs = allLogs.filter(l => l.name === name);
-        const lastLog = userLogs[userLogs.length - 1] || {status:'N/A', date:'-', timestamp:'-', type:'-'};
+        const lastLog = userLogs[userLogs.length - 1];
         document.getElementById('spec-user-name').innerText = name;
         document.getElementById('spec-user-avatar').innerText = name.charAt(0).toUpperCase();
         document.getElementById('spec-user-avatar').style.background = getColorFromName(name);
