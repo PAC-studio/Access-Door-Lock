@@ -10,7 +10,7 @@
     
     <style>
         :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --border-color: #dee2e6; }
-        /* ปรับ Dark Mode ให้มืดจริงตามสั่ง */
+        /* ปรับ Dark Mode ให้ดำสนิทตามที่สั่ง */
         body.dark-mode { --bg-color: #0a0a0a; --card-bg: #161616; --text-main: #e0e0e0; --border-color: #333333; }
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; }
         
@@ -18,12 +18,13 @@
         .dark-mode input::placeholder { color: #bbb !important; }
 
         .dark-mode .modal-content { background-color: #1e1e1e; color: white; border: 1px solid #444; }
-        .dark-mode .form-control { background-color: #2b2b2b !important; border-color: #444 !important; color: white !important; }
+        .dark-mode .form-control, .dark-mode .form-select { background-color: #2b2b2b !important; border-color: #444 !important; color: white !important; }
         .dark-mode .list-group-item { background-color: #2b2b2b; color: white; border-color: #444; }
 
-        /* จัดตำแหน่งปุ่มขวาบน */
-        .top-buttons { position: absolute; top: 15px; right: 15px; z-index: 1100; display: flex; gap: 10px; }
-        .btn-circle { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; }
+        /* จัดตำแหน่งปุ่มด้านบน */
+        .header-actions { position: absolute; top: 15px; right: 15px; z-index: 1100; display: flex; gap: 8px; }
+        .btn-round { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; }
+        #dark-mode-toggle { border-radius: 50px; padding: 5px 15px; position: static; }
 
         #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
         #main-dashboard { display: none; position: relative; }
@@ -34,39 +35,53 @@
         .clock-wrapper { display: flex; align-items: center; gap: 15px; font-size: 1.5rem; font-weight: 600; color: #0d6efd; letter-spacing: 0.5px; }
         .user-avatar { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; font-size: 0.85rem; }
 
-        /* หน้าจอโหลดแสกน */
-        #scan-overlay { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; color: white; border-radius: inherit; }
+        /* UI สำหรับการ Enroll แสกนนิ้ว */
+        #enroll-overlay { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; color: white; border-radius: 12px; }
     </style>
 </head>
 <body>
 
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-body text-center p-5">
+        <div class="mb-3"><i class="bi bi-person-check-fill text-primary" style="font-size: 4rem;"></i></div>
+        <h2 class="fw-bold mt-3 mb-2">ยินดีต้อนรับคุณ <span id="welcome-user-name" class="text-success">---</span></h2>
+        <p class="text-secondary">คุณได้เข้าสู่ Access Entry Door Lock Dashboard เรียบร้อยแล้ว!</p>
+        <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-pill mt-4 shadow-sm" data-bs-dismiss="modal">ตกลง</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="userListModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content overflow-hidden">
-      <div id="scan-overlay">
+      <div id="enroll-overlay">
           <div class="spinner-border text-primary mb-3"></div>
-          <h5 id="scan-status">กำลังรอการแสกน...</h5>
-          <p id="scan-info" class="small">กรุณาวางนิ้วหรือแตะบัตร</p>
+          <h5 id="enroll-status">กรุณาวางนิ้วบนเซนเซอร์...</h5>
+          <p id="enroll-step" class="small">ขั้นตอนที่ 1/2</p>
       </div>
+
       <div class="modal-header">
-        <h5 class="modal-title fw-bold"><i class="bi bi-people-fill me-2"></i>จัดการสมาชิก</h5>
+        <h5 class="modal-title fw-bold"><i class="bi bi-people-fill me-2"></i>จัดการสมาชิกและผู้ใช้งาน</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="enroll-section" class="card p-3 mb-4 bg-light bg-opacity-10 border shadow-sm">
+        <div id="enroll-form" class="card p-3 mb-4 bg-light bg-opacity-10 border shadow-sm">
             <h6 class="fw-bold mb-3">เพิ่มสมาชิกใหม่</h6>
             <div class="row g-2">
-                <div class="col-md-4"><input type="text" id="new-user-name" class="form-control" placeholder="ชื่อสมาชิก"></div>
+                <div class="col-md-4"><input type="text" id="new-user-name" class="form-control" placeholder="ชื่อเล่น/ชื่อจริง"></div>
                 <div class="col-md-4">
-                    <select id="new-user-type" class="form-select" onchange="updateBtnText()">
+                    <select id="new-user-type" class="form-select" onchange="toggleEnrollMode()">
                         <option value="Keypad">รหัสผ่าน (Keypad)</option>
                         <option value="Finger">ลายนิ้วมือ (Fingerprint)</option>
                         <option value="RFID">บัตร (RFID)</option>
                     </select>
                 </div>
-                <div class="col-md-4" id="pass-box"><input type="password" id="new-user-pass" class="form-control" placeholder="รหัสผ่าน"></div>
+                <div class="col-md-4" id="pass-input-div"><input type="password" id="new-user-pass" class="form-control" placeholder="รหัสผ่าน 6 หลัก"></div>
                 <div class="col-12 mt-2">
-                    <button id="enroll-btn" class="btn btn-success w-100 fw-bold" onclick="startEnroll()">บันทึกข้อมูล</button>
+                    <button id="enroll-btn" class="btn btn-success w-100 fw-bold" onclick="startEnroll()">บันทึกข้อมูลและลงทะเบียน</button>
                 </div>
             </div>
         </div>
@@ -79,11 +94,13 @@
                     <div id="spec-user-avatar" class="user-avatar me-3" style="width: 50px; height: 50px; font-size: 1.2rem;"></div>
                     <div>
                         <h4 class="fw-bold mb-0" id="spec-user-name">---</h4>
-                        <span id="spec-user-creds" class="small text-muted">รหัส/UID: ---</span>
+                        <span id="spec-user-status" class="badge mt-1">---</span>
+                        <div id="spec-user-info" class="small text-muted mt-1">รหัส/UID: ---</div>
                     </div>
                 </div>
-                <div class="small mt-2">
-                    <strong><i class="bi bi-clock-history me-1"></i> แสกนล่าสุด:</strong> <span id="spec-last-time">---</span>
+                <hr class="my-2 opacity-25">
+                <div class="small">
+                    <strong><i class="bi bi-clock-history me-1"></i> แสกนล่าสุด:</strong> <span id="spec-last-time">---</span> 
                 </div>
             </div>
             <div class="table-responsive">
@@ -101,6 +118,7 @@
 <div id="login-section">
     <div class="card p-4 shadow text-center" style="width: 350px;">
         <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2"></i>Login</h3>
+        <p class="small opacity-75 mb-4">Access Entry Door Lock Dashboard</p>
         <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
         <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
         <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold">เข้าสู่ระบบ</button>
@@ -109,26 +127,30 @@
 </div>
 
 <div id="main-dashboard">
-    <div class="top-buttons">
-        <button class="btn btn-primary btn-circle shadow-sm" data-bs-toggle="modal" data-bs-target="#userListModal">
+    <div class="header-actions">
+        <button class="btn btn-primary btn-round shadow-sm" data-bs-toggle="modal" data-bs-target="#userListModal">
             <i class="bi bi-person-plus-fill"></i>
         </button>
-        <button id="dark-mode-toggle" class="btn btn-light btn-circle shadow-sm border">
-            <i id="mode-icon" class="bi bi-sun-fill"></i>
+        <button id="dark-mode-toggle" class="btn btn-light shadow-sm border">
+            <i id="mode-icon" class="bi bi-sun-fill"></i> <span id="mode-text">โหมดสว่าง</span>
         </button>
     </div>
 
     <div class="container py-4">
         <header class="mb-4">
             <h1 class="h2 fw-bold text-primary mb-1">Access Entry Door Lock Dashboard</h1>
+            <p class="opacity-75 mb-3 small">IoT-Based Door Lock System with Real-time Monitoring</p>
             <div class="d-flex justify-content-between align-items-end border-top pt-3">
                 <div>
                     <div class="clock-wrapper">
                         <div id="live-clock"><i class="bi bi-clock-fill me-2"></i><span id="clock-display">--:--:--</span></div>
-                        <div id="live-date" class="ms-3 small text-secondary">---</div>
+                        <div id="live-date">---</div>
                     </div>
+                    <div class="small mt-1">ผู้ใช้งานปัจจุบัน: <span id="admin-name" class="fw-bold text-success">---</span></div>
                 </div>
-                <button id="logout-btn" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm">ออกจากระบบ</button>
+                <button id="logout-btn" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i> ออกจากระบบ
+                </button>
             </div>
         </header>
 
@@ -136,15 +158,25 @@
             <div class="col-md-6">
                 <div class="card p-4 h-100 border-bottom border-secondary border-3">
                     <h6 class="card-label">แสกนครั้งล่าสุด</h6>
-                    <h2 id="last-user-text" class="fw-bold my-2"><span id="last-user">---</span></h2>
-                    <div class="info-detail"><span id="last-time">---</span> <span id="last-status-badge" class="badge">---</span></div>
+                    <h2 id="last-user-text" class="fw-bold my-2">
+                        <i class="bi bi-calendar3 me-2"></i><span id="last-user">---</span>
+                    </h2>
+                    <div id="last-detail-box" class="info-detail mt-2">
+                        <span id="last-time">---</span>
+                        <span id="last-status-badge" class="badge ms-2">---</span>
+                        <div class="mt-1 small opacity-75">อุปกรณ์: <span id="last-device-type">---</span></div>
+                    </div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="card p-4 h-100 stat-card shadow-lg">
                     <h6 class="card-label text-white opacity-75">จำนวนคนในห้อง</h6>
                     <div class="d-flex align-items-center">
-                        <span id="people-count" class="display-5 fw-bold">0</span><span class="fs-4 ms-2">คน</span>
+                        <i class="bi bi-people-fill me-3" style="font-size: 2.5rem;"></i>
+                        <div>
+                            <span id="people-count" class="display-5 fw-bold">0</span>
+                            <span class="fs-4">คน</span>
+                        </div>
                     </div>
                     <div id="names-list" class="mt-2"></div>
                 </div>
@@ -154,7 +186,9 @@
         <div class="card p-4 shadow-sm history-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold m-0"><i class="bi bi-clock-history me-2"></i>ประวัติการเข้า-ออก</h5>
-                <button id="clear-btn" class="btn btn-sm btn-outline-danger px-3">ล้างประวัติ</button>
+                <div>
+                    <button id="clear-btn" class="btn btn-sm btn-outline-danger px-3">ล้างประวัติ</button>
+                </div>
             </div>
             <div class="table-responsive">
                 <table class="table align-middle text-center">
@@ -183,51 +217,83 @@
     let allLogs = [];
     let registeredUsers = {};
 
-    // --- ฟังก์ชัน Enroll ---
-    window.updateBtnText = () => {
+    // --- ระบบ Enroll ---
+    window.toggleEnrollMode = () => {
         const type = document.getElementById('new-user-type').value;
-        const btn = document.getElementById('enroll-btn');
-        const passBox = document.getElementById('pass-box');
-        if(type === 'Finger') { btn.innerText = "เริ่มการแสกนลายนิ้วมือ"; passBox.style.display = 'none'; }
-        else if(type === 'RFID') { btn.innerText = "เริ่มการแสกนบัตร"; passBox.style.display = 'none'; }
-        else { btn.innerText = "บันทึกข้อมูล"; passBox.style.display = 'block'; }
+        document.getElementById('pass-input-div').style.display = (type === 'Keypad') ? 'block' : 'none';
+        document.getElementById('enroll-btn').innerText = (type === 'Keypad') ? 'บันทึกข้อมูล' : 'เริ่มขั้นตอนการแสกน';
     };
 
     window.startEnroll = async () => {
         const name = document.getElementById('new-user-name').value;
         const type = document.getElementById('new-user-type').value;
         const pass = document.getElementById('new-user-pass').value;
-        if(!name) return alert("ใส่ชื่อด้วย");
+        if(!name) return alert("กรุณาใส่ชื่อสมาชิก");
 
         if(type === 'Keypad') {
             await set(ref(db, `users/${name}`), { name, type, info: pass });
-            alert("เพิ่มสำเร็จ");
+            alert("บันทึกสมาชิกเรียบร้อย");
         } else {
-            const overlay = document.getElementById('scan-overlay');
-            const status = document.getElementById('scan-status');
+            const overlay = document.getElementById('enroll-overlay');
+            const status = document.getElementById('enroll-status');
             overlay.style.display = 'flex';
-            status.innerText = "กำลังรอการแสกน (ครั้งที่ 1)...";
+            status.innerText = "กำลังส่งคำสั่งไปที่เครื่อง...";
             
-            await set(ref(db, 'system/enroll'), { name, type, step: 1 });
-            onValue(ref(db, 'system/enroll/step'), (snap) => {
-                if(snap.val() == 2) status.innerText = "แสกนสำเร็จรอบที่ 1! รอแสกนรอบที่ 2...";
-                if(snap.val() == 0) {
+            await set(ref(db, 'system/enroll_cmd'), { name, type, step: 1, status: 'pending' });
+            
+            // ตรวจสอบการอัปเดตจาก Firebase (จำลอง/บอร์ดส่งกลับมา)
+            const cmdRef = ref(db, 'system/enroll_cmd');
+            onValue(cmdRef, (snap) => {
+                const data = snap.val();
+                if(!data) return;
+                if(data.status === 'step2') {
+                    status.innerText = "แสกนครั้งที่ 1 สำเร็จ! กรุณาวางนิ้วอีกครั้ง...";
+                    document.getElementById('enroll-step').innerText = "ขั้นตอนที่ 2/2";
+                } else if(data.status === 'success') {
                     overlay.style.display = 'none';
-                    alert(`แสกนสำเร็จ! คุณ ${name} ถูกเพิ่มแล้ว`);
+                    alert("ลงทะเบียนสำเร็จ!");
+                    remove(cmdRef);
                 }
             });
         }
     };
 
-    // --- ระบบ Dark Mode ---
-    const enableDark = () => { document.body.classList.add('dark-mode'); document.getElementById('mode-icon').className="bi bi-sun-fill"; };
-    const disableDark = () => { document.body.classList.remove('dark-mode'); document.getElementById('mode-icon').className="bi bi-moon-fill"; };
-    document.getElementById('dark-mode-toggle').onclick = () => document.body.classList.contains('dark-mode') ? disableDark() : enableDark();
+    // --- Dark Mode เดิม ---
+    const enableDarkMode = () => { 
+        document.body.classList.add('dark-mode'); 
+        document.getElementById('mode-icon').className = "bi bi-sun-fill"; 
+        document.getElementById('mode-text').innerText = "โหมดสว่าง"; 
+    };
+    const disableDarkMode = () => { 
+        document.body.classList.remove('dark-mode'); 
+        document.getElementById('mode-icon').className = "bi bi-moon-fill"; 
+        document.getElementById('mode-text').innerText = "โหมดมืด"; 
+    };
+
+    document.getElementById('dark-mode-toggle').onclick = () => {
+        document.body.classList.contains('dark-mode') ? disableDarkMode() : enableDarkMode();
+    };
+
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH');
+    }
+    setInterval(updateClock, 1000);
+
+    document.getElementById('login-btn').onclick = () => {
+        signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
+        .catch(() => document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+    };
+
+    document.getElementById('logout-btn').onclick = () => { signOut(auth); };
 
     onAuthStateChanged(auth, (user) => {
         if (user) { 
+            const userName = user.email.split('@')[0];
             document.getElementById('login-section').style.display = 'none'; 
             document.getElementById('main-dashboard').style.display = 'block'; 
+            document.getElementById('admin-name').innerText = userName; 
             runApp(); 
         } else { 
             document.getElementById('login-section').style.display = 'flex'; 
@@ -235,18 +301,15 @@
         }
     });
 
-    document.getElementById('login-btn').onclick = () => {
-        signInWithEmailAndPassword(auth, document.getElementById('username').value + "@insight.com", document.getElementById('password').value)
-        .catch(() => document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
-    };
-    document.getElementById('logout-btn').onclick = () => signOut(auth);
-
     function getColorFromName(name) {
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3'];
-        return colors[name.length % colors.length];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        return colors[Math.abs(hash) % colors.length];
     }
 
     function runApp() {
+        // ดึงข้อมูล User ที่ลงทะเบียนไว้
         onValue(ref(db, 'users'), (snap) => {
             registeredUsers = snap.val() || {};
             updateUserModalList(Object.keys(registeredUsers));
@@ -263,14 +326,16 @@
                 const badgeClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
                 tableBody.insertAdjacentHTML('afterbegin', `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td></tr>`);
                 document.getElementById('last-user').innerText = d.name;
-                document.getElementById('last-time').innerText = d.date + " " + d.timestamp;
+                document.getElementById('last-time').innerText = d.date + " | " + d.timestamp;
+                document.getElementById('last-device-type').innerText = d.type;
                 const statusBadge = document.getElementById('last-status-badge');
-                statusBadge.innerText = d.status; statusBadge.className = `badge ms-2 ${badgeClass}`;
+                statusBadge.innerText = d.status;
+                statusBadge.className = `badge ms-2 ${badgeClass}`;
                 if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } 
                 else { peopleIn = peopleIn.filter(p => p !== d.name); }
             });
             document.getElementById('people-count').innerText = peopleIn.length;
-            document.getElementById('names-list').innerHTML = peopleIn.map(n => `<span class="badge bg-white text-primary border me-1">${n}</span>`).join('');
+            document.getElementById('names-list').innerHTML = `<div class="d-flex flex-wrap gap-2 mt-2">${peopleIn.map(name => `<div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill pe-3" style="border: 1px solid rgba(255,255,255,0.25);"><div class="user-avatar me-2" style="background: ${getColorFromName(name)};">${name.charAt(0).toUpperCase()}</div><span class="user-list-item">${name}</span></div>`).join('')}</div>`;
         });
     }
 
@@ -280,33 +345,33 @@
     }
 
     window.showUserDetail = (name) => {
-        const u = registeredUsers[name];
+        const userData = registeredUsers[name] || {};
         document.getElementById('user-selection-list').style.display = 'none';
-        document.getElementById('enroll-section').style.display = 'none';
+        document.getElementById('enroll-form').style.display = 'none';
         document.getElementById('user-specific-detail').style.display = 'block';
         document.getElementById('spec-user-name').innerText = name;
-        document.getElementById('spec-user-creds').innerText = `รหัส/UID: ${u.info || 'ลงทะเบียนผ่านเครื่อง'}`;
         document.getElementById('spec-user-avatar').innerText = name.charAt(0).toUpperCase();
         document.getElementById('spec-user-avatar').style.background = getColorFromName(name);
+        document.getElementById('spec-user-info').innerText = `รหัส/UID: ${userData.info || 'แสกนผ่านอุปกรณ์'}`;
         
-        const userLogs = allLogs.filter(l => l.name === name).reverse();
-        document.getElementById('spec-last-time').innerText = userLogs[0] ? userLogs[0].timestamp : "ไม่มีประวัติ";
-        document.getElementById('user-history-body').innerHTML = userLogs.map(l => `<tr><td>${l.date}</td><td>${l.timestamp}</td><td>${l.type}</td><td><span class="badge ${l.status==='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>`).join('');
+        const userLogs = allLogs.filter(l => l.name === name);
+        const lastLog = userLogs[userLogs.length - 1] || { status: 'Unknown', timestamp: 'N/A', date: '' };
+        const sBadge = document.getElementById('spec-user-status');
+        sBadge.innerText = lastLog.status;
+        sBadge.className = `badge ${lastLog.status === 'In' ? 'bg-success' : 'bg-danger'}`;
+        document.getElementById('spec-last-time').innerText = `${lastLog.date} ${lastLog.timestamp}`;
+        
+        const hBody = document.getElementById('user-history-body');
+        hBody.innerHTML = userLogs.slice().reverse().map(l => `<tr><td>${l.date}</td><td>${l.timestamp}</td><td><small>${l.type}</small></td><td><span class="badge ${l.status==='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>`).join('');
     };
 
     window.backToUserList = () => {
         document.getElementById('user-selection-list').style.display = 'block';
-        document.getElementById('enroll-section').style.display = 'block';
+        document.getElementById('enroll-form').style.display = 'block';
         document.getElementById('user-specific-detail').style.display = 'none';
     };
 
-    setInterval(() => {
-        const now = new Date();
-        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH');
-        document.getElementById('live-date').innerText = now.toLocaleDateString('th-TH');
-    }, 1000);
-
-    document.getElementById('clear-btn').onclick = () => { if(confirm("ล้างประวัติ?")) remove(ref(db, 'access_logs')); };
+    document.getElementById('clear-btn').onclick = () => { if(confirm("คุณต้องการล้างประวัติทั้งหมดหรือไม่?")) remove(ref(db, 'access_logs')).then(() => location.reload()); };
 </script>
 </body>
 </html>
