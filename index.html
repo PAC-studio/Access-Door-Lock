@@ -11,7 +11,7 @@
     <style>
         :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --border-color: #dee2e6; --accent: #0d6efd; }
         
-        /* Strict Dark Mode: No White Background, No Dark Text */
+        /* Strict Dark Mode: No White/Black/Grey Backgrounds */
         body.dark-mode { 
             --bg-color: #0f172a; 
             --card-bg: #1e293b; 
@@ -21,9 +21,9 @@
 
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; overflow-x: hidden; }
         
-        /* Sidebar Styles */
-        #sidebar { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: var(--card-bg); z-index: 1050; transition: 0.3s; border-right: 1px solid var(--border-color); padding: 20px; }
-        #sidebar.active { left: 0; }
+        /* Sidebar Styles - ย้ายไปฝั่งขวา */
+        #sidebar { position: fixed; right: -280px; top: 0; width: 280px; height: 100%; background: var(--card-bg); z-index: 1050; transition: 0.3s; border-left: 1px solid var(--border-color); padding: 20px; }
+        #sidebar.active { right: 0; }
         .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1040; }
         .sidebar-overlay.active { display: block; }
         
@@ -32,23 +32,25 @@
 
         /* Dark Mode Elements */
         .dark-mode .table { color: #f1f5f9 !important; background-color: #1e293b !important; border-color: #334155 !important; }
-        .dark-mode .table thead th { background-color: #334155 !important; color: #60a5fa !important; border-bottom: 2px solid #475569 !important; }
+        .dark-mode .table thead th { background-color: #334155 !important; color: #60a5fa !important; }
         .dark-mode .table tbody td { background-color: #1e293b !important; color: #f1f5f9 !important; border-bottom: 1px solid #334155 !important; }
         .dark-mode .modal-content { background-color: #1e293b; color: #f1f5f9; border: 1px solid #334155; }
         .dark-mode .form-control { background-color: #334155 !important; border-color: #475569 !important; color: #ffffff !important; }
-        .dark-mode .form-control::placeholder { color: #94a3b8 !important; }
         
-        #hamburger-btn { position: absolute; top: 15px; left: 15px; font-size: 1.5rem; cursor: pointer; z-index: 1100; color: var(--text-main); }
+        /* UI Elements */
+        #dark-mode-toggle { position: absolute; top: 15px; left: 15px; z-index: 1100; border-radius: 50px; padding: 5px 15px; }
+        #hamburger-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; z-index: 1100; color: var(--text-main); }
         #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
         #main-dashboard { display: none; position: relative; }
         
         .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-main); }
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
         
-        /* Profile circular */
-        .profile-main-img { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; background-size: cover; background-position: center; border: 3px solid var(--accent); }
-        .user-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background-size: cover; background-position: center; }
-        
+        /* Profile UI */
+        .profile-main-img { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; background-size: cover; background-position: center; border: 3px solid var(--accent); }
+        .online-dot { width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px #22c55e; }
+        .user-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background-size: cover; border: 2px solid var(--accent); }
+
         #global-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: #60a5fa; }
     </style>
 </head>
@@ -64,13 +66,14 @@
 <div id="sidebar">
     <div class="text-center mb-4 border-bottom pb-3">
         <div id="menu-avatar" class="profile-main-img shadow-sm">?</div>
-        <button class="btn btn-sm btn-link text-decoration-none fw-bold" onclick="showModal('profileModal')">แก้ไขโปรไฟล์</button>
-        <div class="mt-2">
-            <h6 class="fw-bold mb-0" id="menu-user-name">PACadmin001</h6>
-            <small class="opacity-75">PAC Admin System</small>
+        <button class="btn btn-sm btn-link text-decoration-none fw-bold p-0 mb-2" onclick="showModal('profileModal')">แก้ไขโปรไฟล์</button>
+        <div class="mt-1">
+            <h6 class="fw-bold mb-0"><span class="online-dot"></span><span id="menu-user-name">User</span></h6>
+            <small class="opacity-75" id="menu-user-role">PAC Admin System</small>
         </div>
     </div>
     
+    <div class="menu-item" onclick="showModal('profileModal')"><i class="bi bi-person-circle"></i> โปรไฟล์และการล็อกอิน</div>
     <div class="menu-item" onclick="showModal('hwModal')"><i class="bi bi-cpu"></i> แก้ไขรหัสผ่านอุปกรณ์</div>
     <div class="menu-item" onclick="showModal('userListModal')"><i class="bi bi-people"></i> ข้อมูลผู้ใช้ทั้งหมด</div>
     <div class="menu-item" onclick="showModal('settingsModal')"><i class="bi bi-sliders"></i> การตั้งค่า dashboard</div>
@@ -82,17 +85,73 @@
 <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขโปรไฟล์</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header"><h5 class="modal-title fw-bold">โปรไฟล์และการล็อกอิน</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body text-center">
         <div id="p-preview" class="profile-main-img mx-auto mb-3"></div>
         <input type="file" id="p-upload" hidden accept="image/*">
         <button class="btn btn-sm btn-outline-primary mb-4" onclick="document.getElementById('p-upload').click()">เปลี่ยนรูปโปรไฟล์</button>
         <div class="text-start">
-            <label class="small fw-bold mb-1">ชื่อผู้ใช้ (Login)</label>
+            <label class="small fw-bold mb-1">ชื่อผู้ใช้</label>
             <input type="text" id="p-username" class="form-control mb-3" readonly>
             <label class="small fw-bold mb-1">รหัสผ่านใหม่</label>
-            <input type="password" id="p-new-password" class="form-control mb-3" placeholder="กรอกรหัสใหม่">
-            <button class="btn btn-primary w-100 fw-bold py-2" onclick="updateUserAuth()">บันทึกการแก้ไข</button>
+            <input type="password" id="p-new-password" class="form-control mb-3" placeholder="กรอกรหัสใหม่เพื่อเปลี่ยน">
+            <button class="btn btn-primary w-100 fw-bold py-2" onclick="updateUserAuth()">บันทึกข้อมูลและแก้ไขรหัสผ่าน</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="hwModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขรหัสสำหรับใช้เป็นรหัสผ่านเข้า-ออก</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-4 p-3 border rounded">
+            <h6 class="fw-bold text-primary mb-3">Keypad</h6>
+            <div class="input-group">
+                <input type="text" id="hw-keypad" class="form-control" maxlength="6" value="000000">
+                <button class="btn btn-primary" onclick="saveKeypad()">บันทึกรหัส Keypad</button>
+            </div>
+        </div>
+        <div class="mb-4 p-3 border rounded">
+            <h6 class="fw-bold text-success mb-3">Fingerprint Module</h6>
+            <div class="row g-2">
+                <div class="col-8"><input type="text" id="hw-finger-id" class="form-control" placeholder="ระบุ ID เช่น 01"></div>
+                <div class="col-4"><button class="btn btn-success w-100" onclick="checkFingerID()">ลงทะเบียนใหม่</button></div>
+            </div>
+            <div id="finger-step-2" class="mt-3 text-center" style="display:none;">
+                <p class="text-warning small mb-2">มีไอดีนี้ในระบบแล้วจะแก้ไขลายนิ้วมือหรือไม่?</p>
+                <button class="btn btn-outline-success btn-sm" onclick="startFingerScan()">เริ่มการแสกน</button>
+            </div>
+        </div>
+        <div class="p-3 border rounded">
+            <h6 class="fw-bold text-info mb-3">RFID module</h6>
+            <div id="rfid-container"><button class="btn btn-info w-100 text-white fw-bold" onclick="startRFIDScan()">เริ่มการแสกน</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="userListModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title fw-bold">ข้อมูลผู้ใช้ทั้งหมด</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div id="full-user-list" class="list-group list-group-flush mb-4"></div>
+        <div id="personal-history" style="display:none;">
+            <button class="btn btn-sm btn-secondary mb-3" onclick="showFullList()"><i class="bi bi-arrow-left"></i> กลับไปรายชื่อ</button>
+            <div class="card p-3 mb-3 bg-primary bg-opacity-10 border-0">
+                <h5 class="fw-bold mb-0" id="hist-name">---</h5>
+                <small id="hist-role" class="text-primary fw-bold">Visitor</small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm text-center">
+                    <thead><tr><th>วันที่</th><th>เวลา</th><th>อุปกรณ์</th><th>สถานะ</th></tr></thead>
+                    <tbody id="hist-table-body"></tbody>
+                </table>
+            </div>
         </div>
       </div>
     </div>
@@ -104,83 +163,15 @@
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title fw-bold">การตั้งค่า dashboard</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <label class="small fw-bold mb-2">โหมดการแสดงผล</label>
-        <button id="dark-mode-toggle" class="btn btn-outline-primary w-100 mb-4 py-2 fw-bold">
-            <i id="mode-icon" class="bi bi-sun-fill"></i> <span id="mode-text">สลับเป็นโหมดมืด</span>
-        </button>
-
         <label class="small fw-bold mb-2">เปลี่ยนภาษา</label>
-        <select class="form-control mb-4" id="lang-select">
-            <option value="th">ภาษาไทย</option>
-            <option value="en">English</option>
-        </select>
-        
-        <label class="small fw-bold mb-2">ระบบเปลี่ยนโหมดอัตโนมัติ (06:00-18:00)</label>
+        <select class="form-control mb-4" id="lang-select"><option value="th">ภาษาไทย</option><option value="en">English</option></select>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="auto-theme-switch" checked>
-            <label class="form-check-label">ตั้งค่าตามเวลาอัตโนมัติ</label>
+            <label class="form-check-label">ระบบเปลี่ยนโหมดอัตโนมัติ (06:00-18:00)</label>
         </div>
       </div>
     </div>
   </div>
-</div>
-
-<div class="modal fade" id="hwModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขรหัสสำหรับใช้เป็นรหัสผ่านเข้า-ออก</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-          <div class="mb-4 p-3 border rounded">
-              <h6 class="fw-bold text-primary mb-3">Keypad</h6>
-              <div class="input-group">
-                  <input type="text" id="hw-keypad" class="form-control" maxlength="6" value="000000">
-                  <button class="btn btn-primary" onclick="saveKeypad()">บันทึกรหัส 6 หลัก</button>
-              </div>
-          </div>
-          <div class="mb-4 p-3 border rounded">
-              <h6 class="fw-bold text-success mb-3">Fingerprint Module</h6>
-              <div class="row g-2">
-                  <div class="col-8"><input type="text" id="hw-finger-id" class="form-control" placeholder="ID เช่น ID 01"></div>
-                  <div class="col-4"><button class="btn btn-success w-100" onclick="checkFingerID()">ลงทะเบียนใหม่</button></div>
-              </div>
-              <div id="finger-step-2" class="mt-3 text-center" style="display:none;">
-                  <p class="text-warning small mb-2">มีไอดีนี้ในระบบแล้ว ต้องการเขียนทับหรือไม่?</p>
-                  <button class="btn btn-outline-success btn-sm px-4" onclick="startFingerScan()">เริ่มการแสกน</button>
-              </div>
-          </div>
-          <div class="p-3 border rounded">
-              <h6 class="fw-bold text-info mb-3">RFID module</h6>
-              <div id="rfid-container">
-                  <button class="btn btn-info w-100 text-white fw-bold" onclick="startRFIDScan()">เริ่มการแสกน</button>
-              </div>
-          </div>
-        </div>
-      </div>
-    </div>
-</div>
-
-<div class="modal fade" id="userListModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title fw-bold">ข้อมูลผู้ใช้</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-          <div id="full-user-list" class="list-group list-group-flush mb-4"></div>
-          <div id="personal-history" style="display:none;">
-              <button class="btn btn-sm btn-secondary mb-3" onclick="showFullList()"><i class="bi bi-arrow-left"></i> กลับไปรายชื่อ</button>
-              <div class="card p-3 mb-3 bg-primary bg-opacity-10 border-0">
-                  <h5 class="fw-bold mb-0" id="hist-name">---</h5>
-                  <p class="small mb-0" id="hist-last-scan">แสกนล่าสุด: ---</p>
-              </div>
-              <div class="table-responsive">
-                  <table class="table table-sm text-center">
-                      <thead><tr><th>วันที่</th><th>เวลา</th><th>อุปกรณ์</th><th>สถานะ</th></tr></thead>
-                      <tbody id="hist-table-body"></tbody>
-                  </table>
-              </div>
-          </div>
-        </div>
-      </div>
-    </div>
 </div>
 
 <div id="login-section">
@@ -197,6 +188,9 @@
 
 <div id="main-dashboard">
     <div id="hamburger-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></div>
+    <button id="dark-mode-toggle" class="btn btn-light shadow-sm border">
+        <i id="mode-icon" class="bi bi-sun-fill"></i> <span id="mode-text">โหมดสว่าง</span>
+    </button>
     
     <div class="container py-4">
         <header class="mb-4">
@@ -217,7 +211,7 @@
         <div class="row g-4 mb-4">
             <div class="col-md-6">
                 <div class="card p-4 h-100 border-bottom border-secondary border-3">
-                    <h6 class="card-label small fw-bold text-secondary text-uppercase">แสกนครั้งล่าสุด</h6>
+                    <h6 class="card-label small fw-bold text-secondary">แสกนครั้งล่าสุด</h6>
                     <h2 id="last-user-text" class="fw-bold my-2"><span id="last-user">---</span></h2>
                     <div id="last-detail-box" class="mt-2">
                         <span id="last-time" class="small">---</span>
@@ -228,7 +222,7 @@
             </div>
             <div class="col-md-6">
                 <div class="card p-4 h-100 stat-card shadow-lg">
-                    <h6 class="text-white opacity-75 fw-bold small text-uppercase">จำนวนคนในห้อง</h6>
+                    <h6 class="text-white opacity-75 fw-bold small">จำนวนคนในห้อง</h6>
                     <div class="d-flex align-items-center">
                         <i class="bi bi-people-fill me-3" style="font-size: 2.5rem;"></i>
                         <div><span id="people-count" class="display-5 fw-bold">0</span> <span class="fs-4">คน</span></div>
@@ -270,16 +264,23 @@
     let allLogs = [];
     let userProfiles = {};
 
-    // --- Theme Logic ---
+    // --- Role Logic ---
+    const getRoleByUsername = (name) => {
+        if(name === "Nonthaphat") return "Developer";
+        if(name === "Phirnath" || name === "Natrada") return "Admin";
+        return "Visitor";
+    };
+
+    // --- Strict Dark Mode ---
     function applyTheme(isDark) {
         if (isDark) {
             document.body.classList.add('dark-mode');
             document.getElementById('mode-icon').className = "bi bi-sun-fill";
-            document.getElementById('mode-text').innerText = "สลับเป็นโหมดสว่าง";
+            document.getElementById('mode-text').innerText = "โหมดสว่าง";
         } else {
             document.body.classList.remove('dark-mode');
             document.getElementById('mode-icon').className = "bi bi-moon-fill";
-            document.getElementById('mode-text').innerText = "สลับเป็นโหมดมืด";
+            document.getElementById('mode-text').innerText = "โหมดมืด";
         }
     }
 
@@ -295,6 +296,7 @@
         applyTheme(!document.body.classList.contains('dark-mode'));
     };
 
+    // --- Sidebar Right Logic ---
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
         document.querySelector('.sidebar-overlay').classList.toggle('active');
@@ -305,27 +307,25 @@
         new bootstrap.Modal(document.getElementById(id)).show();
     };
 
-    // --- Auth Logic ---
+    // --- Auth & Users ---
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
         signInWithEmailAndPassword(auth, u + "@insight.com", p)
-        .catch(() => document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+        .catch(() => document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านผิด");
     };
 
     window.showRegister = () => {
-        const u = prompt("สมัครสมาชิก - ระบุชื่อผู้ใช้:");
-        const p = prompt("สมัครสมาชิก - ระบุรหัสผ่าน (6 ตัวขึ้นไป):");
+        const u = prompt("สมัครบัญชีใหม่ - ชื่อผู้ใช้:");
+        const p = prompt("สมัครบัญชีใหม่ - รหัสผ่าน:");
         if(u && p) {
             createUserWithEmailAndPassword(auth, u + "@insight.com", p).then((cred) => {
-                set(ref(db, 'users/' + u), { username: u, photo: "" });
-                alert("สมัครบัญชีเรียบร้อย!");
+                const role = getRoleByUsername(u);
+                set(ref(db, 'users/' + u), { username: u, photo: "", role: role });
+                alert("สมัครสำเร็จ! สิทธิ์ของคุณคือ: " + role);
             }).catch(e => alert(e.message));
         }
     };
-
-    document.getElementById('logout-btn').onclick = () => signOut(auth);
-    document.getElementById('logout-btn-side').onclick = () => signOut(auth);
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -334,6 +334,9 @@
             document.getElementById('main-dashboard').style.display = 'block';
             document.getElementById('admin-name').innerText = uName;
             document.getElementById('p-username').value = uName;
+            document.getElementById('menu-user-name').innerText = uName;
+            document.getElementById('menu-user-role').innerText = getRoleByUsername(uName);
+            
             onValue(ref(db, 'users'), (snap) => {
                 userProfiles = snap.val() || {};
                 updateSidebarProfile(uName);
@@ -350,62 +353,64 @@
         const menuAvatar = document.getElementById('menu-avatar');
         const pPreview = document.getElementById('p-preview');
         if(data && data.photo) {
-            [menuAvatar, pPreview].forEach(el => {
-                el.style.backgroundImage = `url(${data.photo})`;
-                el.innerText = "";
-            });
+            [menuAvatar, pPreview].forEach(el => { el.style.backgroundImage = `url(${data.photo})`; el.innerText = ""; });
         } else {
             const color = getColorFromName(uName);
-            [menuAvatar, pPreview].forEach(el => {
-                el.style.backgroundColor = color;
-                el.innerText = uName.charAt(0).toUpperCase();
-                el.style.backgroundImage = "none";
-            });
+            [menuAvatar, pPreview].forEach(el => { el.style.backgroundColor = color; el.innerText = uName.charAt(0).toUpperCase(); el.style.backgroundImage = "none"; });
         }
     }
 
-    window.updateUserAuth = () => {
-        const newPass = document.getElementById('p-new-password').value;
-        if(newPass && newPass.length >= 6) {
-            updatePassword(auth.currentUser, newPass).then(() => {
-                alert("เปลี่ยนรหัสผ่านสำเร็จ! กรุณาล็อกอินด้วยรหัสใหม่");
-                signOut(auth);
-            }).catch(e => alert(e.message));
-        } else if(newPass) { alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"); }
+    // --- Logic รายชื่อผู้ใช้ ---
+    function updateFullUserList() {
+        const list = document.getElementById('full-user-list');
+        list.innerHTML = "";
+        Object.keys(userProfiles).forEach(uName => {
+            const role = getRoleByUsername(uName);
+            list.insertAdjacentHTML('beforeend', `
+                <button class="list-group-item list-group-item-action d-flex align-items-center py-3" onclick="showPersonalHistory('${uName}')">
+                    <div class="user-avatar me-3" style="background:${getColorFromName(uName)}">${uName.charAt(0).toUpperCase()}</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">${uName}</div>
+                        <small class="text-primary">${role}</small>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto"></i>
+                </button>
+            `);
+        });
+    }
+
+    window.showPersonalHistory = (name) => {
+        document.getElementById('full-user-list').style.display = 'none';
+        document.getElementById('personal-history').style.display = 'block';
+        document.getElementById('hist-name').innerText = name;
+        document.getElementById('hist-role').innerText = getRoleByUsername(name);
+        const logs = allLogs.filter(l => l.name === name).reverse();
+        document.getElementById('hist-table-body').innerHTML = logs.map(l => `
+            <tr><td>${l.date}</td><td>${l.timestamp}</td><td>${l.type}</td><td><span class="badge ${l.status=='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>
+        `).join('');
     };
 
-    // --- Hardware Control Logic ---
+    window.showFullList = () => {
+        document.getElementById('full-user-list').style.display = 'block';
+        document.getElementById('personal-history').style.display = 'none';
+    };
+
+    // --- Hardware Controls ---
     window.saveKeypad = () => {
         const code = document.getElementById('hw-keypad').value;
-        if(code.length === 6) {
-            set(ref(db, 'settings/keypad'), code).then(() => alert("บันทึกรหัสเรียบร้อย"));
-        } else { alert("รหัสต้องครบ 6 หลัก"); }
+        if(code.length === 6) set(ref(db, 'settings/keypad'), code).then(() => alert("บันทึกเรียบร้อย"));
+        else alert("6 หลักเท่านั้น");
     };
 
-    window.checkFingerID = () => {
-        const id = document.getElementById('hw-finger-id').value;
-        if(!id) return alert("ระบุ ID");
-        document.getElementById('finger-step-2').style.display = 'block';
-    };
-
+    window.checkFingerID = () => { document.getElementById('finger-step-2').style.display = 'block'; };
     window.startFingerScan = () => {
         const id = document.getElementById('hw-finger-id').value;
-        showLoader("กรุณาวางนิ้วบนเซ็นเซอร์ (ครั้งที่ 1)...");
+        showLoader("กรุณาวางลายนิ้วมือ...");
         set(ref(db, 'board_cmd'), { action: "enroll", id: id, step: 1, status: "wait" });
-        
         onValue(ref(db, 'board_cmd'), (snap) => {
             const val = snap.val();
-            if(!val) return;
-            if(val.status === "place_again") {
-                document.getElementById('loader-status-text').innerText = "กรุณาวางนิ้วเดิมอีกครั้ง...";
-            } else if(val.status === "success") {
-                hideLoader(); alert("ลงทะเบียนลายนิ้วมือสำเร็จ");
-                set(ref(db, 'board_cmd'), null);
-                document.getElementById('finger-step-2').style.display = 'none';
-            } else if(val.status === "fail") {
-                hideLoader(); alert("ไม่ตรงกัน กรุณาเริ่มใหม่หมด");
-                set(ref(db, 'board_cmd'), null);
-            }
+            if(val?.status === "place_again") document.getElementById('loader-status-text').innerText = "วางอีกครั้ง...";
+            if(val?.status === "success") { hideLoader(); alert("สำเร็จ!"); set(ref(db, 'board_cmd'), null); }
         });
     };
 
@@ -413,29 +418,17 @@
         showLoader("กำลังรอแสกนบัตร...");
         set(ref(db, 'board_cmd'), { action: "scan_rfid", status: "wait" });
         onValue(ref(db, 'board_cmd'), (snap) => {
-            const val = snap.val();
-            if(val?.status === "done") {
+            if(snap.val()?.status === "done") {
                 hideLoader();
-                document.getElementById('rfid-container').innerHTML = `
-                    <div class="alert alert-info text-dark fw-bold mb-2">โค้ดที่แสกนได้: ${val.code}</div>
-                    <button class="btn btn-warning w-100 fw-bold" onclick="startRFIDScan()">แก้ไข RFID code</button>
-                `;
+                document.getElementById('rfid-container').innerHTML = `<div class="alert alert-info py-2 small">ID: ${snap.val().code}</div><button class="btn btn-warning w-100 fw-bold" onclick="startRFIDScan()">แก้ไข RFID Code</button>`;
                 set(ref(db, 'board_cmd'), null);
             }
         });
     };
 
-    // --- Core Logic ---
+    // --- Core Dashboard ---
     function runApp() {
-        const userList = document.getElementById('full-user-list');
-        userList.innerHTML = Object.keys(userProfiles).map(uName => `
-            <button class="list-group-item list-group-item-action d-flex align-items-center py-3" onclick="showPersonalHistory('${uName}')">
-                <div class="user-avatar me-3" style="background:${getColorFromName(uName)}">${uName.charAt(0).toUpperCase()}</div>
-                <span class="fw-bold text-main">${uName}</span>
-                <i class="bi bi-chevron-right ms-auto"></i>
-            </button>
-        `).join('');
-
+        updateFullUserList();
         onValue(ref(db, 'access_logs'), (snap) => {
             allLogs = [];
             const tbody = document.getElementById('table-body');
@@ -445,66 +438,44 @@
                 const d = c.val(); allLogs.push(d);
                 const bClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
                 tbody.insertAdjacentHTML('afterbegin', `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${d.name}</td><td><small>${d.type}</small></td><td><span class="badge ${bClass}">${d.status}</span></td></tr>`);
-                
-                document.getElementById('last-user').innerText = d.name;
-                document.getElementById('last-time').innerText = d.date + " | " + d.timestamp;
-                document.getElementById('last-device-type').innerText = d.type;
-                const lb = document.getElementById('last-status-badge');
-                lb.innerText = d.status; lb.className = `badge ms-2 ${bClass}`;
-
-                if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); }
-                else { peopleIn = peopleIn.filter(p => p !== d.name); }
+                if(d.status == "In") { if(!peopleIn.includes(d.name)) peopleIn.push(d.name); } else { peopleIn = peopleIn.filter(p => p !== d.name); }
             });
             document.getElementById('people-count').innerText = peopleIn.length;
             document.getElementById('names-list').innerHTML = peopleIn.map(n => {
                 const p = userProfiles[n];
-                const st = (p && p.photo) ? `background-image:url(${p.photo});` : `background-color:${getColorFromName(n)};`;
-                const ch = (p && p.photo) ? "" : n.charAt(0).toUpperCase();
-                return `<div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill pe-3 border" style="padding:2px;">
-                    <div class="user-avatar me-2" style="${st} border:none; width:28px; height:28px; font-size:0.7rem;">${ch}</div>
-                    <span class="small fw-bold">${n}</span>
-                </div>`;
+                const bg = p?.photo ? `background-image:url(${p.photo})` : `background-color:${getColorFromName(n)}`;
+                return `<div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill pe-3 border" style="padding:2px;"><div class="user-avatar me-2" style="${bg}; width:30px; height:30px; font-size:0.7rem; border:none;">${p?.photo?'':n[0]}</div><span class="small fw-bold">${n}</span></div>`;
             }).join('');
         });
     }
 
-    window.showPersonalHistory = (name) => {
-        document.getElementById('full-user-list').style.display = 'none';
-        document.getElementById('personal-history').style.display = 'block';
-        document.getElementById('hist-name').innerText = name;
-        const logs = allLogs.filter(l => l.name === name).reverse();
-        document.getElementById('hist-last-scan').innerText = logs.length > 0 ? `แสกนล่าสุด: ${logs[0].date} ${logs[0].timestamp}` : "ไม่มีประวัติ";
-        document.getElementById('hist-table-body').innerHTML = logs.map(l => `<tr><td>${l.date}</td><td>${l.timestamp}</td><td>${l.type}</td><td><span class="badge ${l.status=='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>`).join('');
-    };
-
-    window.showFullList = () => {
-        document.getElementById('full-user-list').style.display = 'block';
-        document.getElementById('personal-history').style.display = 'none';
-    };
-
-    function getColorFromName(n) {
+    function getColorFromName(name) {
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800'];
-        let h = 0; for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
-        return colors[Math.abs(h) % colors.length];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        return colors[Math.abs(hash) % colors.length];
     }
 
-    function showLoader(t) { document.getElementById('loader-status-text').innerText = t; document.getElementById('global-loader').style.display = 'flex'; }
+    function showLoader(txt) { document.getElementById('loader-status-text').innerText = txt; document.getElementById('global-loader').style.display = 'flex'; }
     function hideLoader() { document.getElementById('global-loader').style.display = 'none'; }
 
     setInterval(() => {
-        const n = new Date();
-        document.getElementById('clock-display').innerText = n.toLocaleTimeString('th-TH');
-        document.getElementById('live-date').innerText = n.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+        const now = new Date();
+        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH');
+        document.getElementById('live-date').innerText = now.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
     }, 1000);
 
     document.getElementById('p-upload').onchange = (e) => {
-        const f = e.target.files[0]; if(!f) return;
-        const r = new FileReader();
-        r.onload = () => update(ref(db, 'users/' + auth.currentUser.email.split('@')[0]), { photo: r.result });
-        r.readAsDataURL(f);
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = () => { update(ref(db, 'users/' + auth.currentUser.email.split('@')[0]), { photo: reader.result }); };
+        reader.readAsDataURL(file);
     };
 
-    document.getElementById('clear-btn').onclick = () => confirm("ล้างประวัติทั้งหมด?") && remove(ref(db, 'access_logs'));
+    document.getElementById('logout-btn').onclick = () => signOut(auth);
+    document.getElementById('logout-btn-side').onclick = () => signOut(auth);
+    document.getElementById('clear-btn').onclick = () => confirm("ล้างประวัติ?") && remove(ref(db, 'access_logs'));
 </script>
 </body>
 </html>
