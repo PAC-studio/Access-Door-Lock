@@ -20,9 +20,9 @@
 
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; overflow-x: hidden; }
         
-        /* Sidebar Styles - ย้ายไปฝั่งขวา */
-        #sidebar { position: fixed; right: -280px; left: auto; top: 0; width: 280px; height: 100%; background: var(--card-bg); z-index: 1050; transition: 0.3s; border-left: 1px solid var(--border-color); padding: 20px; }
-        #sidebar.active { right: 0; }
+        /* Sidebar Styles - ย้ายไปฝั่งขวาตามสั่ง */
+        #sidebar { position: fixed; right: -280px; left: auto; top: 0; width: 280px; height: 100%; background: var(--card-bg); z-index: 1050; transition: 0.3s; border-left: 1px solid var(--border-color); border-right: none; padding: 20px; }
+        #sidebar.active { right: 0; left: auto; }
         .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1040; }
         .sidebar-overlay.active { display: block; }
         
@@ -35,6 +35,7 @@
         .dark-mode .modal-content { background-color: #1e293b; color: #f1f5f9; border: 1px solid #334155; }
         .dark-mode .form-control { background-color: #334155 !important; border-color: #475569 !important; color: #ffffff !important; }
         
+        /* ปรับปุ่ม Hamburger ไปไว้ฝั่งขวา */
         #hamburger-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; z-index: 1100; color: var(--text-main); }
         #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
         #main-dashboard { display: none; position: relative; }
@@ -45,7 +46,9 @@
         .user-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background-size: cover; background-position: center; border: 2px solid var(--accent); }
         .profile-main-img { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; background-size: cover; background-position: center; border: 3px solid var(--accent); }
         
+        /* จุดสีเขียว Online */
         .online-dot { width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px #22c55e; }
+
         #global-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: #60a5fa; }
     </style>
 </head>
@@ -62,9 +65,13 @@
     <div class="text-center mb-4 border-bottom pb-3">
         <div id="menu-avatar" class="profile-main-img shadow-sm">?</div>
         <button class="btn btn-sm btn-link text-decoration-none fw-bold" onclick="showModal('profileModal')">แก้ไขโปรไฟล์</button>
-        <div class="mt-2 text-start px-2">
-            <h6 class="fw-bold mb-0"><span class="online-dot"></span> <span id="menu-user-name">Nonthaphat</span> <small class="text-success" style="font-size: 0.7rem;">Online</small></h6>
-            <small class="text-primary fw-bold" id="menu-user-role">Developer</small>
+        <div class="mt-2 text-start px-3">
+            <h6 class="fw-bold mb-0">
+                <span class="online-dot"></span>
+                <span id="menu-user-name">Loading...</span> 
+                <small class="text-success fw-normal" style="font-size: 0.7rem;">Online</small>
+            </h6>
+            <small class="text-primary fw-bold" id="menu-user-role" style="font-size: 0.85rem;">Developer</small>
         </div>
     </div>
     
@@ -100,50 +107,17 @@
   </div>
 </div>
 
-<div class="modal fade" id="hwModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขรหัสสำหรับใช้เป็นรหัสผ่านเข้า-ออก</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <div class="mb-4 p-3 border rounded">
-            <h6 class="fw-bold text-primary mb-3">Keypad</h6>
-            <div class="input-group">
-                <input type="text" id="hw-keypad" class="form-control" maxlength="6" value="000000">
-                <button class="btn btn-primary" onclick="saveKeypad()">บันทึกรหัส 6 หลัก</button>
-            </div>
-        </div>
-        <div class="mb-4 p-3 border rounded">
-            <h6 class="fw-bold text-success mb-3">Fingerprint Module</h6>
-            <div class="row g-2">
-                <div class="col-8"><input type="text" id="hw-finger-id" class="form-control" placeholder="เขียนไอดี เช่น ID 01"></div>
-                <div class="col-4"><button class="btn btn-success w-100" onclick="checkFingerID()">ลงทะเบียนใหม่</button></div>
-            </div>
-            <div id="finger-step-2" class="mt-3 text-center" style="display:none;">
-                <p class="text-warning small mb-2">มีไอดีนี้ในระบบแล้วจะแก้ไขลายนิ้วมือในระบบหรือไม่?</p>
-                <button class="btn btn-outline-success btn-sm px-4" onclick="startFingerScan()">เริ่มการแสกน</button>
-            </div>
-        </div>
-        <div class="p-3 border rounded">
-            <h6 class="fw-bold text-info mb-3">RFID module</h6>
-            <div id="rfid-container">
-                <button class="btn btn-info w-100 text-white fw-bold" onclick="startRFIDScan()">เริ่มการแสกน</button>
-            </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title fw-bold">การตั้งค่า dashboard</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <label class="small fw-bold mb-2">เปลี่ยนโหมดสี</label>
-        <button id="dark-mode-toggle" class="btn btn-outline-primary w-100 mb-4 d-flex justify-content-between align-items-center">
+        <label class="small fw-bold mb-3">รูปแบบการแสดงผล</label>
+        <button id="dark-mode-toggle-btn" class="btn btn-outline-primary w-100 mb-4 d-flex justify-content-between align-items-center">
             <span>เปลี่ยนโหมด มืด/สว่าง</span>
-            <i id="mode-icon" class="bi bi-moon-fill"></i>
+            <i id="mode-icon" class="bi bi-moon-stars-fill"></i>
         </button>
+
         <label class="small fw-bold mb-2">เปลี่ยนภาษา</label>
         <select class="form-control mb-4" id="lang-select">
             <option value="th">ภาษาไทย</option>
@@ -151,7 +125,7 @@
         </select>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="auto-theme-switch" checked>
-            <label class="form-check-label">เปลี่ยนโหมดอัตโนมัติตามเวลา</label>
+            <label class="form-check-label small">เปลี่ยนโหมดอัตโนมัติตามเวลา (06:00-18:00)</label>
         </div>
       </div>
     </div>
@@ -169,8 +143,26 @@
         <div class="text-start">
             <label class="small fw-bold mb-1">ชื่อผู้ใช้</label>
             <input type="text" id="p-username" class="form-control mb-3" readonly>
+            <label class="small fw-bold mb-1">แก้ไขรหัสผ่านใหม่</label>
             <input type="password" id="p-new-password" class="form-control mb-3" placeholder="กรอกรหัสผ่านใหม่">
-            <button class="btn btn-primary w-100 fw-bold py-2" onclick="updateUserAuth()">บันทึกและแก้ไขรหัสผ่าน</button>
+            <button class="btn btn-primary w-100 fw-bold py-2" onclick="updateUserAuth()">บันทึกและเปลี่ยนรหัสผ่าน</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="hwModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขรหัสผ่านอุปกรณ์</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-4 p-3 border rounded">
+            <h6 class="fw-bold text-primary mb-3">Keypad (6 หลัก)</h6>
+            <div class="input-group">
+                <input type="text" id="hw-keypad" class="form-control" maxlength="6" value="000000">
+                <button class="btn btn-primary" onclick="saveKeypad()">บันทึกรหัส</button>
+            </div>
         </div>
       </div>
     </div>
@@ -263,23 +255,30 @@
     let allLogs = [];
     let userProfiles = {};
 
+    // --- ระบบ Role ตามที่สั่ง ---
     function getRole(username) {
-        const u = username.toLowerCase();
-        if(u === "nonthaphat") return "Developer";
-        if(u === "phirnath" || u === "natrada") return "Admin";
+        if(username === "Nonthaphat") return "Developer";
+        if(username === "Phirnath" || username === "Natrada") return "Admin";
         return "Visitor";
     }
 
+    // --- Theme System ---
     function applyTheme(isDark) {
-        if (isDark) { document.body.classList.add('dark-mode'); document.getElementById('mode-icon').className = "bi bi-sun-fill"; }
-        else { document.body.classList.remove('dark-mode'); document.getElementById('mode-icon').className = "bi bi-moon-fill"; }
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+            document.getElementById('mode-icon').className = "bi bi-sun-fill";
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.getElementById('mode-icon').className = "bi bi-moon-stars-fill";
+        }
     }
 
-    document.getElementById('dark-mode-toggle').onclick = () => {
+    document.getElementById('dark-mode-toggle-btn').onclick = () => {
         document.getElementById('auto-theme-switch').checked = false;
         applyTheme(!document.body.classList.contains('dark-mode'));
     };
 
+    // --- Sidebar & Modal ---
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
         document.querySelector('.sidebar-overlay').classList.toggle('active');
@@ -290,19 +289,22 @@
         new bootstrap.Modal(document.getElementById(id)).show();
     };
 
+    // --- Authentication ---
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
-        signInWithEmailAndPassword(auth, u + "@insight.com", p).catch(() => document.getElementById('error-msg').innerText = "ผิดพลาด");
+        signInWithEmailAndPassword(auth, u + "@insight.com", p)
+        .catch(() => document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
     };
 
     window.showRegister = () => {
-        const u = prompt("ชื่อผู้ใช้:");
-        const p = prompt("รหัสผ่าน:");
+        const u = prompt("สมัครสมาชิกใหม่ - ชื่อผู้ใช้:");
+        const p = prompt("รหัสผ่าน (6 ตัวขึ้นไป):");
         if(u && p) {
             createUserWithEmailAndPassword(auth, u + "@insight.com", p).then(() => {
                 set(ref(db, 'users/' + u), { username: u, photo: "", role: getRole(u) });
-            });
+                alert("สมัครสมาชิกสำเร็จ!");
+            }).catch(e => alert("เกิดข้อผิดพลาด: " + e.message));
         }
     };
 
@@ -313,9 +315,16 @@
             document.getElementById('main-dashboard').style.display = 'block';
             document.getElementById('admin-name').innerText = uName;
             document.getElementById('p-username').value = uName;
+            
+            // อัปเดตเมนูฝั่งขวา
             document.getElementById('menu-user-name').innerText = uName;
             document.getElementById('menu-user-role').innerText = getRole(uName);
-            onValue(ref(db, 'users'), (snap) => { userProfiles = snap.val() || {}; updateSidebarAvatar(uName); runApp(); });
+            
+            onValue(ref(db, 'users'), (snap) => {
+                userProfiles = snap.val() || {};
+                updateSidebarAvatar(uName);
+                runApp();
+            });
         } else {
             document.getElementById('login-section').style.display = 'flex';
             document.getElementById('main-dashboard').style.display = 'none';
@@ -326,35 +335,30 @@
         const data = userProfiles[uName];
         const menuAv = document.getElementById('menu-avatar');
         const pPrev = document.getElementById('p-preview');
-        if(data?.photo) { [menuAv, pPrev].forEach(el => { el.style.backgroundImage = `url(${data.photo})`; el.innerText = ""; }); }
-        else { const color = getColorFromName(uName); [menuAv, pPrev].forEach(el => { el.style.backgroundColor = color; el.innerText = uName[0].toUpperCase(); el.style.backgroundImage = "none"; }); }
+        if(data?.photo) {
+            [menuAv, pPrev].forEach(el => { el.style.backgroundImage = `url(${data.photo})`; el.innerText = ""; });
+        } else {
+            const color = getColorFromName(uName);
+            [menuAv, pPrev].forEach(el => { el.style.backgroundColor = color; el.innerText = uName[0].toUpperCase(); el.style.backgroundImage = "none"; });
+        }
     }
 
-    // --- Hardware Functions (RFID/Finger) คงไว้เหมือนเดิม ---
-    window.saveKeypad = () => {
-        const code = document.getElementById('hw-keypad').value;
-        if(code.length === 6) set(ref(db, 'settings/keypad'), code).then(() => alert("บันทึกสำเร็จ"));
-    };
-
-    window.checkFingerID = () => { document.getElementById('finger-step-2').style.display = 'block'; };
-
-    window.startFingerScan = () => {
-        const id = document.getElementById('hw-finger-id').value;
-        set(ref(db, 'board_cmd'), { action: "enroll", id: id, step: 1, status: "wait" });
-        alert("กำลังรอแสกนที่บอร์ด...");
-    };
-
-    window.startRFIDScan = () => {
-        set(ref(db, 'board_cmd'), { action: "scan_rfid", status: "wait" });
-        alert("กำลังรอแสกนบัตร...");
-    };
-
-    // --- User List & Logs ---
+    // --- User List System ---
     function updateFullUserList() {
         const list = document.getElementById('full-user-list');
         list.innerHTML = "";
         Object.keys(userProfiles).forEach(uName => {
-            list.insertAdjacentHTML('beforeend', `<button class="list-group-item list-group-item-action d-flex align-items-center py-3" onclick="showPersonalHistory('${uName}')"><div class="user-avatar me-3" style="background:${getColorFromName(uName)}">${uName[0].toUpperCase()}</div><div><div class="fw-bold">${uName}</div><small class="text-primary">${getRole(uName)}</small></div><i class="bi bi-chevron-right ms-auto"></i></button>`);
+            const role = getRole(uName);
+            list.insertAdjacentHTML('beforeend', `
+                <button class="list-group-item list-group-item-action d-flex align-items-center py-3" onclick="showPersonalHistory('${uName}')">
+                    <div class="user-avatar me-3" style="background:${getColorFromName(uName)}">${uName[0].toUpperCase()}</div>
+                    <div>
+                        <div class="fw-bold">${uName}</div>
+                        <small class="text-primary">${role}</small>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto"></i>
+                </button>
+            `);
         });
     }
 
@@ -364,24 +368,38 @@
         document.getElementById('hist-name').innerText = name;
         document.getElementById('hist-role-label').innerText = "Role: " + getRole(name);
         const logs = allLogs.filter(l => l.name === name).reverse();
-        document.getElementById('hist-table-body').innerHTML = logs.map(l => `<tr><td>${l.date}</td><td>${l.timestamp}</td><td>${l.type}</td><td><span class="badge ${l.status=='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>`).join('');
+        document.getElementById('hist-table-body').innerHTML = logs.map(l => `
+            <tr><td>${l.date}</td><td>${l.timestamp}</td><td>${l.type}</td><td><span class="badge ${l.status=='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>
+        `).join('');
     };
 
-    window.showFullList = () => { document.getElementById('full-user-list').style.display = 'block'; document.getElementById('personal-history').style.display = 'none'; };
+    window.showFullList = () => {
+        document.getElementById('full-user-list').style.display = 'block';
+        document.getElementById('personal-history').style.display = 'none';
+    };
 
+    // --- Main Logic ---
     function runApp() {
         updateFullUserList();
         onValue(ref(db, 'access_logs'), (snap) => {
-            allLogs = []; const tbody = document.getElementById('table-body'); tbody.innerHTML = ""; let peopleIn = [];
+            allLogs = [];
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = "";
+            let peopleIn = [];
             snap.forEach(c => {
-                const d = c.val(); const displayName = d.name || "User"; allLogs.push({...d, name: displayName});
+                const d = c.val(); 
+                const displayName = d.name || "Unknown User"; // แก้ Anonymous
+                allLogs.push({...d, name: displayName});
+                
                 const bClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
                 tbody.insertAdjacentHTML('afterbegin', `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${displayName}</td><td><small>${d.type}</small></td><td><span class="badge ${bClass}">${d.status}</span></td></tr>`);
+                
                 if(d.status == "In") { if(!peopleIn.includes(displayName)) peopleIn.push(displayName); }
                 else { peopleIn = peopleIn.filter(p => p !== displayName); }
             });
             document.getElementById('people-count').innerText = peopleIn.length;
             document.getElementById('names-list').innerHTML = peopleIn.map(n => `<div class="bg-white bg-opacity-10 rounded-pill px-3 py-1 border small fw-bold">${n}</div>`).join('');
+            
             if(allLogs.length > 0) {
                 const last = allLogs[allLogs.length-1];
                 document.getElementById('last-user').innerText = last.name;
@@ -392,9 +410,11 @@
         });
     }
 
+    // --- Helpers ---
     function getColorFromName(name) {
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800'];
-        let hash = 0; for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
         return colors[Math.abs(hash) % colors.length];
     }
 
@@ -402,12 +422,15 @@
         const now = new Date();
         document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH');
         document.getElementById('live-date').innerText = now.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-        if(document.getElementById('auto-theme-switch').checked) { const hour = now.getHours(); applyTheme(hour < 6 || hour >= 18); }
+        if(document.getElementById('auto-theme-switch').checked) {
+            const hour = now.getHours();
+            applyTheme(hour < 6 || hour >= 18);
+        }
     }, 1000);
 
     document.getElementById('logout-btn').onclick = () => signOut(auth);
     document.getElementById('logout-btn-side').onclick = () => signOut(auth);
-    document.getElementById('clear-btn').onclick = () => confirm("ล้างประวัติ?") && remove(ref(db, 'access_logs'));
+    document.getElementById('clear-btn').onclick = () => confirm("ล้างประวัติทั้งหมด?") && remove(ref(db, 'access_logs'));
 </script>
 </body>
 </html>
