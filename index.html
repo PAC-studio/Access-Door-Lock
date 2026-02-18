@@ -36,7 +36,12 @@
         .dark-mode .form-control { background-color: #334155 !important; border-color: #475569 !important; color: #ffffff !important; }
         
         #hamburger-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; z-index: 1100; color: var(--text-main); }
-        #login-section { height: 100vh; display: flex; align-items: center; justify-content: center; }
+        
+        /* Login / Register Wrappers */
+        .auth-wrapper { height: 100vh; display: flex; align-items: center; justify-content: center; }
+        #login-section { display: flex; }
+        #register-section { display: none; }
+        
         #main-dashboard { display: none; position: relative; }
         
         .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-main); }
@@ -48,6 +53,11 @@
         .online-dot { width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px #22c55e; }
         
         .icon-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 15px; }
+        
+        /* สำหรับ Welcome Popup */
+        .icon-circle-success { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin: 0 auto 20px; background: #d1e7dd; color: #198754; box-shadow: 0 4px 15px rgba(25,135,84,0.3); }
+        @keyframes heartbeat { 0% { transform: scale(1); } 14% { transform: scale(1.15); } 28% { transform: scale(1); } 42% { transform: scale(1.15); } 70% { transform: scale(1); } }
+        .heartbeat-anim { animation: heartbeat 1.5s infinite; }
     </style>
 </head>
 <body>
@@ -77,32 +87,41 @@
     <div class="menu-item danger-item text-danger" onclick="showDeleteSelfModal()"><i class="bi bi-person-x"></i> ลบบัญชีของฉัน</div>
 </div>
 
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-body text-center p-5">
+        <div class="icon-circle-success heartbeat-anim"><i class="bi bi-unlock-fill"></i></div>
+        <h3 class="fw-bold mb-3" id="welcome-title">เข้าสู่ระบบสำเร็จ!</h3>
+        <p class="mb-4" id="welcome-message" style="font-size: 1.15rem; color: var(--text-main);"></p>
+        <button type="button" class="btn btn-primary px-5 py-2 fw-bold rounded-pill shadow-sm" data-bs-dismiss="modal">เริ่มต้นใช้งาน</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="deleteSelfModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-body text-center p-4">
-        
         <div id="delete-step-1">
             <div class="icon-circle bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
             <h4 class="fw-bold mb-3">ต้องการลบบัญชีหรือไม่?</h4>
-            <p class="text-muted small mb-4">หากคุณดำเนินการต่อ บัญชีผู้ใช้และโปรไฟล์ของคุณจะถูกลบออกจากระบบอย่างถาวร และคุณจะไม่สามารถเข้าสู่ระบบได้อีก</p>
+            <p class="text-muted small mb-4">หากคุณดำเนินการต่อ บัญชีผู้ใช้และโปรไฟล์ของคุณจะถูกลบออกจากระบบอย่างถาวร</p>
             <div class="d-flex gap-2 justify-content-center">
                 <button type="button" class="btn btn-light px-4 fw-bold" data-bs-dismiss="modal">ยกเลิก</button>
                 <button type="button" class="btn btn-danger px-4 fw-bold" onclick="nextDeleteSelf()">ถัดไป <i class="bi bi-arrow-right"></i></button>
             </div>
         </div>
-
         <div id="delete-step-2" style="display:none;">
             <div class="icon-circle bg-danger text-white shadow"><i class="bi bi-shield-lock-fill"></i></div>
             <h5 class="fw-bold mb-3">ยืนยันรหัสผ่านของคุณ</h5>
-            <p class="text-muted small mb-3">เพื่อความปลอดภัย กรุณากรอกรหัสผ่านปัจจุบันของคุณเพื่อยืนยันการลบบัญชีขั้นสุดท้าย</p>
             <input type="password" id="del-self-password" class="form-control mb-4 text-center" placeholder="รหัสผ่านของคุณ">
             <div class="d-flex gap-2 justify-content-center">
                 <button type="button" class="btn btn-light px-4 fw-bold" onclick="showDeleteSelfModal()">ย้อนกลับ</button>
                 <button type="button" class="btn btn-danger px-4 fw-bold" onclick="confirmDeleteSelf()">ยืนยันการลบถาวร</button>
             </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -157,8 +176,6 @@
       <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขโปรไฟล์</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body text-center">
         <div id="p-preview" class="profile-main-img mx-auto mb-3"></div>
-        <input type="file" id="p-upload" hidden accept="image/*">
-        
         <div class="text-start">
             <label class="small fw-bold mb-1">ชื่อผู้ใช้</label>
             <input type="text" id="p-username" class="form-control mb-3" readonly>
@@ -188,15 +205,27 @@
   </div>
 </div>
 
-<div id="login-section">
+<div id="login-section" class="auth-wrapper">
     <div class="card p-4 shadow text-center" style="width: 350px;">
-        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2"></i>Login</h3>
+        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2 text-primary"></i>Login</h3>
         <p class="small opacity-75 mb-4">Access Entry Door Lock Dashboard</p>
         <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้ (เช่น nonthaphat)">
         <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
         <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold mb-3">เข้าสู่ระบบ</button>
-        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegister()">สมัครบัญชีใหม่ (สำหรับแอดมิน)</button>
+        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegisterUI()">สมัครบัญชีใหม่ (สำหรับแอดมิน)</button>
         <p id="error-msg" class="text-danger mt-3 small fw-bold"></p>
+    </div>
+</div>
+
+<div id="register-section" class="auth-wrapper">
+    <div class="card p-4 shadow text-center border-top border-success border-4" style="width: 350px;">
+        <h3 class="fw-bold mb-1"><i class="bi bi-person-plus-fill me-2 text-success"></i>สมัครบัญชีใหม่</h3>
+        <p class="small opacity-75 mb-4">สำหรับเพิ่มผู้ใช้ในระบบ Access Control</p>
+        <input type="text" id="reg-username" class="form-control mb-3 py-2" placeholder="ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)">
+        <input type="password" id="reg-password" class="form-control mb-3 py-2" placeholder="ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)">
+        <button id="do-register-btn" class="btn btn-success w-100 py-2 fw-bold mb-3">ลงทะเบียนผู้ใช้</button>
+        <button class="btn btn-link btn-sm text-decoration-none text-secondary" onclick="showLoginUI()"><i class="bi bi-arrow-left"></i> กลับไปหน้าเข้าสู่ระบบ</button>
+        <p id="reg-error-msg" class="text-danger mt-3 small fw-bold"></p>
     </div>
 </div>
 
@@ -330,35 +359,58 @@
 
         const credential = EmailAuthProvider.credential(user.email, pass);
         
-        // ยืนยันรหัสผ่าน
         reauthenticateWithCredential(user, credential).then(() => {
             const uName = user.email.split('@')[0];
-            
-            // 1. ลบข้อมูลใน Realtime Database ก่อน
             remove(ref(db, 'users/' + uName)).then(() => {
-                // 2. ลบบัญชีผู้ใช้ในระบบ Auth แบบถอนรากถอนโคน
                 deleteUser(user).then(() => {
                     alert('ลบบัญชีของคุณออกจากระบบเรียบร้อยแล้ว');
                     bootstrap.Modal.getInstance(document.getElementById('deleteSelfModal')).hide();
                 }).catch(e => alert("เกิดข้อผิดพลาดในการลบบัญชี: " + e.message));
             });
-        }).catch(e => {
+        }).catch(() => {
             alert('รหัสผ่านไม่ถูกต้อง หรือเกิดข้อผิดพลาด');
         });
     };
 
-    window.showRegister = () => {
-        const u = prompt("เพิ่มผู้ใช้ใหม่ - ระบุชื่อผู้ใช้ (ภาษาอังกฤษ):");
-        if(!u) return;
-        const p = prompt("ระบุรหัสผ่าน (6 ตัวอักษรขึ้นไป):");
-        if(u && p && p.length >= 6) {
-            createUserWithEmailAndPassword(auth, u + "@insight.com", p).then(() => {
-                set(ref(db, 'users/' + u), { username: u, photo: "", role: getRole(u) });
-                alert("สร้างผู้ใช้ใหม่สำเร็จ! ชื่อ: " + u);
-            }).catch(e => alert("เกิดข้อผิดพลาด: " + e.message));
-        } else {
-            alert("ยกเลิก หรือ รหัสผ่านสั้นเกินไปครับ");
+    // --- Login / Register UI Switcher ---
+    window.showRegisterUI = () => {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('register-section').style.display = 'flex';
+        document.getElementById('reg-error-msg').innerText = '';
+        document.getElementById('reg-username').value = '';
+        document.getElementById('reg-password').value = '';
+    };
+
+    window.showLoginUI = () => {
+        document.getElementById('register-section').style.display = 'none';
+        document.getElementById('login-section').style.display = 'flex';
+        document.getElementById('error-msg').innerText = '';
+    };
+
+    // --- Register Logic ---
+    document.getElementById('do-register-btn').onclick = () => {
+        const u = document.getElementById('reg-username').value.trim();
+        const p = document.getElementById('reg-password').value;
+        
+        if(!u || p.length < 6) {
+            document.getElementById('reg-error-msg').innerText = "❌ กรุณากรอกชื่อและรหัสผ่านอย่างน้อย 6 ตัวอักษร";
+            return;
         }
+        
+        document.getElementById('reg-error-msg').innerText = "กำลังสร้างบัญชีผู้ใช้...";
+        sessionStorage.setItem('justLoggedIn', 'true'); // Flag ให้เด้ง Popup หลังสมัครเสร็จและเข้าสู่ระบบออโต้
+
+        createUserWithEmailAndPassword(auth, u + "@insight.com", p).then(() => {
+            set(ref(db, 'users/' + u), { username: u, photo: "", role: getRole(u) });
+            // firebase จะทำการ sign in ให้อัตโนมัติ ปล่อยให้ onAuthStateChanged ทำงานต่อได้เลย
+        }).catch(e => {
+            sessionStorage.removeItem('justLoggedIn');
+            if(e.code === 'auth/email-already-in-use') {
+                document.getElementById('reg-error-msg').innerText = "❌ ชื่อผู้ใช้นี้มีในระบบแล้ว";
+            } else {
+                document.getElementById('reg-error-msg').innerText = "❌ เกิดข้อผิดพลาด: " + e.message;
+            }
+        });
     };
 
     window.updateUserAuth = () => {
@@ -384,31 +436,43 @@
         }
     };
 
-    // --- Authentication & Login Block Logic ---
+    // --- Login Logic ---
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value.trim();
         const p = document.getElementById('password').value;
-        document.getElementById('error-msg').innerText = "กำลังเข้าสู่ระบบ...";
+        document.getElementById('error-msg').innerHTML = "<span class='text-primary'>กำลังเข้าสู่ระบบ...</span>";
+        
+        sessionStorage.setItem('justLoggedIn', 'true'); // Flag ว่าเพิ่งกดปุ่มล็อกอินมาสดๆ ร้อนๆ
+        
         signInWithEmailAndPassword(auth, u + "@insight.com", p)
-        .catch(() => document.getElementById('error-msg').innerText = "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+        .catch(() => {
+            sessionStorage.removeItem('justLoggedIn');
+            // เงื่อนไข: ถ้ารหัสผ่านผิด
+            document.getElementById('error-msg').innerText = "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        });
     };
 
+    // --- ตรวจจับสถานะการล็อกอิน ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             const uName = user.email.split('@')[0];
-            currentLoggedInUser = uName.toLowerCase();
+            const targetUser = uName.toLowerCase();
+            currentLoggedInUser = targetUser;
             
-            // 🚨 กลไกเช็ค: ถ้าในฐานข้อมูลไม่มีชื่อนี้ (แปลว่าโดนแอดมินลบออกไปแล้ว) ให้เตะออกทันที!
-            get(ref(db, 'users/' + uName)).then((snapshot) => {
+            // เช็คว่าโดนแอดมินลบออกไปจาก Database หรือยัง?
+            get(ref(db, 'users/' + targetUser)).then((snapshot) => {
                 if (!snapshot.exists()) {
                     signOut(auth).then(() => {
-                        document.getElementById('error-msg').innerHTML = "❌ บัญชีของคุณถูกลบหรือระงับการใช้งาน<br><small>กรุณาติดต่อ Developer</small>";
+                        // เงื่อนไข: ถ้าโดนลบบัญชี
+                        document.getElementById('error-msg').innerHTML = "❌ คุณไม่สามารถเข้าสู่ระบบได้ ต้องขออภัยด้วย หากนี่เป็นข้อผิดพลาดกรุณาแจ้งผู้ดูแลระบบ";
+                        sessionStorage.removeItem('justLoggedIn');
                     });
                     return;
                 }
                 
-                // ถ้ารายชื่อยังอยู่ ให้เข้าสู่ระบบได้ตามปกติ
+                // เข้าสู่ระบบสำเร็จ (ซ่อนหน้า Login/Register โชว์ Dashboard)
                 document.getElementById('login-section').style.display = 'none';
+                document.getElementById('register-section').style.display = 'none';
                 document.getElementById('main-dashboard').style.display = 'block';
                 
                 document.getElementById('admin-name').innerText = uName;
@@ -421,17 +485,37 @@
                     updateSidebarAvatar(uName);
                     updateFullUserList(); 
                 });
-                
                 runAppLogs();
+
+                // 🌟 เงื่อนไข: แสดง Pop-up ต้อนรับสุดหรูเฉพาะตอนล็อกอินใหม่ๆ (ไม่แสดงซ้ำตอนรีเฟรชหน้าเว็บ)
+                if (sessionStorage.getItem('justLoggedIn') === 'true') {
+                    let welcomeText = "";
+                    if (targetUser === 'nonthaphat') {
+                        welcomeText = `ยินดีต้อนรับกลับมานะ ผู้ดูแลระบบ คุณ <b>${uName}</b>`;
+                    } else if (targetUser === 'phirnath' || targetUser === 'natrada') {
+                        welcomeText = `ยินดีต้อนรับกลับมานะแอดมินของเรา คุณ <b>${uName}</b>`;
+                    } else {
+                        welcomeText = `ยินดีต้อนรับเข้าสู่ระบบจัดการประตูอัจฉริยะ คุณ <b>${uName}</b>`;
+                    }
+                    
+                    document.getElementById('welcome-message').innerHTML = welcomeText;
+                    new bootstrap.Modal(document.getElementById('welcomeModal')).show();
+                    
+                    // เคลียร์ flag ทิ้ง เพื่อไม่ให้มันเด้งอีกถ้ารีเฟรชหน้าจอ
+                    sessionStorage.removeItem('justLoggedIn');
+                }
             });
         } else {
+            // โหมดยังไม่ได้ล็อกอิน
             currentLoggedInUser = "";
             document.getElementById('login-section').style.display = 'flex';
+            document.getElementById('register-section').style.display = 'none';
             document.getElementById('main-dashboard').style.display = 'none';
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
-            // เคลียร์ error-msg เฉพาะตอนที่ผู้ใช้ตั้งใจกดปุ่ม Log Out เอง (ไม่ใช่ตอนโดนเตะออก)
-            if(document.getElementById('error-msg').innerText === "กำลังเข้าสู่ระบบ...") {
+            
+            // เคลียร์ error message เวลา log out ออกมาปกติ (แต่ถ้าโดนเตะออก error-msg จะยังโชว์อยู่)
+            if(document.getElementById('error-msg').innerHTML.includes("กำลังเข้าสู่ระบบ...")) {
                 document.getElementById('error-msg').innerText = '';
             }
         }
@@ -450,7 +534,7 @@
         });
     }
 
-    // --- User List System & Admin Delete Logic ---
+    // --- User List System ---
     function updateFullUserList() {
         const list = document.getElementById('full-user-list');
         list.innerHTML = "";
@@ -466,14 +550,19 @@
             if (!userData || !userData.username) return; 
             
             const uName = userData.username;
+            const targetUser = uName.toLowerCase();
             const role = userData.role || getRole(uName);
+            const isSelf = (targetUser === currentLoggedInUser);
             
-            // เช็คสิทธิ์: ให้เฉพาะ 'nonthaphat' (หรือ Admin) เห็นปุ่มลบผู้ใช้คนอื่น (และซ่อนปุ่มลบตัวเองในหน้านี้)
-            const isDeveloper = (currentLoggedInUser === 'nonthaphat' || currentLoggedInUser === 'phirnath' || currentLoggedInUser === 'natrada');
-            const isSelf = (uName.toLowerCase() === currentLoggedInUser);
+            let canDelete = false;
+            if (currentLoggedInUser === 'nonthaphat') {
+                canDelete = !isSelf;
+            } else if (currentLoggedInUser === 'phirnath' || currentLoggedInUser === 'natrada') {
+                canDelete = !isSelf && (targetUser !== 'nonthaphat');
+            }
             
             let deleteBtnHtml = '';
-            if (isDeveloper && !isSelf) {
+            if (canDelete) {
                 deleteBtnHtml = `<button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteUserProfile('${uName}', event)" title="ลบผู้ใช้"><i class="bi bi-trash"></i></button>`;
             }
             
@@ -491,7 +580,6 @@
         });
     }
 
-    // ฟังก์ชันผู้ดูแลระบบลบรายชื่อผู้ใช้อื่น
     window.deleteUserProfile = (uName, event) => {
         event.stopPropagation(); 
         const msg = `คุณต้องการลบข้อมูลของ "${uName}" ออกจากระบบ ใช่หรือไม่?\n\n(หากลบแล้ว ผู้ใช้นี้จะไม่สามารถล็อกอินเข้าสู่ระบบได้อีกทันที)`;
@@ -587,7 +675,6 @@
         }
     }, 1000);
 
-    // Logout & Clear Data
     if(document.getElementById('logout-btn-side')) document.getElementById('logout-btn-side').onclick = () => {
         signOut(auth).then(() => { document.getElementById('error-msg').innerText = ''; });
     };
