@@ -212,7 +212,7 @@
         <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้ (เช่น nonthaphat)">
         <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
         <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold mb-3">เข้าสู่ระบบ</button>
-        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegisterUI()">สมัครบัญชีใหม่ (สำหรับแอดมิน)</button>
+        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegisterUI()">ไม่มีบัญชี? สมัครบัญชีใหม่</button>
         <p id="error-msg" class="text-danger mt-3 small fw-bold"></p>
     </div>
 </div>
@@ -220,11 +220,11 @@
 <div id="register-section" class="auth-wrapper">
     <div class="card p-4 shadow text-center border-top border-success border-4" style="width: 350px;">
         <h3 class="fw-bold mb-1"><i class="bi bi-person-plus-fill me-2 text-success"></i>สมัครบัญชีใหม่</h3>
-        <p class="small opacity-75 mb-4">สำหรับเพิ่มผู้ใช้ในระบบ Access Control</p>
+        <p class="small opacity-75 mb-4">สำหรับเพิ่มผู้ใช้ในระบบ Access Entry Door Lock Dashboard</p>
         <input type="text" id="reg-username" class="form-control mb-3 py-2" placeholder="ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)">
         <input type="password" id="reg-password" class="form-control mb-3 py-2" placeholder="ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)">
         <button id="do-register-btn" class="btn btn-success w-100 py-2 fw-bold mb-3">ลงทะเบียนผู้ใช้</button>
-        <button class="btn btn-link btn-sm text-decoration-none text-secondary" onclick="showLoginUI()"><i class="bi bi-arrow-left"></i> กลับไปหน้าเข้าสู่ระบบ</button>
+        <button class="btn btn-link btn-sm text-decoration-none text-secondary" onclick="showLoginUI()"><i class="bi bi-arrow-left"></i> มีบัญชีแล้ว? กลับไปหน้าเข้าสู่ระบบ</button>
         <p id="reg-error-msg" class="text-danger mt-3 small fw-bold"></p>
     </div>
 </div>
@@ -398,9 +398,9 @@
         }).catch(e => {
             sessionStorage.removeItem('justLoggedIn');
             if(e.code === 'auth/email-already-in-use') {
-                document.getElementById('reg-error-msg').innerText = "❌ ชื่อผู้ใช้นี้มีในระบบแล้ว";
+                document.getElementById('reg-error-msg').innerText = "ชื่อผู้ใช้นี้มีในระบบแล้ว";
             } else {
-                document.getElementById('reg-error-msg').innerText = "❌ เกิดข้อผิดพลาด: " + e.message;
+                document.getElementById('reg-error-msg').innerText = "เกิดข้อผิดพลาด: " + e.message;
             }
         });
     };
@@ -438,7 +438,7 @@
         signInWithEmailAndPassword(auth, u + "@insight.com", p)
         .catch(() => {
             sessionStorage.removeItem('justLoggedIn');
-            document.getElementById('error-msg').innerText = "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+            document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
         });
     };
 
@@ -451,7 +451,7 @@
             get(ref(db, 'users/' + targetUser)).then((snapshot) => {
                 if (!snapshot.exists()) {
                     signOut(auth).then(() => {
-                        document.getElementById('error-msg').innerHTML = "❌ คุณไม่สามารถเข้าสู่ระบบได้ ต้องขออภัยด้วย หากนี่เป็นข้อผิดพลาดกรุณาแจ้งผู้ดูแลระบบ";
+                        document.getElementById('error-msg').innerHTML = "คุณไม่สามารถเข้าสู่ระบบได้ ต้องขออภัยด้วย หากนี่เป็นข้อผิดพลาดกรุณาแจ้งผู้ดูแลระบบ";
                         sessionStorage.removeItem('justLoggedIn');
                     });
                     return;
