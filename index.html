@@ -311,7 +311,6 @@
         return "Visitor";
     }
 
-    // --- Theme ---
     function applyTheme(isDark) {
         if (isDark) {
             document.body.classList.add('dark-mode');
@@ -327,7 +326,6 @@
         applyTheme(!document.body.classList.contains('dark-mode'));
     };
 
-    // --- Sidebar & Modal Functions ---
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
         document.querySelector('.sidebar-overlay').classList.toggle('active');
@@ -338,7 +336,6 @@
         new bootstrap.Modal(document.getElementById(id)).show();
     };
 
-    // --- Delete Own Account Flow ---
     window.showDeleteSelfModal = () => {
         if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
         document.getElementById('delete-step-1').style.display = 'block';
@@ -367,12 +364,9 @@
                     bootstrap.Modal.getInstance(document.getElementById('deleteSelfModal')).hide();
                 }).catch(e => alert("เกิดข้อผิดพลาดในการลบบัญชี: " + e.message));
             });
-        }).catch(() => {
-            alert('รหัสผ่านไม่ถูกต้อง หรือเกิดข้อผิดพลาด');
-        });
+        }).catch(() => alert('รหัสผ่านไม่ถูกต้อง หรือเกิดข้อผิดพลาด'));
     };
 
-    // --- Login / Register UI Switcher ---
     window.showRegisterUI = () => {
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('register-section').style.display = 'flex';
@@ -387,7 +381,6 @@
         document.getElementById('error-msg').innerText = '';
     };
 
-    // --- Register Logic ---
     document.getElementById('do-register-btn').onclick = () => {
         const u = document.getElementById('reg-username').value.trim();
         const p = document.getElementById('reg-password').value;
@@ -398,11 +391,10 @@
         }
         
         document.getElementById('reg-error-msg').innerText = "กำลังสร้างบัญชีผู้ใช้...";
-        sessionStorage.setItem('justLoggedIn', 'true'); // Flag ให้เด้ง Popup หลังสมัครเสร็จและเข้าสู่ระบบออโต้
+        sessionStorage.setItem('justLoggedIn', 'true'); 
 
         createUserWithEmailAndPassword(auth, u + "@insight.com", p).then(() => {
             set(ref(db, 'users/' + u), { username: u, photo: "", role: getRole(u) });
-            // firebase จะทำการ sign in ให้อัตโนมัติ ปล่อยให้ onAuthStateChanged ทำงานต่อได้เลย
         }).catch(e => {
             sessionStorage.removeItem('justLoggedIn');
             if(e.code === 'auth/email-already-in-use') {
@@ -436,41 +428,35 @@
         }
     };
 
-    // --- Login Logic ---
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value.trim();
         const p = document.getElementById('password').value;
         document.getElementById('error-msg').innerHTML = "<span class='text-primary'>กำลังเข้าสู่ระบบ...</span>";
         
-        sessionStorage.setItem('justLoggedIn', 'true'); // Flag ว่าเพิ่งกดปุ่มล็อกอินมาสดๆ ร้อนๆ
+        sessionStorage.setItem('justLoggedIn', 'true'); 
         
         signInWithEmailAndPassword(auth, u + "@insight.com", p)
         .catch(() => {
             sessionStorage.removeItem('justLoggedIn');
-            // เงื่อนไข: ถ้ารหัสผ่านผิด
             document.getElementById('error-msg').innerText = "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
         });
     };
 
-    // --- ตรวจจับสถานะการล็อกอิน ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             const uName = user.email.split('@')[0];
             const targetUser = uName.toLowerCase();
             currentLoggedInUser = targetUser;
             
-            // เช็คว่าโดนแอดมินลบออกไปจาก Database หรือยัง?
             get(ref(db, 'users/' + targetUser)).then((snapshot) => {
                 if (!snapshot.exists()) {
                     signOut(auth).then(() => {
-                        // เงื่อนไข: ถ้าโดนลบบัญชี
                         document.getElementById('error-msg').innerHTML = "❌ คุณไม่สามารถเข้าสู่ระบบได้ ต้องขออภัยด้วย หากนี่เป็นข้อผิดพลาดกรุณาแจ้งผู้ดูแลระบบ";
                         sessionStorage.removeItem('justLoggedIn');
                     });
                     return;
                 }
                 
-                // เข้าสู่ระบบสำเร็จ (ซ่อนหน้า Login/Register โชว์ Dashboard)
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('register-section').style.display = 'none';
                 document.getElementById('main-dashboard').style.display = 'block';
@@ -487,7 +473,6 @@
                 });
                 runAppLogs();
 
-                // 🌟 เงื่อนไข: แสดง Pop-up ต้อนรับสุดหรูเฉพาะตอนล็อกอินใหม่ๆ (ไม่แสดงซ้ำตอนรีเฟรชหน้าเว็บ)
                 if (sessionStorage.getItem('justLoggedIn') === 'true') {
                     let welcomeText = "";
                     if (targetUser === 'nonthaphat') {
@@ -501,12 +486,10 @@
                     document.getElementById('welcome-message').innerHTML = welcomeText;
                     new bootstrap.Modal(document.getElementById('welcomeModal')).show();
                     
-                    // เคลียร์ flag ทิ้ง เพื่อไม่ให้มันเด้งอีกถ้ารีเฟรชหน้าจอ
                     sessionStorage.removeItem('justLoggedIn');
                 }
             });
         } else {
-            // โหมดยังไม่ได้ล็อกอิน
             currentLoggedInUser = "";
             document.getElementById('login-section').style.display = 'flex';
             document.getElementById('register-section').style.display = 'none';
@@ -514,7 +497,6 @@
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             
-            // เคลียร์ error message เวลา log out ออกมาปกติ (แต่ถ้าโดนเตะออก error-msg จะยังโชว์อยู่)
             if(document.getElementById('error-msg').innerHTML.includes("กำลังเข้าสู่ระบบ...")) {
                 document.getElementById('error-msg').innerText = '';
             }
@@ -534,7 +516,7 @@
         });
     }
 
-    // --- User List System ---
+    // --- อัพเดทระบบเช็คสิทธิ์การลบผู้ใช้ (แก้ไขตรงนี้ครับ!) ---
     function updateFullUserList() {
         const list = document.getElementById('full-user-list');
         list.innerHTML = "";
@@ -552,13 +534,19 @@
             const uName = userData.username;
             const targetUser = uName.toLowerCase();
             const role = userData.role || getRole(uName);
+            const targetRole = getRole(targetUser); 
+            const currentRole = getRole(currentLoggedInUser); // ดึงตำแหน่งของคนที่ล็อกอินอยู่
             const isSelf = (targetUser === currentLoggedInUser);
             
+            // 🔥 ปรับ Logic ใหม่ ป้องกัน Admin ตีกันเอง
             let canDelete = false;
-            if (currentLoggedInUser === 'nonthaphat') {
+            
+            if (currentRole === 'Developer') {
+                // Developer ลบได้ทุกคน (ยกเว้นตัวเอง)
                 canDelete = !isSelf;
-            } else if (currentLoggedInUser === 'phirnath' || currentLoggedInUser === 'natrada') {
-                canDelete = !isSelf && (targetUser !== 'nonthaphat');
+            } else if (currentRole === 'Admin') {
+                // Admin ลบได้เฉพาะ Visitor เท่านั้น (ห้ามลบ Developer และห้ามลบ Admin ด้วยกันเอง)
+                canDelete = !isSelf && targetRole === 'Visitor';
             }
             
             let deleteBtnHtml = '';
@@ -611,7 +599,6 @@
         document.getElementById('personal-history').style.display = 'none';
     };
 
-    // --- Main Log Dashboard ---
     function runAppLogs() {
         onValue(ref(db, 'access_logs'), (snap) => {
             allLogs = [];
@@ -656,7 +643,6 @@
         });
     }
 
-    // --- Helpers ---
     function getColorFromName(name) {
         if(!name) return '#000';
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800'];
