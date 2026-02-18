@@ -256,8 +256,9 @@
 
     // --- ระบบ Role ตามที่สั่ง ---
     function getRole(username) {
-        if(username === "Nonthaphat") return "Developer";
-        if(username === "Phirnath" || username === "Natrada") return "Admin";
+        if(!username) return "Visitor";
+        if(username.toLowerCase() === "nonthaphat") return "Developer";
+        if(username.toLowerCase() === "phirnath" || username.toLowerCase() === "natrada") return "Admin";
         return "Visitor";
     }
 
@@ -342,12 +343,20 @@
         }
     }
 
-    // --- User List System ---
+    // --- User List System (แก้ไขเพิ่ม Filter กรอง UID ขยะทิ้ง) ---
     function updateFullUserList() {
         const list = document.getElementById('full-user-list');
         list.innerHTML = "";
-        Object.keys(userProfiles).forEach(uName => {
+        
+        Object.keys(userProfiles).forEach(key => {
+            const userData = userProfiles[key];
+            
+            // ป้องกันข้อมูลขยะ: ถ้าไม่มี object หรือไม่มีฟิลด์ username ให้ข้ามไปเลย
+            if (!userData || !userData.username) return; 
+            
+            const uName = userData.username;
             const role = getRole(uName);
+            
             list.insertAdjacentHTML('beforeend', `
                 <button class="list-group-item list-group-item-action d-flex align-items-center py-3" onclick="showPersonalHistory('${uName}')">
                     <div class="user-avatar me-3" style="background:${getColorFromName(uName)}">${uName[0].toUpperCase()}</div>
@@ -411,6 +420,7 @@
 
     // --- Helpers ---
     function getColorFromName(name) {
+        if(!name) return '#000';
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800'];
         let hash = 0;
         for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -427,9 +437,10 @@
         }
     }, 1000);
 
-    document.getElementById('logout-btn').onclick = () => signOut(auth);
-    document.getElementById('logout-btn-side').onclick = () => signOut(auth);
-    document.getElementById('clear-btn').onclick = () => confirm("ล้างประวัติทั้งหมด?") && remove(ref(db, 'access_logs'));
+    // Note: logout-btn (หน้าล็อกอินเผื่อซ่อนไว้) และ logout-btn-side (เมนูข้าง)
+    if(document.getElementById('logout-btn')) document.getElementById('logout-btn').onclick = () => signOut(auth);
+    if(document.getElementById('logout-btn-side')) document.getElementById('logout-btn-side').onclick = () => signOut(auth);
+    if(document.getElementById('clear-btn')) document.getElementById('clear-btn').onclick = () => confirm("คุณต้องการล้างประวัติทั้งหมดหรือไม่?") && remove(ref(db, 'access_logs'));
 </script>
 </body>
 </html>
