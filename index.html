@@ -29,7 +29,6 @@
         .menu-item:hover { background: var(--accent); color: #ffffff !important; }
         .menu-item.danger-item:hover { background: #dc3545; color: #ffffff !important; }
 
-        /* การตั้งค่า Dark Mode ที่ครอบคลุมขึ้น */
         .dark-mode .table { color: #f1f5f9 !important; background-color: transparent !important; border-color: #334155 !important; }
         .dark-mode .table thead th { background-color: #334155 !important; color: #60a5fa !important; border-bottom: 2px solid #475569 !important; }
         .dark-mode .table tbody td { background-color: #1e293b !important; color: #f1f5f9 !important; border-bottom: 1px solid #334155 !important; }
@@ -37,8 +36,6 @@
         .dark-mode .form-control, .dark-mode .form-select { background-color: #334155 !important; border-color: #475569 !important; color: #ffffff !important; }
         .dark-mode .modal-header.bg-light, .dark-mode .modal-body.bg-light { background-color: #1e293b !important; border-color: #334155 !important; }
         .dark-mode .bg-light { background-color: #334155 !important; color: #f1f5f9 !important; }
-        
-        /* แก้ไขกรอบ List รายชื่อผู้ใช้ในโหมดมืด */
         .dark-mode .list-group-item { background-color: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
         .dark-mode .list-group-item:hover { background-color: #334155 !important; }
         .dark-mode .text-muted { color: #94a3b8 !important; }
@@ -55,13 +52,17 @@
         .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
         
         .user-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background-size: cover; background-position: center; border: 2px solid var(--accent); }
-        .profile-main-img { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; background-size: cover; background-position: center; border: 3px solid var(--accent); }
+        .profile-main-img { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; background-size: cover; background-position: center; border: 3px solid var(--accent); }
         
         .online-dot { width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px #22c55e; }
         
         .icon-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 15px; }
-        
         .icon-circle-success { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin: 0 auto 20px; background: #d1e7dd; color: #198754; box-shadow: 0 4px 15px rgba(25,135,84,0.3); }
+        
+        /* ปุ่มแก้ไขรูปภาพ */
+        .edit-img-btn { position: absolute; bottom: 0; right: 0; background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--card-bg); box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s; }
+        .edit-img-btn:hover { background: #0b5ed7; transform: scale(1.1); }
+        
         @keyframes heartbeat { 0% { transform: scale(1); } 14% { transform: scale(1.15); } 28% { transform: scale(1); } 42% { transform: scale(1.15); } 70% { transform: scale(1); } }
         .heartbeat-anim { animation: heartbeat 1.5s infinite; }
     </style>
@@ -72,7 +73,7 @@
 
 <div id="sidebar">
     <div class="text-center mb-4 border-bottom pb-3">
-        <div id="menu-avatar" class="profile-main-img shadow-sm">?</div>
+        <div id="menu-avatar" class="profile-main-img shadow-sm mb-2">?</div>
         <button class="btn btn-sm btn-link text-decoration-none fw-bold" onclick="showModal('profileModal')">แก้ไขโปรไฟล์</button>
         <div class="mt-2 text-start px-3">
             <h6 class="fw-bold mb-0">
@@ -189,13 +190,20 @@
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขโปรไฟล์</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body text-center">
-        <div id="p-preview" class="profile-main-img mx-auto mb-3"></div>
+        <div class="position-relative mx-auto mb-4" style="width: 100px; height: 100px;">
+            <div id="p-preview" class="profile-main-img w-100 h-100 m-0"></div>
+            <label for="p-img-upload" class="edit-img-btn" title="เปลี่ยนรูปโปรไฟล์">
+                <i class="bi bi-camera-fill"></i>
+            </label>
+            <input type="file" id="p-img-upload" accept="image/*" class="d-none" onchange="uploadProfileImage(event)">
+        </div>
+        
         <div class="text-start">
             <label class="small fw-bold mb-1">ชื่อผู้ใช้</label>
             <input type="text" id="p-username" class="form-control mb-3" readonly>
             <label class="small fw-bold mb-1">แก้ไขรหัสผ่านใหม่ (สำหรับล็อกอินเว็บ)</label>
             <input type="password" id="p-new-password" class="form-control mb-3" placeholder="กรอกรหัสผ่านใหม่ (6 ตัวขึ้นไป)">
-            <button class="btn btn-primary w-100 fw-bold py-2" onclick="updateUserAuth()">บันทึกรหัสผ่านใหม่</button>
+            <button class="btn btn-primary w-100 fw-bold py-2" onclick="updateUserAuth()">บันทึกข้อมูลใหม่</button>
         </div>
       </div>
     </div>
@@ -210,7 +218,6 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-4 bg-light">
-        
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-123"></i> 1. Keypad Pin (รหัสกดประตู)</h6>
@@ -257,7 +264,6 @@
                 </div>
             </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -370,7 +376,6 @@
         return "Visitor";
     }
 
-    // 🌍 ระบบแปลภาษา (i18n) ที่ปรับปรุงแล้ว
     const i18n = {
         th: {
             menu_hw: "รหัสผ่านเข้าห้องของฉัน", menu_users: "ข้อมูลผู้ใช้ทั้งหมด", menu_settings: "การตั้งค่า dashboard",
@@ -401,12 +406,9 @@
     window.changeLanguage = (lang) => {
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (i18n[lang] && i18n[lang][key]) {
-                el.innerText = i18n[lang][key];
-            }
+            if (i18n[lang] && i18n[lang][key]) el.innerText = i18n[lang][key];
         });
         localStorage.setItem('dashboard_lang', lang);
-        
         updateClockAndDate();
     };
 
@@ -439,6 +441,46 @@
         new bootstrap.Modal(document.getElementById(id)).show();
     };
 
+    // ---------------- PROFILE IMAGE UPLOAD ---------------- //
+    window.uploadProfileImage = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // ย่อขนาดรูปให้เหลือไม่เกิน 200x200 px เพื่อไม่ให้เปลืองพื้นที่ Database
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 200;
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                } else {
+                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // เซฟเป็น JPG คุณภาพ 80%
+
+                // บันทึกรูป (Base64) ลง Firebase Database
+                set(ref(db, `users/${currentLoggedInUser}/profile_img`), dataUrl).then(() => {
+                    alert('อัปเดตรูปโปรไฟล์สำเร็จแล้ว!');
+                }).catch(err => {
+                    alert('เกิดข้อผิดพลาดในการอัปโหลดรูป: ' + err.message);
+                });
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+    // ------------------------------------------------------ //
+
     window.openHardwareModal = () => {
         if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
         const data = userProfiles[currentLoggedInUser];
@@ -459,7 +501,6 @@
         new bootstrap.Modal(document.getElementById('hwModal')).show();
     };
 
-    // ---------------- HARDWARE ACTIONS ---------------- //
     window.saveKeypad = () => {
         const val = document.getElementById('hw-keypad').value;
         if(val.length === 6) {
@@ -583,8 +624,6 @@
         }
     };
 
-    // ---------------------------------------------------- //
-
     window.showDeleteSelfModal = () => {
         if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
         document.getElementById('delete-step-1').style.display = 'block';
@@ -696,11 +735,26 @@
         }
     });
 
+    // ---------------- อัปเดตรูปโปรไฟล์ในส่วนต่างๆ ---------------- //
     function updateSidebarAvatar(uName) {
-        if(!userProfiles[uName]) return;
+        const userData = userProfiles[uName];
+        if(!userData) return;
+        
         const color = getColorFromName(uName);
-        [document.getElementById('menu-avatar'), document.getElementById('p-preview')].forEach(el => { 
-            el.style.backgroundColor = color; el.innerText = uName[0].toUpperCase(); el.style.backgroundImage = "none"; 
+        const els = [document.getElementById('menu-avatar'), document.getElementById('p-preview')];
+        
+        els.forEach(el => {
+            if (userData.profile_img) {
+                // ถ้ามีรูปที่อัปโหลดไว้
+                el.style.backgroundImage = `url(${userData.profile_img})`;
+                el.innerText = '';
+                el.style.backgroundColor = 'transparent';
+            } else {
+                // ถ้ายังไม่มีรูป ให้แสดงตัวอักษรและสี
+                el.style.backgroundImage = "none";
+                el.style.backgroundColor = color;
+                el.innerText = uName[0].toUpperCase();
+            }
         });
     }
 
@@ -726,9 +780,17 @@
             
             let deleteBtnHtml = canDelete ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteUserProfile('${uName}', event)" title="ลบผู้ใช้"><i class="bi bi-trash"></i></button>` : '';
             
+            // ตรวจสอบรูปโปรไฟล์สำหรับรายชื่อผู้ใช้
+            let avatarHtml = '';
+            if (userData.profile_img) {
+                avatarHtml = `<div class="user-avatar me-3" style="background-image:url(${userData.profile_img}); background-color:transparent; cursor:pointer;" onclick="showPersonalHistory('${uName}')"></div>`;
+            } else {
+                avatarHtml = `<div class="user-avatar me-3" style="background:${getColorFromName(uName)}; cursor:pointer;" onclick="showPersonalHistory('${uName}')">${uName[0].toUpperCase()}</div>`;
+            }
+            
             list.insertAdjacentHTML('beforeend', `
                 <div class="list-group-item list-group-item-action d-flex align-items-center py-3">
-                    <div class="user-avatar me-3" style="background:${getColorFromName(uName)}; cursor:pointer;" onclick="showPersonalHistory('${uName}')">${uName[0].toUpperCase()}</div>
+                    ${avatarHtml}
                     <div class="flex-grow-1" onclick="showPersonalHistory('${uName}')" style="cursor:pointer;">
                         <div class="fw-bold">${uName} ${isSelf ? '<span class="badge bg-primary ms-1" style="font-size:0.6rem;" data-i18n="txt_you">คุณ</span>' : ''}</div>
                         <small class="${role === 'Admin' ? 'text-danger fw-bold' : 'text-primary'}">${role}</small>
