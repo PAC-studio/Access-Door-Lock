@@ -54,7 +54,6 @@
         
         .icon-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 15px; }
         
-        /* สำหรับ Welcome Popup */
         .icon-circle-success { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin: 0 auto 20px; background: #d1e7dd; color: #198754; box-shadow: 0 4px 15px rgba(25,135,84,0.3); }
         @keyframes heartbeat { 0% { transform: scale(1); } 14% { transform: scale(1.15); } 28% { transform: scale(1); } 42% { transform: scale(1.15); } 70% { transform: scale(1); } }
         .heartbeat-anim { animation: heartbeat 1.5s infinite; }
@@ -74,11 +73,11 @@
                 <span id="menu-user-name">Loading...</span> 
                 <small class="text-success fw-normal" style="font-size: 0.7rem;">Online</small>
             </h6>
-            <small class="text-primary fw-bold" id="menu-user-role" style="font-size: 0.85rem;">Developer</small>
+            <small class="text-primary fw-bold" id="menu-user-role" style="font-size: 0.85rem;">Admin</small>
         </div>
     </div>
     
-    <div class="menu-item" onclick="showModal('hwModal')"><i class="bi bi-cpu"></i> แก้ไขรหัสผ่านอุปกรณ์</div>
+    <div class="menu-item" onclick="openHardwareModal()"><i class="bi bi-cpu"></i> รหัสผ่านเข้าห้องของฉัน</div>
     <div class="menu-item" onclick="showModal('userListModal')"><i class="bi bi-people"></i> ข้อมูลผู้ใช้ทั้งหมด</div>
     <div class="menu-item" onclick="showModal('settingsModal')"><i class="bi bi-sliders"></i> การตั้งค่า dashboard</div>
     
@@ -179,7 +178,7 @@
         <div class="text-start">
             <label class="small fw-bold mb-1">ชื่อผู้ใช้</label>
             <input type="text" id="p-username" class="form-control mb-3" readonly>
-            <label class="small fw-bold mb-1">แก้ไขรหัสผ่านใหม่</label>
+            <label class="small fw-bold mb-1">แก้ไขรหัสผ่านใหม่ (สำหรับล็อกอินเว็บ)</label>
             <input type="password" id="p-new-password" class="form-control mb-3" placeholder="กรอกรหัสผ่านใหม่ (6 ตัวขึ้นไป)">
             <button class="btn btn-primary w-100 fw-bold py-2" onclick="updateUserAuth()">บันทึกรหัสผ่านใหม่</button>
         </div>
@@ -189,17 +188,61 @@
 </div>
 
 <div class="modal fade" id="hwModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขรหัสผ่านอุปกรณ์</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <div class="mb-4 p-3 border rounded">
-            <h6 class="fw-bold text-primary mb-3">Keypad Pin (6 หลัก)</h6>
-            <div class="input-group">
-                <input type="text" id="hw-keypad" class="form-control" maxlength="6" value="000000" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                <button class="btn btn-primary" onclick="saveKeypad()">บันทึกรหัสล็อกประตู</button>
+      <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-primary"><i class="bi bi-shield-lock"></i> รหัสผ่านเข้าห้องของฉัน</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4 bg-light">
+        
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-123"></i> 1. Keypad Pin (รหัสกดประตู)</h6>
+                <label class="small text-muted mb-2">ตั้งค่ารหัสผ่าน 6 หลักสำหรับกดเข้าห้องของคุณ</label>
+                <div class="input-group">
+                    <input type="text" id="hw-keypad" class="form-control text-center fw-bold fs-5" maxlength="6" placeholder="000000" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <button class="btn btn-primary px-4 fw-bold" onclick="saveKeypad()">บันทึก</button>
+                </div>
             </div>
         </div>
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold text-success mb-3"><i class="bi bi-fingerprint"></i> 2. Fingerprint Module</h6>
+                <label class="small text-muted mb-2">ระบุหมายเลข ID (เช่น 01, 04) เพื่อลงทะเบียนลายนิ้วมือ</label>
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-success text-white fw-bold border-success">ID</span>
+                    <input type="number" id="hw-finger-id" class="form-control border-success" placeholder="ระบุตัวเลข ID">
+                    <button class="btn btn-success fw-bold" id="btn-check-finger" onclick="checkFingerprintID()">ลงทะเบียนใหม่</button>
+                </div>
+
+                <div id="finger-scan-area" class="text-center p-3 bg-success bg-opacity-10 border border-success rounded" style="display:none;">
+                    <p id="finger-status-text" class="mb-3 fw-bold text-success">พร้อมแสกนลายนิ้วมือของคุณ</p>
+                    <div id="finger-spinner" class="spinner-border text-success mb-3" style="display:none; width: 3rem; height: 3rem;" role="status"></div>
+                    <br>
+                    <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" id="btn-start-finger" onclick="startFingerprintScan()">เริ่มการแสกน <i class="bi bi-play-circle-fill ms-1"></i></button>
+                    <button class="btn btn-link text-danger text-decoration-none btn-sm mt-2" onclick="cancelScan('finger')">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="fw-bold text-info mb-3"><i class="bi bi-credit-card-2-front-fill"></i> 3. RFID Module (บัตรทาบ)</h6>
+                <label class="small text-muted mb-2">รหัสบัตร RFID ปัจจุบันของคุณ:</label>
+                <input type="text" id="hw-rfid-code" class="form-control mb-3 text-center fw-bold text-secondary bg-light" readonly value="ยังไม่มีข้อมูลบัตร">
+                
+                <div id="rfid-scan-area" class="text-center p-3 bg-info bg-opacity-10 border border-info rounded">
+                    <p id="rfid-status-text" class="mb-3 fw-bold text-info">กดปุ่มด้านล่างเพื่อสแกนบัตรใบใหม่</p>
+                    <div id="rfid-spinner" class="spinner-border text-info mb-3" style="display:none; width: 3rem; height: 3rem;" role="status"></div>
+                    <br>
+                    <button class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm" id="btn-start-rfid" onclick="startRFIDScan()">เริ่มการแสกน <i class="bi bi-play-circle-fill ms-1"></i></button>
+                    <button class="btn btn-link text-danger text-decoration-none btn-sm mt-2" id="btn-cancel-rfid" style="display:none;" onclick="cancelScan('rfid')">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -209,10 +252,10 @@
     <div class="card p-4 shadow text-center" style="width: 350px;">
         <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2 text-primary"></i>Login</h3>
         <p class="small opacity-75 mb-4">Access Entry Door Lock Dashboard</p>
-        <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้ (เช่น nonthaphat)">
+        <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
         <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
         <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold mb-3">เข้าสู่ระบบ</button>
-        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegisterUI()">ไม่มีบัญชี? สมัครบัญชีใหม่</button>
+        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegisterUI()">สมัครบัญชีใหม่ (Admin Only)</button>
         <p id="error-msg" class="text-danger mt-3 small fw-bold"></p>
     </div>
 </div>
@@ -220,11 +263,11 @@
 <div id="register-section" class="auth-wrapper">
     <div class="card p-4 shadow text-center border-top border-success border-4" style="width: 350px;">
         <h3 class="fw-bold mb-1"><i class="bi bi-person-plus-fill me-2 text-success"></i>สมัครบัญชีใหม่</h3>
-        <p class="small opacity-75 mb-4">สำหรับเพิ่มผู้ใช้ในระบบ Access Entry Door Lock Dashboard</p>
+        <p class="small opacity-75 mb-4">สำหรับเพิ่มผู้ใช้ในระบบ Access Control</p>
         <input type="text" id="reg-username" class="form-control mb-3 py-2" placeholder="ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)">
         <input type="password" id="reg-password" class="form-control mb-3 py-2" placeholder="ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)">
         <button id="do-register-btn" class="btn btn-success w-100 py-2 fw-bold mb-3">ลงทะเบียนผู้ใช้</button>
-        <button class="btn btn-link btn-sm text-decoration-none text-secondary" onclick="showLoginUI()"><i class="bi bi-arrow-left"></i> มีบัญชีแล้ว? กลับไปหน้าเข้าสู่ระบบ</button>
+        <button class="btn btn-link btn-sm text-decoration-none text-secondary" onclick="showLoginUI()"><i class="bi bi-arrow-left"></i> กลับไปหน้าเข้าสู่ระบบ</button>
         <p id="reg-error-msg" class="text-danger mt-3 small fw-bold"></p>
     </div>
 </div>
@@ -286,6 +329,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -302,12 +346,13 @@
     let allLogs = [];
     let userProfiles = {};
     let currentLoggedInUser = "";
+    let fingerUnsub = null;
+    let rfidUnsub = null;
 
+    // ระบบ Role ใหม่ (มีแค่ nonthaphat ที่เป็น Admin)
     function getRole(username) {
         if(!username) return "Visitor";
-        const u = username.toLowerCase();
-        if(u === "nonthaphat") return "Developer";
-        if(u === "phirnath" || u === "natrada") return "Admin";
+        if(username.toLowerCase() === "nonthaphat") return "Admin";
         return "Visitor";
     }
 
@@ -335,6 +380,171 @@
         if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
         new bootstrap.Modal(document.getElementById(id)).show();
     };
+
+    // เปิดหน้า Hardware และดึงข้อมูลปัจจุบันของตัวเองมาใส่
+    window.openHardwareModal = () => {
+        if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
+        const data = userProfiles[currentLoggedInUser];
+        
+        // รีเซ็ต UI การสแกน
+        cancelScan('finger');
+        cancelScan('rfid');
+
+        if(data) {
+            document.getElementById('hw-keypad').value = data.keypad_pin || '000000';
+            document.getElementById('hw-finger-id').value = data.fingerprint_id || '';
+            document.getElementById('hw-rfid-code').value = data.rfid_code || 'ยังไม่มีข้อมูลบัตร';
+            
+            if(data.rfid_code) {
+                document.getElementById('btn-start-rfid').innerHTML = `แก้ไข RFID code <i class="bi bi-pencil-square ms-1"></i>`;
+            } else {
+                document.getElementById('btn-start-rfid').innerHTML = `เริ่มการแสกน <i class="bi bi-play-circle-fill ms-1"></i>`;
+            }
+        }
+        new bootstrap.Modal(document.getElementById('hwModal')).show();
+    };
+
+    // ---------------- HARDWARE ACTIONS ---------------- //
+
+    window.saveKeypad = () => {
+        const val = document.getElementById('hw-keypad').value;
+        if(val.length === 6) {
+            // บันทึกเฉพาะของ user คนปัจจุบัน
+            set(ref(db, `users/${currentLoggedInUser}/keypad_pin`), val).then(() => {
+                alert("บันทึกรหัสผ่านล็อกประตูของคุณสำเร็จแล้ว");
+            });
+        } else {
+            alert("กรุณากรอกรหัสผ่านให้ครบ 6 หลัก");
+        }
+    };
+
+    window.checkFingerprintID = () => {
+        const id = document.getElementById('hw-finger-id').value;
+        if(!id) return alert("กรุณาระบุ ID ก่อนลงทะเบียน");
+        
+        let exists = false;
+        for(let key in userProfiles) {
+            if(userProfiles[key].fingerprint_id == id && key !== currentLoggedInUser) {
+                exists = true; break;
+            }
+        }
+        
+        if(exists) {
+            if(!confirm(`มีไอดี ${id} ในระบบแล้ว คุณต้องการแก้ไข/เขียนทับลายนิ้วมือนี้หรือไม่?`)) return;
+        }
+        
+        document.getElementById('finger-scan-area').style.display = 'block';
+        document.getElementById('btn-check-finger').innerText = "เปลี่ยน ID ใหม่";
+    };
+
+    window.startFingerprintScan = () => {
+        const id = document.getElementById('hw-finger-id').value;
+        document.getElementById('finger-spinner').style.display = 'inline-block';
+        document.getElementById('btn-start-finger').style.display = 'none';
+        document.getElementById('finger-status-text').innerText = "กำลังรอการแสกนนิ้วครั้งที่ 1 (จากตัวเครื่อง)...";
+        document.getElementById('finger-status-text').className = "mb-3 fw-bold text-primary";
+
+        // สั่งงานไปที่ Board ให้เริ่มแสกน
+        set(ref(db, 'commands/fingerprint'), {
+            command: 'enroll',
+            id: id,
+            user: currentLoggedInUser,
+            status: 'waiting_1' // บอกบอร์ดว่ากำลังรอครั้งแรก
+        });
+
+        // รอรับค่าสถานะจาก Board กลับมา
+        if(fingerUnsub) fingerUnsub();
+        fingerUnsub = onValue(ref(db, 'commands/fingerprint/status'), (snap) => {
+            const status = snap.val();
+            if(status === 'waiting_2') {
+                Swal.fire({ icon: 'info', title: 'แสกนครั้งที่ 1 ผ่าน', text: 'กรุณาวางลายนิ้วมืออีกครั้ง!', confirmButtonText: 'ตกลง' });
+                document.getElementById('finger-status-text').innerText = "กรุณาวางลายนิ้วมืออีกครั้ง...";
+                document.getElementById('finger-status-text').className = "mb-3 fw-bold text-warning";
+            } else if(status === 'success') {
+                document.getElementById('finger-status-text').innerText = "บันทึกลายนิ้วมือสำเร็จ!";
+                document.getElementById('finger-status-text').className = "mb-3 fw-bold text-success";
+                document.getElementById('finger-spinner').style.display = 'none';
+                document.getElementById('btn-start-finger').style.display = 'inline-block';
+                document.getElementById('btn-start-finger').innerHTML = `ลงทะเบียนอีกครั้ง <i class="bi bi-arrow-repeat ms-1"></i>`;
+                
+                // เซฟเข้าโปรไฟล์ผู้ใช้
+                set(ref(db, `users/${currentLoggedInUser}/fingerprint_id`), id);
+                if(fingerUnsub) { fingerUnsub(); fingerUnsub = null; }
+            } else if(status === 'failed' || status === 'mismatch') {
+                document.getElementById('finger-status-text').innerText = "การแสกนไม่ตรงกัน กรุณาเริ่มใหม่";
+                document.getElementById('finger-status-text').className = "mb-3 fw-bold text-danger";
+                document.getElementById('finger-spinner').style.display = 'none';
+                document.getElementById('btn-start-finger').style.display = 'inline-block';
+                document.getElementById('btn-start-finger').innerHTML = `เริ่มการแสกนใหม่ <i class="bi bi-play-circle-fill ms-1"></i>`;
+                if(fingerUnsub) { fingerUnsub(); fingerUnsub = null; }
+            }
+        });
+    };
+
+    window.startRFIDScan = () => {
+        document.getElementById('rfid-spinner').style.display = 'inline-block';
+        document.getElementById('btn-start-rfid').style.display = 'none';
+        document.getElementById('btn-cancel-rfid').style.display = 'inline-block';
+        document.getElementById('rfid-status-text').innerText = "กรุณาแตะบัตรที่เครื่องอ่าน...";
+        document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-primary";
+
+        // สั่งงานบอร์ด
+        set(ref(db, 'commands/rfid'), {
+            command: 'enroll',
+            user: currentLoggedInUser,
+            status: 'waiting',
+            scanned_code: ''
+        });
+
+        if(rfidUnsub) rfidUnsub();
+        rfidUnsub = onValue(ref(db, 'commands/rfid'), (snap) => {
+            const data = snap.val();
+            if(!data) return;
+            
+            if(data.status === 'success' && data.scanned_code) {
+                document.getElementById('rfid-status-text').innerText = "บันทึกบัตรสำเร็จ!";
+                document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-success";
+                document.getElementById('rfid-spinner').style.display = 'none';
+                document.getElementById('btn-start-rfid').style.display = 'inline-block';
+                document.getElementById('btn-cancel-rfid').style.display = 'none';
+                document.getElementById('btn-start-rfid').innerHTML = `แก้ไข RFID code <i class="bi bi-pencil-square ms-1"></i>`;
+                
+                document.getElementById('hw-rfid-code').value = data.scanned_code;
+                set(ref(db, `users/${currentLoggedInUser}/rfid_code`), data.scanned_code);
+                
+                if(rfidUnsub) { rfidUnsub(); rfidUnsub = null; }
+            } else if(data.status === 'failed') {
+                document.getElementById('rfid-status-text').innerText = "อ่านบัตรไม่สำเร็จ กรุณาลองใหม่";
+                document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-danger";
+                document.getElementById('rfid-spinner').style.display = 'none';
+                document.getElementById('btn-start-rfid').style.display = 'inline-block';
+                document.getElementById('btn-cancel-rfid').style.display = 'none';
+                document.getElementById('btn-start-rfid').innerHTML = `เริ่มการแสกนใหม่ <i class="bi bi-play-circle-fill ms-1"></i>`;
+                if(rfidUnsub) { rfidUnsub(); rfidUnsub = null; }
+            }
+        });
+    };
+
+    window.cancelScan = (type) => {
+        if(type === 'finger') {
+            document.getElementById('finger-scan-area').style.display = 'none';
+            document.getElementById('finger-spinner').style.display = 'none';
+            document.getElementById('btn-start-finger').style.display = 'inline-block';
+            document.getElementById('btn-check-finger').innerText = "ลงทะเบียนใหม่";
+            set(ref(db, 'commands/fingerprint/command'), 'idle');
+            if(fingerUnsub) { fingerUnsub(); fingerUnsub = null; }
+        } else {
+            document.getElementById('rfid-status-text').innerText = "กดปุ่มด้านล่างเพื่อสแกนบัตรใบใหม่";
+            document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-info";
+            document.getElementById('rfid-spinner').style.display = 'none';
+            document.getElementById('btn-start-rfid').style.display = 'inline-block';
+            document.getElementById('btn-cancel-rfid').style.display = 'none';
+            set(ref(db, 'commands/rfid/command'), 'idle');
+            if(rfidUnsub) { rfidUnsub(); rfidUnsub = null; }
+        }
+    };
+
+    // ---------------------------------------------------- //
 
     window.showDeleteSelfModal = () => {
         if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
@@ -394,13 +604,13 @@
         sessionStorage.setItem('justLoggedIn', 'true'); 
 
         createUserWithEmailAndPassword(auth, u + "@insight.com", p).then(() => {
-            set(ref(db, 'users/' + u), { username: u, photo: "", role: getRole(u) });
+            set(ref(db, 'users/' + u), { username: u, photo: "", role: getRole(u), keypad_pin: "000000" });
         }).catch(e => {
             sessionStorage.removeItem('justLoggedIn');
             if(e.code === 'auth/email-already-in-use') {
-                document.getElementById('reg-error-msg').innerText = "ชื่อผู้ใช้นี้มีในระบบแล้ว";
+                document.getElementById('reg-error-msg').innerText = "❌ ชื่อผู้ใช้นี้มีในระบบแล้ว";
             } else {
-                document.getElementById('reg-error-msg').innerText = "เกิดข้อผิดพลาด: " + e.message;
+                document.getElementById('reg-error-msg').innerText = "❌ เกิดข้อผิดพลาด: " + e.message;
             }
         });
     };
@@ -417,17 +627,6 @@
         }
     };
 
-    window.saveKeypad = () => {
-        const val = document.getElementById('hw-keypad').value;
-        if(val.length === 6) {
-            set(ref(db, 'hardware/keypad_pin'), val).then(() => {
-                alert("บันทึกรหัสผ่านล็อกประตูสำเร็จ (รหัสใหม่: " + val + ")");
-            });
-        } else {
-            alert("กรุณากรอกรหัสผ่านให้ครบ 6 หลัก");
-        }
-    };
-
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value.trim();
         const p = document.getElementById('password').value;
@@ -438,7 +637,7 @@
         signInWithEmailAndPassword(auth, u + "@insight.com", p)
         .catch(() => {
             sessionStorage.removeItem('justLoggedIn');
-            document.getElementById('error-msg').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+            document.getElementById('error-msg').innerText = "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
         });
     };
 
@@ -451,7 +650,7 @@
             get(ref(db, 'users/' + targetUser)).then((snapshot) => {
                 if (!snapshot.exists()) {
                     signOut(auth).then(() => {
-                        document.getElementById('error-msg').innerHTML = "คุณไม่สามารถเข้าสู่ระบบได้ ต้องขออภัยด้วย หากนี่เป็นข้อผิดพลาดกรุณาแจ้งผู้ดูแลระบบ";
+                        document.getElementById('error-msg').innerHTML = "❌ คุณไม่สามารถเข้าสู่ระบบได้ ต้องขออภัยด้วย หากนี่เป็นข้อผิดพลาดกรุณาแจ้งผู้ดูแลระบบ";
                         sessionStorage.removeItem('justLoggedIn');
                     });
                     return;
@@ -474,14 +673,9 @@
                 runAppLogs();
 
                 if (sessionStorage.getItem('justLoggedIn') === 'true') {
-                    let welcomeText = "";
-                    if (targetUser === 'nonthaphat') {
-                        welcomeText = `ยินดีต้อนรับกลับมานะ ผู้ดูแลระบบ คุณ <b>${uName}</b>`;
-                    } else if (targetUser === 'phirnath' || targetUser === 'natrada') {
-                        welcomeText = `ยินดีต้อนรับกลับมานะแอดมินของเรา คุณ <b>${uName}</b>`;
-                    } else {
-                        welcomeText = `ยินดีต้อนรับเข้าสู่ระบบจัดการประตูอัจฉริยะ คุณ <b>${uName}</b>`;
-                    }
+                    let welcomeText = targetUser === 'nonthaphat' 
+                        ? `ยินดีต้อนรับกลับมานะ ผู้ดูแลระบบ คุณ <b>${uName}</b>`
+                        : `ยินดีต้อนรับเข้าสู่ระบบจัดการประตูอัจฉริยะ คุณ <b>${uName}</b>`;
                     
                     document.getElementById('welcome-message').innerHTML = welcomeText;
                     new bootstrap.Modal(document.getElementById('welcomeModal')).show();
@@ -516,7 +710,6 @@
         });
     }
 
-    // --- อัพเดทระบบเช็คสิทธิ์การลบผู้ใช้ (แก้ไขตรงนี้ครับ!) ---
     function updateFullUserList() {
         const list = document.getElementById('full-user-list');
         list.innerHTML = "";
@@ -534,20 +727,12 @@
             const uName = userData.username;
             const targetUser = uName.toLowerCase();
             const role = userData.role || getRole(uName);
-            const targetRole = getRole(targetUser); 
-            const currentRole = getRole(currentLoggedInUser); // ดึงตำแหน่งของคนที่ล็อกอินอยู่
+            const currentRole = getRole(currentLoggedInUser); 
             const isSelf = (targetUser === currentLoggedInUser);
             
-            // 🔥 ปรับ Logic ใหม่ ป้องกัน Admin ตีกันเอง
             let canDelete = false;
-            
-            if (currentRole === 'Developer') {
-                // Developer ลบได้ทุกคน (ยกเว้นตัวเอง)
-                canDelete = !isSelf;
-            } else if (currentRole === 'Admin') {
-                // Admin ลบได้เฉพาะ Visitor เท่านั้น (ห้ามลบ Developer และห้ามลบ Admin ด้วยกันเอง)
-                canDelete = !isSelf && targetRole === 'Visitor';
-            }
+            // nonthaphat ลบได้ทุกคนยกเว้นตัวเอง
+            if (currentRole === 'Admin') canDelete = !isSelf;
             
             let deleteBtnHtml = '';
             if (canDelete) {
@@ -570,11 +755,8 @@
 
     window.deleteUserProfile = (uName, event) => {
         event.stopPropagation(); 
-        const msg = `คุณต้องการลบข้อมูลของ "${uName}" ออกจากระบบ ใช่หรือไม่?\n\n(หากลบแล้ว ผู้ใช้นี้จะไม่สามารถล็อกอินเข้าสู่ระบบได้อีกทันที)`;
-        if(confirm(msg)) {
-            remove(ref(db, 'users/' + uName)).then(() => {
-                alert(`ลบ ${uName} ออกจากระบบเรียบร้อยแล้ว!`);
-            });
+        if(confirm(`คุณต้องการลบข้อมูลของ "${uName}" ออกจากระบบ ใช่หรือไม่?`)) {
+            remove(ref(db, 'users/' + uName)).then(() => alert(`ลบ ${uName} เรียบร้อยแล้ว!`));
         }
     };
 
