@@ -29,7 +29,6 @@
         .menu-item:hover { background: var(--accent); color: #ffffff !important; }
         .menu-item.danger-item:hover { background: #dc3545; color: #ffffff !important; }
 
-        /* การตั้งค่าโหมดมืด (Dark Mode) และแก้สี Placeholder เป็นสีขาว */
         .dark-mode .table { color: #f1f5f9 !important; background-color: transparent !important; border-color: #334155 !important; }
         .dark-mode .table thead th { background-color: #334155 !important; color: #60a5fa !important; border-bottom: 2px solid #475569 !important; }
         .dark-mode .table tbody td { background-color: #1e293b !important; color: #f1f5f9 !important; border-bottom: 1px solid #334155 !important; }
@@ -41,12 +40,8 @@
         .dark-mode .list-group-item:hover { background-color: #334155 !important; }
         .dark-mode .text-muted { color: #94a3b8 !important; }
 
-        /* ทำให้ข้อความตอนยังไม่พิมพ์ (Placeholder) เป็นสีขาว */
         .dark-mode .form-control::placeholder,
-        .dark-mode .form-select::placeholder { 
-            color: rgba(255, 255, 255, 0.8) !important; 
-            opacity: 1; 
-        }
+        .dark-mode .form-select::placeholder { color: rgba(255, 255, 255, 0.8) !important; opacity: 1; }
         
         #hamburger-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; z-index: 1100; color: var(--text-main); }
         
@@ -106,9 +101,9 @@
     <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
       <div class="modal-body text-center p-5">
         <div class="icon-circle-success heartbeat-anim"><i class="bi bi-unlock-fill"></i></div>
-        <h3 class="fw-bold mb-3" id="welcome-title">เข้าสู่ระบบสำเร็จ!</h3>
+        <h3 class="fw-bold mb-3" id="welcome-title" data-i18n="welcome_title">เข้าสู่ระบบสำเร็จ!</h3>
         <p class="mb-4" id="welcome-message" style="font-size: 1.15rem; color: var(--text-main);"></p>
-        <button type="button" class="btn btn-primary px-5 py-2 fw-bold rounded-pill shadow-sm" data-bs-dismiss="modal">เริ่มต้นใช้งาน</button>
+        <button type="button" class="btn btn-primary px-5 py-2 fw-bold rounded-pill shadow-sm" data-bs-dismiss="modal" data-i18n="welcome_btn">เริ่มต้นใช้งาน</button>
       </div>
     </div>
   </div>
@@ -390,7 +385,6 @@
         return "Visitor";
     }
 
-    // เพิ่มคีย์แปลภาษาสำหรับ Error / Loading Messages ของหน้า Login & Register
     const i18n = {
         th: {
             menu_hw: "รหัสผ่านเข้าห้องของฉัน", menu_users: "ข้อมูลผู้ใช้ทั้งหมด", menu_settings: "การตั้งค่า dashboard",
@@ -409,14 +403,18 @@
             auth_reg_sub: "สำหรับเพิ่มผู้ใช้ในระบบ Access Control", auth_reg_user_ph: "ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)",
             auth_reg_pass_ph: "ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)", auth_reg_btn: "ลงทะเบียนผู้ใช้",
             auth_has_account: "มีบัญชีแล้ว? กลับไปหน้าเข้าสู่ระบบ",
-            // --- เพิ่มส่วนแปลข้อความแจ้งเตือนตรงนี้ ---
             err_reg_len: "❌ กรุณากรอกชื่อและรหัสผ่านอย่างน้อย 6 ตัวอักษร",
             msg_creating_acc: "กำลังสร้างบัญชีผู้ใช้...",
             err_user_exists: "❌ ชื่อผู้ใช้นี้มีในระบบแล้ว",
             err_general: "❌ เกิดข้อผิดพลาด: ",
             msg_logging_in: "กำลังเข้าสู่ระบบ...",
             err_invalid_login: "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
-            err_cannot_login: "❌ คุณไม่สามารถเข้าสู่ระบบได้"
+            err_cannot_login: "❌ คุณไม่สามารถเข้าสู่ระบบได้",
+            // --- เพิ่มส่วนแปล Pop-up ยินดีต้อนรับ ---
+            welcome_title: "เข้าสู่ระบบสำเร็จ!",
+            welcome_btn: "เริ่มต้นใช้งาน",
+            welcome_admin: "ยินดีต้อนรับกลับมานะ ผู้ดูแลระบบ คุณ <b>{name}</b>",
+            welcome_user: "ยินดีต้อนรับเข้าสู่ระบบจัดการประตูอัจฉริยะ คุณ <b>{name}</b>"
         },
         en: {
             menu_hw: "My Door Access", menu_users: "All Users Info", menu_settings: "Dashboard Settings",
@@ -435,18 +433,21 @@
             auth_reg_sub: "Add new user to Access Control system", auth_reg_user_ph: "Set Username",
             auth_reg_pass_ph: "Set Password (Min 6 chars)", auth_reg_btn: "Register User",
             auth_has_account: "Already have an account? Back to login",
-            // --- เพิ่มส่วนแปลข้อความแจ้งเตือนตรงนี้ ---
             err_reg_len: "❌ Please enter a username and password (min 6 chars)",
             msg_creating_acc: "Creating account...",
             err_user_exists: "❌ Username already exists",
             err_general: "❌ Error: ",
             msg_logging_in: "Logging in...",
             err_invalid_login: "❌ Invalid username or password",
-            err_cannot_login: "❌ You cannot log in"
+            err_cannot_login: "❌ You cannot log in",
+            // --- เพิ่มส่วนแปล Pop-up ยินดีต้อนรับ ---
+            welcome_title: "Login Successful!",
+            welcome_btn: "Get Started",
+            welcome_admin: "Welcome back, Admin <b>{name}</b>",
+            welcome_user: "Welcome to Smart Door System, <b>{name}</b>"
         }
     };
 
-    // ตัวช่วยดึงข้อความแจ้งเตือนตามภาษาปัจจุบัน
     const getErrMsg = (key) => {
         const lang = localStorage.getItem('dashboard_lang') || 'th';
         return i18n[lang][key] || key;
@@ -470,7 +471,6 @@
         localStorage.setItem('dashboard_lang', lang);
         updateClockAndDate();
         
-        // เคลียร์ Error message ทุกครั้งที่เปลี่ยนภาษาเพื่อให้ดูสะอาดตา
         document.getElementById('error-msg').innerText = '';
         document.getElementById('reg-error-msg').innerText = '';
     };
@@ -708,7 +708,6 @@
     };
     window.showLoginUI = () => { document.getElementById('register-section').style.display = 'none'; document.getElementById('login-section').style.display = 'flex'; document.getElementById('error-msg').innerText = ''; };
 
-    // อัปเดตฟังก์ชันสมัครสมาชิกให้ดึงข้อความแจ้งเตือนตามภาษา
     document.getElementById('do-register-btn').onclick = () => {
         const u = document.getElementById('reg-username').value.trim();
         const p = document.getElementById('reg-password').value;
@@ -731,7 +730,6 @@
         } else { alert("กรุณากรอกรหัสผ่านอย่างน้อย 6 ตัวอักษร"); }
     };
 
-    // อัปเดตฟังก์ชันล็อคอินให้ดึงข้อความแจ้งเตือนตามภาษา
     document.getElementById('login-btn').onclick = () => {
         const u = document.getElementById('username').value.trim();
         const p = document.getElementById('password').value;
@@ -777,9 +775,14 @@
                 runAppLogs();
 
                 if (sessionStorage.getItem('justLoggedIn') === 'true') {
-                    let welcomeText = targetUser === 'nonthaphat' 
-                        ? `ยินดีต้อนรับกลับมานะ ผู้ดูแลระบบ คุณ <b>${uName}</b>`
-                        : `ยินดีต้อนรับเข้าสู่ระบบจัดการประตูอัจฉริยะ คุณ <b>${uName}</b>`;
+                    // --- เพิ่มการดึงข้อความจาก i18n ---
+                    const lang = localStorage.getItem('dashboard_lang') || 'th';
+                    let welcomeTemplate = targetUser === 'nonthaphat' 
+                        ? i18n[lang].welcome_admin
+                        : i18n[lang].welcome_user;
+                        
+                    let welcomeText = welcomeTemplate.replace('{name}', uName);
+                    
                     document.getElementById('welcome-message').innerHTML = welcomeText;
                     new bootstrap.Modal(document.getElementById('welcomeModal')).show();
                     sessionStorage.removeItem('justLoggedIn');
@@ -796,7 +799,6 @@
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             
-            // ล้างข้อความ "กำลังเข้าสู่ระบบ..." ตอนที่ล็อกเอาต์ออกมา
             if(document.getElementById('error-msg').innerHTML.includes("text-primary")) {
                 document.getElementById('error-msg').innerText = '';
             }
