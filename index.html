@@ -29,6 +29,7 @@
         .menu-item:hover { background: var(--accent); color: #ffffff !important; }
         .menu-item.danger-item:hover { background: #dc3545; color: #ffffff !important; }
 
+        /* การตั้งค่าโหมดมืด (Dark Mode) และแก้สี Placeholder เป็นสีขาวตามที่รีเควส */
         .dark-mode .table { color: #f1f5f9 !important; background-color: transparent !important; border-color: #334155 !important; }
         .dark-mode .table thead th { background-color: #334155 !important; color: #60a5fa !important; border-bottom: 2px solid #475569 !important; }
         .dark-mode .table tbody td { background-color: #1e293b !important; color: #f1f5f9 !important; border-bottom: 1px solid #334155 !important; }
@@ -39,10 +40,17 @@
         .dark-mode .list-group-item { background-color: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
         .dark-mode .list-group-item:hover { background-color: #334155 !important; }
         .dark-mode .text-muted { color: #94a3b8 !important; }
+
+        /* ทำให้ข้อความตอนยังไม่พิมพ์ (Placeholder) เป็นสีขาว */
+        .dark-mode .form-control::placeholder,
+        .dark-mode .form-select::placeholder { 
+            color: rgba(255, 255, 255, 0.8) !important; 
+            opacity: 1; 
+        }
         
         #hamburger-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; z-index: 1100; color: var(--text-main); }
         
-        .auth-wrapper { height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .auth-wrapper { height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; }
         #login-section { display: flex; }
         #register-section { display: none; }
         
@@ -59,7 +67,6 @@
         .icon-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 15px; }
         .icon-circle-success { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin: 0 auto 20px; background: #d1e7dd; color: #198754; box-shadow: 0 4px 15px rgba(25,135,84,0.3); }
         
-        /* ปุ่มแก้ไขรูปภาพ */
         .edit-img-btn { position: absolute; bottom: 0; right: 0; background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--card-bg); box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s; }
         .edit-img-btn:hover { background: #0b5ed7; transform: scale(1.1); }
         
@@ -269,26 +276,33 @@
   </div>
 </div>
 
+<div id="auth-lang-container" class="position-absolute top-0 end-0 p-3 z-3">
+    <select class="form-select form-select-sm shadow-sm" id="auth-language-select" onchange="changeLanguage(this.value)" style="width: auto; cursor: pointer; border-radius: 8px;">
+        <option value="th">🇹🇭 ไทย</option>
+        <option value="en">🇬🇧 English</option>
+    </select>
+</div>
+
 <div id="login-section" class="auth-wrapper">
     <div class="card p-4 shadow text-center" style="width: 350px;">
-        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2 text-primary"></i>Login</h3>
-        <p class="small opacity-75 mb-4">ระบบควบคุมระบบการล็อกและการเข้า-ออกอาคาร</p>
-        <input type="text" id="username" class="form-control mb-3 py-2" placeholder="ชื่อผู้ใช้">
-        <input type="password" id="password" class="form-control mb-3 py-2" placeholder="รหัสผ่าน">
-        <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold mb-3">เข้าสู่ระบบ</button>
-        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegisterUI()">สมัครบัญชีใหม่ (Admin Only)</button>
+        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2 text-primary"></i><span data-i18n="auth_login_title">เข้าสู่ระบบ</span></h3>
+        <p class="small opacity-75 mb-4" data-i18n="auth_sys_title">ระบบควบคุมระบบการล็อกและการเข้า-ออกอาคาร</p>
+        <input type="text" id="username" class="form-control mb-3 py-2" data-i18n="auth_user_ph" placeholder="ชื่อผู้ใช้">
+        <input type="password" id="password" class="form-control mb-3 py-2" data-i18n="auth_pass_ph" placeholder="รหัสผ่าน">
+        <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold mb-3" data-i18n="auth_login_btn">เข้าสู่ระบบ</button>
+        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegisterUI()" data-i18n="auth_no_account">ยังไม่มีบัญชี? สมัครสมาชิก</button>
         <p id="error-msg" class="text-danger mt-3 small fw-bold"></p>
     </div>
 </div>
 
 <div id="register-section" class="auth-wrapper">
     <div class="card p-4 shadow text-center border-top border-success border-4" style="width: 350px;">
-        <h3 class="fw-bold mb-1"><i class="bi bi-person-plus-fill me-2 text-success"></i>สมัครบัญชีใหม่</h3>
-        <p class="small opacity-75 mb-4">สำหรับเพิ่มผู้ใช้ในระบบ Access Control</p>
-        <input type="text" id="reg-username" class="form-control mb-3 py-2" placeholder="ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)">
-        <input type="password" id="reg-password" class="form-control mb-3 py-2" placeholder="ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)">
-        <button id="do-register-btn" class="btn btn-success w-100 py-2 fw-bold mb-3">ลงทะเบียนผู้ใช้</button>
-        <button class="btn btn-link btn-sm text-decoration-none text-secondary" onclick="showLoginUI()"><i class="bi bi-arrow-left"></i> กลับไปหน้าเข้าสู่ระบบ</button>
+        <h3 class="fw-bold mb-1"><i class="bi bi-person-plus-fill me-2 text-success"></i><span data-i18n="auth_reg_title">สมัครบัญชีใหม่</span></h3>
+        <p class="small opacity-75 mb-4" data-i18n="auth_reg_sub">สำหรับเพิ่มผู้ใช้ในระบบ Access Control</p>
+        <input type="text" id="reg-username" class="form-control mb-3 py-2" data-i18n="auth_reg_user_ph" placeholder="ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)">
+        <input type="password" id="reg-password" class="form-control mb-3 py-2" data-i18n="auth_reg_pass_ph" placeholder="ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)">
+        <button id="do-register-btn" class="btn btn-success w-100 py-2 fw-bold mb-3" data-i18n="auth_reg_btn">ลงทะเบียนผู้ใช้</button>
+        <button class="btn btn-link btn-sm text-decoration-none text-secondary" onclick="showLoginUI()"><i class="bi bi-arrow-left"></i> <span data-i18n="auth_has_account">มีบัญชีแล้ว? กลับไปหน้าเข้าสู่ระบบ</span></button>
         <p id="reg-error-msg" class="text-danger mt-3 small fw-bold"></p>
     </div>
 </div>
@@ -376,6 +390,7 @@
         return "Visitor";
     }
 
+    // แก้ไขพจนานุกรมแปลภาษา เพิ่มส่วนของหน้า Login และ Register
     const i18n = {
         th: {
             menu_hw: "รหัสผ่านเข้าห้องของฉัน", menu_users: "ข้อมูลผู้ใช้ทั้งหมด", menu_settings: "การตั้งค่า dashboard",
@@ -387,33 +402,60 @@
             txt_history: "ประวัติการเข้า-ออก", btn_clear: "ล้างประวัติ",
             th_date: "วันที่", th_time: "เวลา", th_name: "ชื่อผู้ใช้", th_device: "อุปกรณ์", th_status: "สถานะ",
             set_display: "รูปแบบการแสดงผล", set_dark: "เปลี่ยนโหมด มืด/สว่าง", set_auto: "เปลี่ยนโหมดอัตโนมัติตามเวลา (06:00-18:00)",
-            set_lang: "ภาษา / Language"
+            set_lang: "ภาษา / Language",
+            // Auth section
+            auth_login_title: "เข้าสู่ระบบ", auth_sys_title: "ระบบควบคุมระบบการล็อกและการเข้า-ออกอาคาร",
+            auth_user_ph: "ชื่อผู้ใช้", auth_pass_ph: "รหัสผ่าน", auth_login_btn: "เข้าสู่ระบบ",
+            auth_no_account: "ยังไม่มีบัญชี? สมัครสมาชิก", auth_reg_title: "สมัครบัญชีใหม่",
+            auth_reg_sub: "สำหรับเพิ่มผู้ใช้ในระบบ Access Control", auth_reg_user_ph: "ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)",
+            auth_reg_pass_ph: "ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)", auth_reg_btn: "ลงทะเบียนผู้ใช้",
+            auth_has_account: "มีบัญชีแล้ว? กลับไปหน้าเข้าสู่ระบบ"
         },
         en: {
             menu_hw: "My Door Access", menu_users: "All Users Info", menu_settings: "Dashboard Settings",
             menu_logout: "Logout", menu_delete: "Delete My Account",
-            title_main: "Access Entry Door Lock Dashboard", 
+            title_main: "Access Control & Door Lock System", 
             title_sub: "IoT-Based Door Lock System with Real-time Dashboard Monitoring",
             txt_login_as: "Logged in as:", txt_last_scan: "Last Entry Scan", wait_data: "Waiting...",
             txt_people: "Current People in Room", txt_unit: "Persons",
             txt_history: "Access History", btn_clear: "Clear History",
             th_date: "Date", th_time: "Time", th_name: "User", th_device: "Device", th_status: "Status",
             set_display: "Display Options", set_dark: "Toggle Dark/Light Mode", set_auto: "Auto theme switch (06:00-18:00)",
-            set_lang: "Language / ภาษา"
+            set_lang: "Language / ภาษา",
+            // Auth section
+            auth_login_title: "Login", auth_sys_title: "Access Control & Door Lock System",
+            auth_user_ph: "Username", auth_pass_ph: "Password", auth_login_btn: "Login",
+            auth_no_account: "Don't have an account? Register", auth_reg_title: "Register",
+            auth_reg_sub: "Add new user to Access Control system", auth_reg_user_ph: "Set Username",
+            auth_reg_pass_ph: "Set Password (Min 6 chars)", auth_reg_btn: "Register User",
+            auth_has_account: "Already have an account? Back to login"
         }
     };
 
+    // อัปเดตฟังก์ชันเปลี่ยนภาษา ให้รองรับ Placeholder ใน Input ด้วย
     window.changeLanguage = (lang) => {
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (i18n[lang] && i18n[lang][key]) el.innerText = i18n[lang][key];
+            if (i18n[lang] && i18n[lang][key]) {
+                if(el.tagName === 'INPUT') {
+                    el.placeholder = i18n[lang][key];
+                } else {
+                    el.innerHTML = i18n[lang][key];
+                }
+            }
         });
+        
+        // Sync Dropdown ให้ตรงกันทั้งสองที่
+        if(document.getElementById('language-select')) document.getElementById('language-select').value = lang;
+        if(document.getElementById('auth-language-select')) document.getElementById('auth-language-select').value = lang;
+        
         localStorage.setItem('dashboard_lang', lang);
         updateClockAndDate();
     };
 
     const savedLang = localStorage.getItem('dashboard_lang') || 'th';
     document.getElementById('language-select').value = savedLang;
+    if(document.getElementById('auth-language-select')) document.getElementById('auth-language-select').value = savedLang;
     changeLanguage(savedLang);
 
     function applyTheme(isDark) {
@@ -441,7 +483,6 @@
         new bootstrap.Modal(document.getElementById(id)).show();
     };
 
-    // ---------------- PROFILE IMAGE UPLOAD ---------------- //
     window.uploadProfileImage = (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -450,25 +491,20 @@
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
-                // ย่อขนาดรูปให้เหลือไม่เกิน 200x200 px เพื่อไม่ให้เปลืองพื้นที่ Database
                 const canvas = document.createElement('canvas');
                 const MAX_SIZE = 200;
                 let width = img.width;
                 let height = img.height;
                 
-                if (width > height) {
-                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                } else {
-                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                }
+                if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
                 
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // เซฟเป็น JPG คุณภาพ 80%
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
-                // บันทึกรูป (Base64) ลง Firebase Database
                 set(ref(db, `users/${currentLoggedInUser}/profile_img`), dataUrl).then(() => {
                     alert('อัปเดตรูปโปรไฟล์สำเร็จแล้ว!');
                 }).catch(err => {
@@ -479,7 +515,6 @@
         };
         reader.readAsDataURL(file);
     };
-    // ------------------------------------------------------ //
 
     window.openHardwareModal = () => {
         if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
@@ -699,6 +734,9 @@
                     return;
                 }
                 
+                // ซ่อนปุ่มเปลี่ยนภาษาหน้าล็อคอิน เมื่อเข้าสู่ระบบแล้ว
+                document.getElementById('auth-lang-container').style.display = 'none';
+                
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('register-section').style.display = 'none';
                 document.getElementById('main-dashboard').style.display = 'block';
@@ -726,6 +764,10 @@
             });
         } else {
             currentLoggedInUser = "";
+            
+            // แสดงปุ่มเปลี่ยนภาษาหน้าล็อคอิน
+            document.getElementById('auth-lang-container').style.display = 'block';
+            
             document.getElementById('login-section').style.display = 'flex';
             document.getElementById('register-section').style.display = 'none';
             document.getElementById('main-dashboard').style.display = 'none';
@@ -735,7 +777,6 @@
         }
     });
 
-    // ---------------- อัปเดตรูปโปรไฟล์ในส่วนต่างๆ ---------------- //
     function updateSidebarAvatar(uName) {
         const userData = userProfiles[uName];
         if(!userData) return;
@@ -745,12 +786,10 @@
         
         els.forEach(el => {
             if (userData.profile_img) {
-                // ถ้ามีรูปที่อัปโหลดไว้
                 el.style.backgroundImage = `url(${userData.profile_img})`;
                 el.innerText = '';
                 el.style.backgroundColor = 'transparent';
             } else {
-                // ถ้ายังไม่มีรูป ให้แสดงตัวอักษรและสี
                 el.style.backgroundImage = "none";
                 el.style.backgroundColor = color;
                 el.innerText = uName[0].toUpperCase();
@@ -780,7 +819,6 @@
             
             let deleteBtnHtml = canDelete ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteUserProfile('${uName}', event)" title="ลบผู้ใช้"><i class="bi bi-trash"></i></button>` : '';
             
-            // ตรวจสอบรูปโปรไฟล์สำหรับรายชื่อผู้ใช้
             let avatarHtml = '';
             if (userData.profile_img) {
                 avatarHtml = `<div class="user-avatar me-3" style="background-image:url(${userData.profile_img}); background-color:transparent; cursor:pointer;" onclick="showPersonalHistory('${uName}')"></div>`;
