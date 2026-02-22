@@ -29,11 +29,19 @@
         .menu-item:hover { background: var(--accent); color: #ffffff !important; }
         .menu-item.danger-item:hover { background: #dc3545; color: #ffffff !important; }
 
-        .dark-mode .table { color: #f1f5f9 !important; background-color: #1e293b !important; border-color: #334155 !important; }
+        /* การตั้งค่า Dark Mode ที่ครอบคลุมขึ้น */
+        .dark-mode .table { color: #f1f5f9 !important; background-color: transparent !important; border-color: #334155 !important; }
         .dark-mode .table thead th { background-color: #334155 !important; color: #60a5fa !important; border-bottom: 2px solid #475569 !important; }
         .dark-mode .table tbody td { background-color: #1e293b !important; color: #f1f5f9 !important; border-bottom: 1px solid #334155 !important; }
         .dark-mode .modal-content { background-color: #1e293b; color: #f1f5f9; border: 1px solid #334155; }
         .dark-mode .form-control, .dark-mode .form-select { background-color: #334155 !important; border-color: #475569 !important; color: #ffffff !important; }
+        .dark-mode .modal-header.bg-light, .dark-mode .modal-body.bg-light { background-color: #1e293b !important; border-color: #334155 !important; }
+        .dark-mode .bg-light { background-color: #334155 !important; color: #f1f5f9 !important; }
+        
+        /* แก้ไขกรอบ List รายชื่อผู้ใช้ในโหมดมืด */
+        .dark-mode .list-group-item { background-color: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
+        .dark-mode .list-group-item:hover { background-color: #334155 !important; }
+        .dark-mode .text-muted { color: #94a3b8 !important; }
         
         #hamburger-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; z-index: 1100; color: var(--text-main); }
         
@@ -135,7 +143,7 @@
             <button class="btn btn-sm btn-secondary mb-3" onclick="showFullList()"><i class="bi bi-arrow-left"></i> กลับไปรายชื่อ</button>
             <div class="card p-3 mb-3 bg-primary bg-opacity-10 border-0">
                 <h5 class="fw-bold mb-0" id="hist-name">---</h5>
-                <p class="small mb-0" id="hist-role-label">Role: Visitor</p>
+                <p class="small mb-0 text-muted" id="hist-role-label">Role: Visitor</p>
             </div>
             <div class="table-responsive">
                 <table class="table table-sm text-center">
@@ -303,7 +311,7 @@
                     <h6 class="card-label small fw-bold text-secondary" data-i18n="txt_last_scan">แสกนเข้าห้องครั้งล่าสุด</h6>
                     <h2 class="fw-bold my-2"><span id="last-user" data-i18n="wait_data">รอข้อมูล...</span></h2>
                     <div id="last-detail-box" class="mt-2">
-                        <span id="last-time" class="small">---</span>
+                        <span id="last-time" class="small text-muted">---</span>
                         <span id="last-status-badge" class="badge ms-2">---</span>
                     </div>
                 </div>
@@ -356,7 +364,7 @@
     let fingerUnsub = null;
     let rfidUnsub = null;
 
-    // 🔥 ระบบ Role: nonthaphat = Admin, คนอื่น = Visitor เท่านั้น
+    // 🔥 ระบบ Role: nonthaphat = Admin, คนอื่น = Visitor
     function getRole(username) {
         if(!username) return "Visitor";
         if(username.toLowerCase() === "nonthaphat") return "Admin";
@@ -396,11 +404,12 @@
                 el.innerText = i18n[lang][key];
             }
         });
-        // บันทึกภาษาลง Local Storage ให้จำค่าไว้
         localStorage.setItem('dashboard_lang', lang);
+        
+        // อัปเดตวันที่ทันทีที่กดเปลี่ยนภาษา
+        updateClockAndDate();
     };
 
-    // โหลดภาษาตอนเปิดเว็บ
     const savedLang = localStorage.getItem('dashboard_lang') || 'th';
     document.getElementById('language-select').value = savedLang;
     changeLanguage(savedLang);
@@ -710,12 +719,11 @@
             
             const uName = userData.username;
             const targetUser = uName.toLowerCase();
-            const role = getRole(uName); // บังคับให้เป็น Admin เฉพาะ nonthaphat
+            const role = getRole(uName); 
             const currentRole = getRole(currentLoggedInUser); 
             const isSelf = (targetUser === currentLoggedInUser);
             
             let canDelete = false;
-            // Admin ลบได้ทุกคนยกเว้นตัวเอง
             if (currentRole === 'Admin') canDelete = !isSelf;
             
             let deleteBtnHtml = canDelete ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteUserProfile('${uName}', event)" title="ลบผู้ใช้"><i class="bi bi-trash"></i></button>` : '';
@@ -724,13 +732,19 @@
                 <div class="list-group-item list-group-item-action d-flex align-items-center py-3">
                     <div class="user-avatar me-3" style="background:${getColorFromName(uName)}; cursor:pointer;" onclick="showPersonalHistory('${uName}')">${uName[0].toUpperCase()}</div>
                     <div class="flex-grow-1" onclick="showPersonalHistory('${uName}')" style="cursor:pointer;">
-                        <div class="fw-bold">${uName} ${isSelf ? '<span class="badge bg-primary ms-1" style="font-size:0.6rem;">คุณ</span>' : ''}</div>
+                        <div class="fw-bold">${uName} ${isSelf ? '<span class="badge bg-primary ms-1" style="font-size:0.6rem;" data-i18n="txt_you">คุณ</span>' : ''}</div>
                         <small class="${role === 'Admin' ? 'text-danger fw-bold' : 'text-primary'}">${role}</small>
                     </div>
                     ${deleteBtnHtml}
                     <i class="bi bi-chevron-right ms-3 text-muted" onclick="showPersonalHistory('${uName}')" style="cursor:pointer;"></i>
                 </div>
             `);
+        });
+        
+        // อัปเดตคำแปล "คุณ" สำหรับคนที่ล็อกอินอยู่ด้วย
+        const currentLang = localStorage.getItem('dashboard_lang') || 'th';
+        document.querySelectorAll('[data-i18n="txt_you"]').forEach(el => {
+            el.innerText = currentLang === 'en' ? 'You' : 'คุณ';
         });
     }
 
@@ -744,7 +758,7 @@
         document.getElementById('hist-name').innerText = name; document.getElementById('hist-role-label').innerText = "Role: " + getRole(name);
         
         const logs = allLogs.filter(l => l.name === name).reverse();
-        if(logs.length === 0) document.getElementById('hist-table-body').innerHTML = "<tr><td colspan='4'>ยังไม่มีประวัติการเข้า-ออก</td></tr>";
+        if(logs.length === 0) document.getElementById('hist-table-body').innerHTML = "<tr><td colspan='4' class='text-muted'>ยังไม่มีประวัติการเข้า-ออก</td></tr>";
         else document.getElementById('hist-table-body').innerHTML = logs.map(l => `<tr><td>${l.date}</td><td>${l.timestamp}</td><td>${l.type}</td><td><span class="badge ${l.status=='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>`).join('');
     };
 
@@ -785,11 +799,24 @@
         return colors[Math.abs(hash) % colors.length];
     }
 
-    setInterval(() => {
+    // ฟังก์ชันอัปเดตเวลาและวันที่ (รองรับเปลี่ยนภาษา)
+    function updateClockAndDate() {
         const now = new Date();
-        document.getElementById('clock-display').innerText = now.toLocaleTimeString('th-TH');
-        document.getElementById('live-date').innerText = now.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-        if(document.getElementById('auto-theme-switch').checked) { const hour = now.getHours(); applyTheme(hour < 6 || hour >= 18); }
+        const currentLang = localStorage.getItem('dashboard_lang') || 'th';
+        const locale = currentLang === 'en' ? 'en-US' : 'th-TH';
+        
+        document.getElementById('clock-display').innerText = now.toLocaleTimeString(locale, { hour12: false });
+        
+        const dateOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        document.getElementById('live-date').innerText = now.toLocaleDateString(locale, dateOptions);
+    }
+
+    setInterval(() => {
+        updateClockAndDate();
+        if(document.getElementById('auto-theme-switch').checked) { 
+            const hour = new Date().getHours(); 
+            applyTheme(hour < 6 || hour >= 18); 
+        }
     }, 1000);
 
     if(document.getElementById('logout-btn-side')) document.getElementById('logout-btn-side').onclick = () => { signOut(auth).then(() => { document.getElementById('error-msg').innerText = ''; }); };
