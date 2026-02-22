@@ -349,7 +349,7 @@
     let fingerUnsub = null;
     let rfidUnsub = null;
 
-    // ระบบ Role ใหม่ (มีแค่ nonthaphat ที่เป็น Admin)
+    // ระบบ Role: อนุญาตแค่ nonthaphat เป็น Admin เท่านั้น
     function getRole(username) {
         if(!username) return "Visitor";
         if(username.toLowerCase() === "nonthaphat") return "Admin";
@@ -731,7 +731,7 @@
             const isSelf = (targetUser === currentLoggedInUser);
             
             let canDelete = false;
-            // nonthaphat ลบได้ทุกคนยกเว้นตัวเอง
+            // อนุญาตเฉพาะ nonthaphat ลบคนอื่นได้
             if (currentRole === 'Admin') canDelete = !isSelf;
             
             let deleteBtnHtml = '';
