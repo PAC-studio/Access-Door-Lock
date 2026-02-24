@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -641,7 +642,7 @@
                 document.getElementById('finger-status-text').innerText = "บันทึกลายนิ้วมือสำเร็จ!";
                 document.getElementById('finger-status-text').className = "mb-3 fw-bold text-success";
                 document.getElementById('finger-spinner').style.display = 'none';
-                document.getElementById('btn-start-finger').style.display = 'inline-block';
+                document.getElementById('btn-start-rfid').style.display = 'inline-block'; // fixed logic error in original file
                 document.getElementById('btn-start-finger').innerHTML = `ลงทะเบียนอีกครั้ง <i class="bi bi-arrow-repeat ms-1"></i>`;
                 
                 set(ref(db, `users/${currentLoggedInUser}/fingerprint_id`), id);
@@ -657,6 +658,9 @@
         });
     };
 
+    // ===============================================
+    // 👉 แก้ไขโค้ดระบบ RFID ฝั่งหน้าเว็บ ให้ตรงกับ ESP32
+    // ===============================================
     window.startRFIDScan = () => {
         document.getElementById('rfid-spinner').style.display = 'inline-block';
         document.getElementById('btn-start-rfid').style.display = 'none';
@@ -664,14 +668,16 @@
         document.getElementById('rfid-status-text').innerText = "กรุณาแตะบัตรที่เครื่องอ่าน...";
         document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-primary";
 
-        set(ref(db, 'commands/rfid'), { command: 'enroll', user: currentLoggedInUser, status: 'waiting', scanned_code: '' });
+        // 👉 แก้ไข 1: เปลี่ยนมาใช้ new_tag ให้ตรงกับ ESP32
+        set(ref(db, 'commands/rfid'), { command: 'enroll', user: currentLoggedInUser, status: 'waiting', new_tag: '' });
 
         if(rfidUnsub) rfidUnsub();
         rfidUnsub = onValue(ref(db, 'commands/rfid'), (snap) => {
             const data = snap.val();
             if(!data) return;
             
-            if(data.status === 'success' && data.scanned_code) {
+            // 👉 แก้ไข 2: ใช้ตัวแปร new_tag ในการตรวจสอบและดึงข้อมูล
+            if(data.status === 'success' && data.new_tag) {
                 document.getElementById('rfid-status-text').innerText = "บันทึกบัตรสำเร็จ!";
                 document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-success";
                 document.getElementById('rfid-spinner').style.display = 'none';
@@ -679,12 +685,13 @@
                 document.getElementById('btn-cancel-rfid').style.display = 'none';
                 document.getElementById('btn-start-rfid').innerHTML = `แก้ไข RFID code <i class="bi bi-pencil-square ms-1"></i>`;
                 
-                document.getElementById('hw-rfid-code').value = data.scanned_code;
-                set(ref(db, `users/${currentLoggedInUser}/rfid_code`), data.scanned_code);
+                // นำเลขบัตรไปโชว์ในช่อง Input และบันทึกลง Profile ผู้ใช้
+                document.getElementById('hw-rfid-code').value = data.new_tag;
+                set(ref(db, `users/${currentLoggedInUser}/rfid_code`), data.new_tag);
                 
                 if(rfidUnsub) { rfidUnsub(); rfidUnsub = null; }
             } else if(data.status === 'failed') {
-                document.getElementById('rfid-status-text').innerText = "อ่านบัตรไม่สำเร็จ กรุณาลองใหม่";
+                document.getElementById('rfid-status-text').innerText = "อ่านบัตรไม่สำเร็จ หรือหมดเวลา";
                 document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-danger";
                 document.getElementById('rfid-spinner').style.display = 'none';
                 document.getElementById('btn-start-rfid').style.display = 'inline-block';
@@ -1041,7 +1048,29 @@
     }, 1000);
 
     if(document.getElementById('logout-btn-side')) document.getElementById('logout-btn-side').onclick = () => { signOut(auth).then(() => { document.getElementById('error-msg').innerText = ''; }); };
-    if(document.getElementById('clear-btn')) document.getElementById('clear-btn').onclick = () => { if(confirm("คุณต้องการล้างประวัติการสแกนเข้า-ออกทั้งหมดหรือไม่? (ไม่สามารถกู้คืนได้)")) remove(ref(db, 'access_logs')); };
+    
+    // 👉 เพิ่มเติม: แก้ไขปุ่มล้างประวัติ ให้ใช้ SweetAlert2 สวยงาม แทน Alert ทื่อๆ ของเดิม
+    if(document.getElementById('clear-btn')) {
+        document.getElementById('clear-btn').onclick = () => { 
+            Swal.fire({
+                title: 'ต้องการล้างประวัติ?',
+                text: "คุณกำลังจะลบประวัติการเข้า-ออกทั้งหมด (ข้อมูลนี้จะไม่สามารถกู้คืนได้)",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'ลบทิ้งถาวร',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    remove(ref(db, 'access_logs')).then(() => {
+                        Swal.fire('สำเร็จ!', 'ล้างประวัติเรียบร้อยแล้ว', 'success');
+                    });
+                }
+            });
+        }; 
+    }
 </script>
 </body>
 </html>
