@@ -1,1076 +1,437 @@
 <!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบควบคุมระบบการล็อกและการเข้า-ออกอาคาร</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
-    <style>
-        :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --border-color: #dee2e6; --accent: #0d6efd; }
-        
-        body.dark-mode { 
-            --bg-color: #0f172a; 
-            --card-bg: #1e293b; 
-            --text-main: #f1f5f9; 
-            --border-color: #334155; 
-        }
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ตัดสายไฟ — กู้ระเบิดสามคน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Sarabun:wght@400;700&display=swap">
+<style>
+:root{--bg:#1b1d1a;--case:#3a3d36;--plate:#2a2c27;--ink:#ece8dc;--dim:#a29f92;--red:#e5484d;--green:#37c26d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Special Elite","Sarabun",monospace}
+body{min-height:100%;padding:12px}
+.bomb{max-width:min(1000px,calc(100vh - 24px));margin:auto;background:var(--case);border-radius:14px;padding:14px;border:3px solid #55584d;box-shadow:inset 0 0 40px #0006;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media(max-width:620px){.bomb{grid-template-columns:repeat(2,minmax(0,1fr))}.center{grid-column:1/-1;order:-1}}
+.center{container-type:inline-size;display:flex;flex-direction:column;align-items:center;gap:12px}
+.timer{width:100%;text-align:center;font:400 21cqw/1.3 "Special Elite","Sarabun",monospace;color:var(--red);background:#120808;padding:8px 0;border-radius:8px;text-shadow:0 0 12px #e5484d99}
+.serial{background:#d9d4c2;color:#222;padding:6px 12px;border-radius:4px;font:400 8cqw "Special Elite","Sarabun",monospace}
+.strikes{font-size:9cqw;display:flex;gap:.3em;color:#555}.strikes b{display:flex}.strikes b.on{color:var(--red);filter:drop-shadow(0 0 4px var(--red))}
+.mod{aspect-ratio:1;container-type:size;position:relative;background:var(--plate);border-radius:10px;border:2px solid #4a4d43}
+.mod.empty{background:#2f312b;border-style:dashed;border-color:#3d4038}
+.mod:not(.empty)::after{content:"";position:absolute;top:6cqw;right:8cqw;width:8cqw;height:8cqw;border-radius:50%;background:#444;border:.6cqw solid #6a6d62}
+.mod.ok::after{background:var(--green);box-shadow:0 0 10px var(--green)}
+.mod.bad{border-color:var(--red);box-shadow:0 0 18px var(--red)}
+.mod:has(.f){z-index:3}
+.nav{cursor:pointer;outline:none}
+.nav.f{box-shadow:0 0 0 3px #fff,0 0 22px 8px #ffffffcc;z-index:2}
+.wsvg{position:absolute;inset:0;width:100%;height:100%}
+.blk{fill:#1d1f1b;stroke:#8a8a82;stroke-width:.6}
+.wire path{fill:none;stroke-linecap:round}
+.halo{opacity:0}.halo path{stroke:#fff}
+.wire.f .halo{opacity:1}
+.hit{stroke:transparent;pointer-events:stroke}
+.wire.cut path{stroke-dasharray:38 24}
+.wire.cut .hit{stroke-dasharray:none}
+.bigbtn{position:absolute;left:50%;top:9%;width:66cqmin;height:66cqmin;margin-left:-33cqmin;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;text-align:center;background:var(--c);border:1.5cqmin solid #fff3;user-select:none}
+.bigbtn.down{transform:scale(.94)}
+.sub{position:absolute;left:27%;width:46%;bottom:5%;height:14%;background:#2f6fe0;color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:7cqmin;letter-spacing:.1em;user-select:none}
+.sub.down{transform:scale(.95)}
+.keys{position:absolute;inset:14% 10% 10%;display:grid;grid-template-columns:1fr 1fr;gap:8%}
+.key{border-radius:10px;background:#d9d4c2;color:#222;display:flex;align-items:center;justify-content:center;padding-bottom:12%;border:3px solid #0004;position:relative}
+.key svg{width:64%;height:64%}
+.bigbtn svg{width:1.6em;height:1.6em}.bigbtn svg g{stroke-width:2.6}
+.key::after{content:"";position:absolute;bottom:9%;left:28%;width:44%;height:7%;border-radius:4px;background:#8a8d80}
+.key.lit::after{background:var(--green);box-shadow:0 0 8px var(--green)}
+.ov{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
+.ov[hidden]{display:none}
+.card{background:var(--plate);border:2px solid #55584d;border-radius:14px;padding:22px;max-width:520px;width:100%;max-height:92vh;overflow:auto}
+.card h1{margin:0 0 6px;font-size:26px}.card p{color:var(--dim);margin:4px 0 12px}
+.role{display:flex;gap:10px;margin:8px 0;font-size:15px}.role b{min-width:70px}
+.go{margin-top:12px;width:100%;padding:12px;border:0;border-radius:8px;background:var(--red);color:#fff;font-family:inherit;font-size:18px;cursor:pointer}
+.hint{font-size:13px;color:var(--dim);margin-top:8px}
 
-        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Kanit', sans-serif; transition: 0.3s; overflow-x: hidden; }
-        
-        #sidebar { position: fixed; right: -280px; left: auto; top: 0; width: 280px; height: 100%; background: var(--card-bg); z-index: 1050; transition: 0.3s; border-left: 1px solid var(--border-color); border-right: none; padding: 20px; }
-        #sidebar.active { right: 0; left: auto; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1040; }
-        .sidebar-overlay.active { display: block; }
-        
-        .menu-item { padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; margin-bottom: 5px; transition: 0.2s; color: var(--text-main); font-weight: 500; }
-        .menu-item:hover { background: var(--accent); color: #ffffff !important; }
-        .menu-item.danger-item:hover { background: #dc3545; color: #ffffff !important; }
+body{background:radial-gradient(120% 90% at 50% 0,#2b2e29,#141512 60%,#0a0a09) fixed}
+:root{--screw:radial-gradient(circle,#d0d2c9 0 1.1px,#80837a 1.5px 2.8px,#222421 3.2px,transparent 3.6px)}
+.bomb,.mod{position:relative}
+.bomb::before,.mod::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-image:var(--screw),var(--screw),var(--screw),var(--screw);background-size:9px 9px;background-repeat:no-repeat;background-position:7px 7px,calc(100% - 7px) 7px,7px calc(100% - 7px),calc(100% - 7px) calc(100% - 7px)}
+.bomb{background:repeating-linear-gradient(90deg,#ffffff07 0 1px,transparent 1px 3px),linear-gradient(160deg,#5f6359,#3b3e37 45%,#2a2c27);border:4px solid;border-color:#7c8074 #33352f #22241f #686c60;border-radius:16px;box-shadow:0 24px 60px #000c,inset 0 0 50px #0009,inset 0 2px 0 #ffffff22}
+.mod{background:repeating-linear-gradient(0deg,#ffffff05 0 1px,transparent 1px 3px),linear-gradient(145deg,#4d5047,#2c2e29);border:2px solid;border-color:#6d7165 #2a2c27 #1c1e1a #5a5e53;border-radius:8px;box-shadow:inset 0 0 14px #0009,0 5px 10px #000b}
+.mod.empty{background:linear-gradient(145deg,#393c35,#292b26);border-style:solid}
+.mod:not(.empty)::after{background:radial-gradient(circle at 35% 30%,#8a8a84,#333 60%,#111);border:.6cqw solid #1a1b18;box-shadow:0 0 0 .6cqw #55584d}
+.mod.ok::after{background:radial-gradient(circle at 35% 30%,#d9ffe6,#37c26d 45%,#0b5a2a);box-shadow:0 0 0 .6cqw #55584d,0 0 12px #37c26d}
+.timer{background:#0b0606;border:3px solid;border-color:#120d0c #4a4d44 #5b5f54 #120d0c;border-radius:6px;padding:3cqw 4cqw;position:relative;box-shadow:inset 0 0 14px #000,0 2px 6px #0008}
+.timer::after{content:"";position:absolute;inset:0;border-radius:3px;pointer-events:none;background:linear-gradient(160deg,#ffffff26,#fff0 40%)}
+.timer svg{display:block;width:100%;filter:drop-shadow(0 0 3px #ff2a1f99)}
+.timer line{stroke:#2b0d0a;stroke-width:2.6;stroke-linecap:round}.timer line.on{stroke:#ff4a3d}.timer circle{fill:#ff4a3d}
+.serial{background:linear-gradient(#e2dcc6,#c7c1a9);box-shadow:0 2px 4px #000a,inset 0 0 8px #0003;transform:rotate(-1.2deg)}
+.strikes{background:#0d0d0b;padding:1.5cqw 3cqw;border-radius:5px;box-shadow:inset 0 2px 6px #000,0 1px 0 #ffffff22}
+.blk{fill:url(#mg)}
+.bigbtn{background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--c) 55%,#fff),var(--c) 42%,color-mix(in srgb,var(--c) 60%,#000));border:0;box-shadow:0 0 0 2cqmin #151613,0 0 0 3.2cqmin #5b5f54,0 2cqmin 4cqmin 3cqmin #000a,inset 0 -2cqmin 3cqmin #0006}
+.key{background:linear-gradient(#ebe6d4,#bcb69f);box-shadow:0 3px 0 #6d6958,0 6px 8px #000a,inset 0 1px 0 #fff9}
+.sub{background:linear-gradient(#5a8df0,#2456b8);box-shadow:0 3px 0 #12306b,0 5px 8px #000a,inset 0 1px 0 #fff6}
+.scr{position:absolute;left:6%;right:15%;top:15%;height:27%;background:linear-gradient(#0f1a10,#08110a);border:2px solid #16170f;border-radius:4px;box-shadow:inset 0 0 12px #000,0 1px 0 #ffffff25;display:flex;align-items:center;justify-content:center;color:#6dff9a;text-shadow:0 0 8px #3ddc7a99;white-space:nowrap;overflow:hidden}
+.scr svg{height:.7em;width:.7em;margin:0 .06em}.scr sup{font-size:.55em;vertical-align:.6em}
+.bits{position:absolute;left:6%;right:15%;top:50%;height:21%;display:grid;grid-template-columns:repeat(6,1fr);gap:3%}
+.bit{border-radius:4px;background:repeating-linear-gradient(45deg,#1c1d1a 0 2px,#0d0e0c 2px 4px);border:2px solid #0b0b0a;box-shadow:inset 0 0 6px #000,0 2px 0 #55584d}
+.bit.on{background:linear-gradient(#fffdf2,#ffe9a6);box-shadow:0 0 10px 2px #ffe9a699,inset 0 0 6px #fff,0 2px 0 #55584d}
+.leds{position:absolute;right:4cqw;top:30%;display:flex;flex-direction:column;gap:6cqh}
+.leds i{display:block;width:5cqw;height:10cqh;border-radius:2px;background:linear-gradient(90deg,#2a2c27,#171815);box-shadow:inset 0 0 3px #000}
+.leds i.on{background:linear-gradient(90deg,#9dffbd,#37c26d);box-shadow:0 0 8px #37c26d}
 
-        .dark-mode .table { color: #f1f5f9 !important; background-color: transparent !important; border-color: #334155 !important; }
-        .dark-mode .table thead th { background-color: #334155 !important; color: #60a5fa !important; border-bottom: 2px solid #475569 !important; }
-        .dark-mode .table tbody td { background-color: #1e293b !important; color: #f1f5f9 !important; border-bottom: 1px solid #334155 !important; }
-        .dark-mode .modal-content { background-color: #1e293b; color: #f1f5f9; border: 1px solid #334155; }
-        .dark-mode .form-control, .dark-mode .form-select { background-color: #334155 !important; border-color: #475569 !important; color: #ffffff !important; }
-        .dark-mode .modal-header.bg-light, .dark-mode .modal-body.bg-light { background-color: #1e293b !important; border-color: #334155 !important; }
-        .dark-mode .bg-light { background-color: #334155 !important; color: #f1f5f9 !important; }
-        .dark-mode .list-group-item { background-color: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
-        .dark-mode .list-group-item:hover { background-color: #334155 !important; }
-        .dark-mode .text-muted { color: #94a3b8 !important; }
+.scr2{position:absolute;left:10%;right:14%;top:16%;height:25%;background:linear-gradient(#0f1a10,#08110a);border:2px solid #16170f;border-radius:4px;box-shadow:inset 0 0 12px #000;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.scr2 svg{height:62%;fill:#6dff9a;stroke:#6dff9a;filter:drop-shadow(0 0 4px #3ddc7a)}
+.scr2.pl svg{animation:pls .45s infinite alternate}@keyframes pls{to{opacity:.25}}
+.mbox{position:absolute;left:6%;right:6%;top:48%;height:22%;display:grid;grid-template-columns:repeat(6,1fr);gap:3%}
+.mb{border-radius:4px;background:linear-gradient(#ebe6d4,#bcb69f);color:#222;display:flex;align-items:center;justify-content:center;font-size:8cqw;border:2px solid #0004;box-shadow:0 2px 0 #6d6958;cursor:pointer}
+.mbar{position:absolute;left:20%;right:20%;bottom:8%;height:11%;display:flex;gap:4%;background:#15160f;border-radius:4px;padding:2%;box-shadow:inset 0 0 6px #000}
+.mbar i{flex:1;border-radius:2px;background:#2a2c27}.mbar i.on{background:#37c26d;box-shadow:0 0 8px #37c26d}
+.rc{font-size:3.4cqw;color:#a29f92;text-align:center}
+.xs{position:absolute;left:5%;right:19%;top:15%;height:17%;display:grid;grid-template-columns:repeat(6,1fr);gap:2%;background:#08110a;border:2px solid #16170f;border-radius:4px;box-shadow:inset 0 0 12px #000;color:#6dff9a;text-shadow:0 0 8px #3ddc7a99;font-size:5.6cqw;align-items:center;text-align:center}
+.xg{position:absolute;left:27.5%;top:36%;width:45%;height:45%;display:grid;grid-template-columns:repeat(3,1fr);gap:4%}
+.xc{border-radius:4px;background:repeating-linear-gradient(45deg,#1c1d1a 0 2px,#0d0e0c 2px 4px);border:2px solid #0b0b0a;box-shadow:inset 0 0 6px #000,0 2px 0 #55584d;cursor:pointer}
+.xc.on{background:linear-gradient(#fffdf2,#ffe9a6);box-shadow:0 0 10px 2px #ffe9a699,inset 0 0 6px #fff,0 2px 0 #55584d}
+.sub.x{height:12%}
 
-        .dark-mode .form-control::placeholder,
-        .dark-mode .form-select::placeholder { color: rgba(255, 255, 255, 0.8) !important; opacity: 1; }
-        
-        #hamburger-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; z-index: 1100; color: var(--text-main); }
-        
-        .auth-wrapper { height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; }
-        #login-section { display: flex; }
-        #register-section { display: none; }
-        
-        #main-dashboard { display: none; position: relative; }
-        
-        .card { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--text-main); }
-        .stat-card { background: linear-gradient(45deg, #0d6efd, #003d99); color: white; }
-        
-        .user-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; background-size: cover; background-position: center; border: 2px solid var(--accent); }
-        .profile-main-img { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; background-size: cover; background-position: center; border: 3px solid var(--accent); }
-        
-        .online-dot { width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px #22c55e; }
-        
-        .icon-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 15px; }
-        .icon-circle-success { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin: 0 auto 20px; background: #d1e7dd; color: #198754; box-shadow: 0 4px 15px rgba(25,135,84,0.3); }
-        
-        .edit-img-btn { position: absolute; bottom: 0; right: 0; background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--card-bg); box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s; }
-        .edit-img-btn:hover { background: #0b5ed7; transform: scale(1.1); }
-        
-        @keyframes heartbeat { 0% { transform: scale(1); } 14% { transform: scale(1.15); } 28% { transform: scale(1); } 42% { transform: scale(1.15); } 70% { transform: scale(1); } }
-        .heartbeat-anim { animation: heartbeat 1.5s infinite; }
-    </style>
-</head>
-<body>
-
-<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-<div id="sidebar">
-    <div class="text-center mb-4 border-bottom pb-3">
-        <div id="menu-avatar" class="profile-main-img shadow-sm mb-2">?</div>
-        <button class="btn btn-sm btn-link text-decoration-none fw-bold" onclick="showModal('profileModal')">แก้ไขโปรไฟล์</button>
-        <div class="mt-2 text-start px-3">
-            <h6 class="fw-bold mb-0">
-                <span class="online-dot"></span>
-                <span id="menu-user-name">Loading...</span> 
-                <small class="text-success fw-normal" style="font-size: 0.7rem;">Online</small>
-            </h6>
-            <small class="text-primary fw-bold" id="menu-user-role" style="font-size: 0.85rem;">Admin</small>
-        </div>
-    </div>
-    
-    <div class="menu-item" onclick="openHardwareModal()"><i class="bi bi-cpu"></i> <span data-i18n="menu_hw">รหัสผ่านเข้าห้องของฉัน</span></div>
-    <div class="menu-item" onclick="showModal('userListModal')"><i class="bi bi-people"></i> <span data-i18n="menu_users">ข้อมูลผู้ใช้ทั้งหมด</span></div>
-    <div class="menu-item" onclick="showModal('settingsModal')"><i class="bi bi-sliders"></i> <span data-i18n="menu_settings">การตั้งค่า dashboard</span></div>
-    
-    <hr class="my-4">
-    <div class="menu-item" id="logout-btn-side"><i class="bi bi-box-arrow-right"></i> <span data-i18n="menu_logout">ออกจากระบบ</span></div>
-    <div class="menu-item danger-item text-danger" onclick="showDeleteSelfModal()"><i class="bi bi-person-x"></i> <span data-i18n="menu_delete">ลบบัญชีของฉัน</span></div>
+.scr{position:fixed;inset:0;overflow:auto;opacity:0;pointer-events:none;transform:scale(1.05);transition:opacity .45s,transform .45s;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px 14px;z-index:1;text-align:center}
+.scr.on{opacity:1;pointer-events:auto;transform:none}.scr.out{transform:scale(.95)}
+#home h1{font-size:clamp(34px,9vw,70px);margin:6px 0;line-height:1.05;text-shadow:0 0 24px #e5484d66}
+.b0{width:min(34vw,200px)}.sp{transform-box:fill-box;transform-origin:center;animation:spk .25s infinite alternate}@keyframes spk{to{transform:scale(1.6);opacity:.4}}
+.sub0{color:var(--dim);margin:0 0 18px}.menu{display:flex;flex-direction:column;gap:12px;align-items:center}
+.hb{font:inherit;font-size:20px;color:var(--ink);background:linear-gradient(#5b5f54,#3a3d36);border:2px solid #1b1c19;border-radius:8px;padding:12px 26px;min-width:min(86vw,360px);box-shadow:0 3px 0 #151613;cursor:pointer}
+.ctl{margin:22px auto 0;max-width:640px;font-size:13px;color:var(--dim);line-height:1.7}
+#lvs h2{margin:4px 0 12px}.tier{max-width:760px;margin:0 auto 12px;background:#23251f;border:2px solid #4a4d43;border-radius:10px;padding:10px 12px}
+.tier h3{margin:0 0 8px;text-align:left}.tier small{color:var(--dim);font-weight:400}.stg{display:flex;gap:8px;flex-wrap:wrap}
+.sb{font:inherit;width:52px;height:52px;border-radius:8px;border:2px solid #111;background:linear-gradient(#ebe6d4,#bcb69f);color:#222;font-size:20px;cursor:pointer}.sb.lk{opacity:.35;cursor:default}
+.hud{display:flex;gap:8px;align-items:center;justify-content:space-between;max-width:1000px;margin:0 auto 6px}
+.hb2{font:inherit;color:var(--ink);background:#3a3d36;border:1px solid #1b1c19;border-radius:6px;padding:6px 10px}
+#nb.on{background:var(--red);animation:nbk .45s infinite alternate}@keyframes nbk{to{opacity:.4}}
+#bomb{max-width:min(1000px,calc(140vh - 130px));margin:0 auto;display:block}
+.face{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.face.on{display:grid}
+.face.flip{animation:flp .5s ease}@keyframes flp{from{transform:perspective(900px) rotateY(-80deg);opacity:0}to{transform:none;opacity:1}}
+.intro{position:absolute;inset:0;z-index:7;background:#000d;display:flex;align-items:center;justify-content:center;font-size:7vw}
+.intro.go b{animation:ia 1.5s both}@keyframes ia{0%{opacity:0;transform:scale(.7)}25%,70%{opacity:1;transform:none}100%{opacity:0;transform:scale(1.2)}}
+#res.in .card{animation:pop .35s}@keyframes pop{from{transform:scale(.85);opacity:0}}
+#res .go{font:inherit;font-size:18px;color:#fff}
+.strikes b,.strikes i{display:block;width:9cqw;height:9cqw}.strikes svg{width:100%;height:100%;fill:none;stroke:#555;stroke-width:1.8;stroke-linecap:round}.strikes .on svg{stroke:var(--red);filter:drop-shadow(0 0 3px var(--red))}
+.leds4{position:absolute;left:12%;right:12%;top:15%;display:flex;justify-content:space-around}
+.sled{display:block;width:13cqw;height:13cqw;border-radius:50%;background:radial-gradient(circle at 35% 30%,#555,#222);border:.8cqw solid #111;box-shadow:0 0 0 .8cqw #55584d}
+.sled.on{background:radial-gradient(circle at 35% 30%,#fff,#ffd54a 50%,#a06a00);box-shadow:0 0 0 .8cqw #55584d,0 0 14px #ffd54a}
+.tgs{position:absolute;left:8%;right:8%;top:45%;height:40%;display:flex;justify-content:space-around}
+.tg{width:17%;height:100%;border-radius:8px;background:linear-gradient(#1b1c19,#2e302a);border:2px solid #0b0b0a;box-shadow:inset 0 0 8px #000,0 2px 0 #55584d;position:relative;cursor:pointer}
+.tg i{position:absolute;left:34%;width:32%;height:46%;bottom:6%;border-radius:40% 40% 20% 20%;background:linear-gradient(90deg,#8a8d84,#e0e2da,#6f7268);transition:bottom .15s}.tg.up i{bottom:48%}
+#needy{position:absolute;inset:0;z-index:6;display:flex;flex-wrap:wrap;gap:3vw;align-items:center;justify-content:center;background:#000a;backdrop-filter:blur(3px)}#needy[hidden]{display:none}
+#needy.in .nyc{animation:pop .35s}.nyc{width:min(42vw,60vh)}.nyh{width:100%;text-align:center;color:var(--dim)}
+.mod.act::after{background:radial-gradient(circle at 35% 30%,#ffb3b3,#e5484d 50%,#600)!important;animation:nbk .4s infinite alternate;box-shadow:0 0 0 .6cqw #55584d,0 0 12px var(--red)!important}
+.tdisp{position:absolute;left:8%;top:18%;width:56%;background:#08110a;color:#6dff9a;border:2px solid #16170f;border-radius:4px;font-size:14cqw;text-align:center;padding:2cqw 0;box-shadow:inset 0 0 10px #000}
+.dg{display:inline-block;width:2.6cqw;height:2.6cqw;border:.8cqw solid #6dff9a;border-radius:50%;vertical-align:5cqw;margin:0 1cqw}
+.tbn,.rbn{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:6px;background:linear-gradient(#ebe6d4,#bcb69f);box-shadow:0 3px 0 #6d6958;cursor:pointer}.tbn{top:58%;width:18cqw;height:16cqw}.rbn{bottom:8%;width:18cqw;height:12cqw}.tbn svg,.rbn svg{width:55%;fill:#222}
+.thermo{position:absolute;right:10%;top:12%;bottom:12%;width:14cqw;border-radius:7cqw;background:#15160f;border:2px solid #55584d;overflow:hidden;display:flex;align-items:flex-end}
+.thermo::after{content:"";position:absolute;left:0;right:0;bottom:22.5%;height:15%;background:#37c26d44;border-block:2px solid #37c26d}.thermo u{display:block;width:100%;height:30%;background:linear-gradient(#ff6b5a,#e5484d);transition:height .3s}
+.fm{position:absolute;left:8%;right:20%;top:12%;background:#e9e3cf;color:#222;border-radius:4px;padding:2cqw 3cqw;font-size:6cqw}.fm b{float:right}
+.fbar{position:relative;height:5cqw;background:#bcb69f;margin-top:2cqw}.fbar u{position:absolute;top:-1cqw;width:1.6cqw;height:7cqw;background:#e5484d;left:0}
+.knob{position:absolute;left:20%;top:34%;width:46%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8a8d84,#3a3d36 70%);box-shadow:0 0 0 2cqw #1a1b18,0 0 0 3cqw #55584d,0 6px 12px #000a}
+.knob i{position:absolute;left:46%;top:6%;width:8%;height:22%;background:#fff;border-radius:3px}
+.lockb{position:absolute;right:8%;top:50%;padding:2cqw 3cqw;border:2px solid #888;border-radius:4px;background:#e9e3cf;color:#222;font-size:5.5cqw;cursor:pointer}
+.ftg{position:absolute;right:8%;bottom:8%;color:#6dff9a;font-size:5.5cqw}
+</style></head><body>
+<div id="pool" style="display:none">
+ <div class="mod" id="mW"><svg class="wsvg" id="wires" viewBox="0 0 100 100"></svg></div>
+ <div class="center"><div class="timer" id="timer">05:00</div><div class="serial" id="serial"></div><div class="strikes" id="strikes"></div><div class="rc" id="rc"></div></div>
+ <div class="mod" id="mB"><div class="nav bigbtn" id="btn" data-k="b"></div><div class="nav sub" id="sub" data-k="s">SUBMIT</div></div>
+ <div class="mod" id="mK"><div class="keys" id="keys"></div></div>
+ <div class="mod" id="mN"><div class="scr" id="eq"></div><div class="bits" id="bits"></div><div class="leds" id="leds"></div><div class="nav sub" id="sub2" data-k="n">SUBMIT</div></div>
+ <div class="mod" id="mM"><div class="nav scr2" id="mplay" data-k="mp"><svg viewBox="0 0 40 20"><circle cx="20" cy="10" r="2.6" stroke="none"/><path d="M13 5Q9 10 13 15M8 2Q1 10 8 18M27 5Q31 10 27 15M32 2Q39 10 32 18" fill="none" stroke-width="1.6" stroke-linecap="round"/></svg></div><div class="mbox" id="mbox"></div><div class="mbar" id="mbar"></div></div>
+ <div class="mod" id="mX"><div class="xs" id="xs"></div><div class="xg" id="xg"></div><div class="nav sub x" id="sub3" data-k="xs">SUBMIT</div></div>
+ <div class="mod" id="mS"><div class="leds4" id="sl"></div><div class="tgs" id="tgs"></div></div>
 </div>
-
-<div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-      <div class="modal-body text-center p-5">
-        <div class="icon-circle-success heartbeat-anim"><i class="bi bi-unlock-fill"></i></div>
-        <h3 class="fw-bold mb-3" id="welcome-title" data-i18n="welcome_title">เข้าสู่ระบบสำเร็จ!</h3>
-        <p class="mb-4" id="welcome-message" style="font-size: 1.15rem; color: var(--text-main);"></p>
-        <button type="button" class="btn btn-primary px-5 py-2 fw-bold rounded-pill shadow-sm" data-bs-dismiss="modal" data-i18n="welcome_btn">เริ่มต้นใช้งาน</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="deleteSelfModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
-      <div class="modal-body text-center p-4">
-        <div id="delete-step-1">
-            <div class="icon-circle bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
-            <h4 class="fw-bold mb-3">ต้องการลบบัญชีหรือไม่?</h4>
-            <p class="text-muted small mb-4">หากคุณดำเนินการต่อ บัญชีผู้ใช้และโปรไฟล์ของคุณจะถูกลบออกจากระบบอย่างถาวร</p>
-            <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light px-4 fw-bold" data-bs-dismiss="modal">ยกเลิก</button>
-                <button type="button" class="btn btn-danger px-4 fw-bold" onclick="nextDeleteSelf()">ถัดไป <i class="bi bi-arrow-right"></i></button>
-            </div>
-        </div>
-        <div id="delete-step-2" style="display:none;">
-            <div class="icon-circle bg-danger text-white shadow"><i class="bi bi-shield-lock-fill"></i></div>
-            <h5 class="fw-bold mb-3">ยืนยันรหัสผ่านของคุณ</h5>
-            <input type="password" id="del-self-password" class="form-control mb-4 text-center" placeholder="รหัสผ่านของคุณ">
-            <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light px-4 fw-bold" onclick="showDeleteSelfModal()">ย้อนกลับ</button>
-                <button type="button" class="btn btn-danger px-4 fw-bold" onclick="confirmDeleteSelf()">ยืนยันการลบถาวร</button>
-            </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="userListModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title fw-bold" data-i18n="menu_users">ข้อมูลผู้ใช้ทั้งหมด</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        
-        <div id="full-user-list" class="list-group list-group-flush mb-4"></div>
-        
-        <div id="personal-history" style="display:none;">
-            <button class="btn btn-sm btn-secondary mb-3" onclick="showFullList()"><i class="bi bi-arrow-left"></i> กลับไปรายชื่อ</button>
-            <div class="card p-3 mb-3 bg-primary bg-opacity-10 border-0">
-                <h5 class="fw-bold mb-0" id="hist-name">---</h5>
-                <p class="small mb-0 text-muted" id="hist-role-label">Role: Visitor</p>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-sm text-center">
-                    <thead><tr><th data-i18n="th_date">วันที่</th><th data-i18n="th_time">เวลา</th><th data-i18n="th_device">อุปกรณ์</th><th data-i18n="th_status">สถานะ</th></tr></thead>
-                    <tbody id="hist-table-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="access-data-view" style="display:none;">
-            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
-                <h5 class="fw-bold text-primary mb-0"><i class="bi bi-shield-lock-fill"></i> ข้อมูลรหัสผ่านและการเข้าถึงของผู้ใช้</h5>
-                <button class="btn btn-sm btn-outline-secondary" onclick="showFullList()"><i class="bi bi-x-lg"></i> ปิดหน้านี้</button>
-            </div>
-
-            <div class="card mb-4 shadow-sm border-0">
-                <div class="card-header bg-primary text-white fw-bold"><i class="bi bi-123"></i> 1. รหัสผ่านกดประตู (Keypad Pin)</div>
-                <ul class="list-group list-group-flush" id="admin-keypad-list"></ul>
-            </div>
-
-            <div class="card mb-4 shadow-sm border-0">
-                <div class="card-header bg-info text-white fw-bold"><i class="bi bi-credit-card-2-front-fill"></i> 2. รหัสบัตร (RFID Code)</div>
-                <ul class="list-group list-group-flush" id="admin-rfid-list"></ul>
-            </div>
-
-            <div class="card mb-3 shadow-sm border-0">
-                <div class="card-header bg-success text-white fw-bold"><i class="bi bi-fingerprint"></i> 3. ลายนิ้วมือ (Fingerprint ID)</div>
-                <div class="table-responsive">
-                    <table class="table table-hover text-center mb-0 align-middle">
-                        <thead class="table-light"><tr><th style="width: 30%;">ID ลายนิ้วมือ</th><th>ชื่อผู้ใช้</th></tr></thead>
-                        <tbody id="admin-finger-list"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title fw-bold" data-i18n="menu_settings">การตั้งค่า dashboard</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <label class="small fw-bold mb-3" data-i18n="set_display">รูปแบบการแสดงผล</label>
-        <button id="dark-mode-toggle-btn" class="btn btn-outline-primary w-100 mb-3 d-flex justify-content-between align-items-center">
-            <span data-i18n="set_dark">เปลี่ยนโหมด มืด/สว่าง</span>
-            <i id="mode-icon" class="bi bi-moon-stars-fill"></i>
-        </button>
-        <div class="form-check form-switch mb-4">
-            <input class="form-check-input" type="checkbox" id="auto-theme-switch" checked>
-            <label class="form-check-label small" data-i18n="set_auto">เปลี่ยนโหมดอัตโนมัติตามเวลา (06:00-18:00)</label>
-        </div>
-        
-        <hr class="my-3 border-secondary opacity-25">
-        
-        <label class="small fw-bold mb-3" data-i18n="set_lang">ภาษา / Language</label>
-        <select class="form-select" id="language-select" onchange="changeLanguage(this.value)">
-            <option value="th">🇹🇭 ไทย (Thai)</option>
-            <option value="en">🇬🇧 English</option>
-        </select>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title fw-bold">แก้ไขโปรไฟล์</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body text-center">
-        <div class="position-relative mx-auto mb-4" style="width: 100px; height: 100px;">
-            <div id="p-preview" class="profile-main-img w-100 h-100 m-0"></div>
-            <label for="p-img-upload" class="edit-img-btn" title="เปลี่ยนรูปโปรไฟล์">
-                <i class="bi bi-camera-fill"></i>
-            </label>
-            <input type="file" id="p-img-upload" accept="image/*" class="d-none" onchange="uploadProfileImage(event)">
-        </div>
-        
-        <div class="text-start">
-            <label class="small fw-bold mb-1">ชื่อผู้ใช้</label>
-            <input type="text" id="p-username" class="form-control mb-3" readonly>
-            <label class="small fw-bold mb-1">แก้ไขรหัสผ่านใหม่ (สำหรับล็อกอินเว็บ)</label>
-            <input type="password" id="p-new-password" class="form-control mb-3" placeholder="กรอกรหัสผ่านใหม่ (6 ตัวขึ้นไป)">
-            <button class="btn btn-primary w-100 fw-bold py-2" onclick="updateUserAuth()">บันทึกข้อมูลใหม่</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="hwModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header bg-light">
-          <h5 class="modal-title fw-bold text-primary"><i class="bi bi-shield-lock"></i> <span data-i18n="menu_hw">รหัสผ่านเข้าห้องของฉัน</span></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body p-4 bg-light">
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body">
-                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-123"></i> 1. Keypad Pin (รหัสกดประตู)</h6>
-                <label class="small text-muted mb-2">ตั้งค่ารหัสผ่าน 6 หลักสำหรับกดเข้าห้องของคุณ</label>
-                <div class="input-group">
-                    <input type="text" id="hw-keypad" class="form-control text-center fw-bold fs-5" maxlength="6" placeholder="000000" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                    <button class="btn btn-primary px-4 fw-bold" onclick="saveKeypad()">บันทึก</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body">
-                <h6 class="fw-bold text-success mb-3"><i class="bi bi-fingerprint"></i> 2. Fingerprint Module</h6>
-                <label class="small text-muted mb-2">ระบุหมายเลข ID (เช่น 01, 04) เพื่อลงทะเบียนลายนิ้วมือ</label>
-                <div class="input-group mb-3">
-                    <span class="input-group-text bg-success text-white fw-bold border-success">ID</span>
-                    <input type="number" id="hw-finger-id" class="form-control border-success" placeholder="ระบุตัวเลข ID">
-                    <button class="btn btn-success fw-bold" id="btn-check-finger" onclick="checkFingerprintID()">ลงทะเบียนใหม่</button>
-                </div>
-
-                <div id="finger-scan-area" class="text-center p-3 bg-success bg-opacity-10 border border-success rounded" style="display:none;">
-                    <p id="finger-status-text" class="mb-3 fw-bold text-success">พร้อมแสกนลายนิ้วมือของคุณ</p>
-                    <div id="finger-spinner" class="spinner-border text-success mb-3" style="display:none; width: 3rem; height: 3rem;" role="status"></div>
-                    <br>
-                    <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" id="btn-start-finger" onclick="startFingerprintScan()">เริ่มการแสกน <i class="bi bi-play-circle-fill ms-1"></i></button>
-                    <button class="btn btn-link text-danger text-decoration-none btn-sm mt-2" onclick="cancelScan('finger')">ยกเลิก</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-                <h6 class="fw-bold text-info mb-3"><i class="bi bi-credit-card-2-front-fill"></i> 3. RFID Module (บัตรทาบ)</h6>
-                <label class="small text-muted mb-2">รหัสบัตร RFID ปัจจุบันของคุณ:</label>
-                <input type="text" id="hw-rfid-code" class="form-control mb-3 text-center fw-bold text-secondary bg-light" readonly value="ยังไม่มีข้อมูลบัตร">
-                
-                <div id="rfid-scan-area" class="text-center p-3 bg-info bg-opacity-10 border border-info rounded">
-                    <p id="rfid-status-text" class="mb-3 fw-bold text-info">กดปุ่มด้านล่างเพื่อสแกนบัตรใบใหม่</p>
-                    <div id="rfid-spinner" class="spinner-border text-info mb-3" style="display:none; width: 3rem; height: 3rem;" role="status"></div>
-                    <br>
-                    <button class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm" id="btn-start-rfid" onclick="startRFIDScan()">เริ่มการแสกน <i class="bi bi-play-circle-fill ms-1"></i></button>
-                    <button class="btn btn-link text-danger text-decoration-none btn-sm mt-2" id="btn-cancel-rfid" style="display:none;" onclick="cancelScan('rfid')">ยกเลิก</button>
-                </div>
-            </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="auth-lang-container" class="position-absolute top-0 end-0 p-3 z-3">
-    <select class="form-select form-select-sm shadow-sm" id="auth-language-select" onchange="changeLanguage(this.value)" style="width: auto; cursor: pointer; border-radius: 8px;">
-        <option value="th">🇹🇭 ไทย</option>
-        <option value="en">🇬🇧 English</option>
-    </select>
-</div>
-
-<div id="login-section" class="auth-wrapper">
-    <div class="card p-4 shadow text-center" style="width: 350px;">
-        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-2 text-primary"></i><span data-i18n="auth_login_title">เข้าสู่ระบบ</span></h3>
-        <p class="small opacity-75 mb-4" data-i18n="auth_sys_title">ระบบควบคุมระบบการล็อกและการเข้า-ออกอาคาร</p>
-        <input type="text" id="username" class="form-control mb-3 py-2" data-i18n="auth_user_ph" placeholder="ชื่อผู้ใช้">
-        <input type="password" id="password" class="form-control mb-3 py-2" data-i18n="auth_pass_ph" placeholder="รหัสผ่าน">
-        <button id="login-btn" class="btn btn-primary w-100 py-2 fw-bold mb-3" data-i18n="auth_login_btn">เข้าสู่ระบบ</button>
-        <button class="btn btn-link btn-sm text-decoration-none" onclick="showRegisterUI()" data-i18n="auth_no_account">ยังไม่มีบัญชี? สมัครสมาชิก</button>
-        <p id="error-msg" class="text-danger mt-3 small fw-bold"></p>
-    </div>
-</div>
-
-<div id="register-section" class="auth-wrapper">
-    <div class="card p-4 shadow text-center border-top border-success border-4" style="width: 350px;">
-        <h3 class="fw-bold mb-1"><i class="bi bi-person-plus-fill me-2 text-success"></i><span data-i18n="auth_reg_title">สมัครบัญชีใหม่</span></h3>
-        <p class="small opacity-75 mb-4" data-i18n="auth_reg_sub">สำหรับเพิ่มผู้ใช้ในระบบ Access Control</p>
-        <input type="text" id="reg-username" class="form-control mb-3 py-2" data-i18n="auth_reg_user_ph" placeholder="ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)">
-        <input type="password" id="reg-password" class="form-control mb-3 py-2" data-i18n="auth_reg_pass_ph" placeholder="ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)">
-        <button id="do-register-btn" class="btn btn-success w-100 py-2 fw-bold mb-3" data-i18n="auth_reg_btn">ลงทะเบียนผู้ใช้</button>
-        <button class="btn btn-link btn-sm text-decoration-none text-secondary" onclick="showLoginUI()"><i class="bi bi-arrow-left"></i> <span data-i18n="auth_has_account">มีบัญชีแล้ว? กลับไปหน้าเข้าสู่ระบบ</span></button>
-        <p id="reg-error-msg" class="text-danger mt-3 small fw-bold"></p>
-    </div>
-</div>
-
-<div id="main-dashboard">
-    <div id="hamburger-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></div>
-    
-    <div class="container py-4">
-        <header class="mb-4">
-            <h1 class="h2 fw-bold text-primary mb-1" data-i18n="title_main">ระบบควบคุมระบบการล็อกและการเข้า-ออกอาคาร</h1>
-            <p class="opacity-75 mb-3 small" data-i18n="title_sub">ระบบล็อกประตูผ่านเครือข่าย IoT พร้อมแดชบอร์ดควบคุมตรวจสอบสถานะแบบเรียลไทม์</p>
-            <div class="d-flex justify-content-between align-items-end border-top pt-3">
-                <div>
-                    <div class="d-flex align-items-center gap-3" style="font-size: 1.5rem; font-weight: 600; color: #0d6efd;">
-                        <div id="clock-display">--:--:--</div>
-                        <div id="live-date" class="small text-secondary" style="font-size: 1rem;">---</div>
-                    </div>
-                    <div class="small mt-1"><span data-i18n="txt_login_as">ล็อกอินในฐานะ:</span> <span id="admin-name" class="fw-bold text-success">---</span></div>
-                </div>
-            </div>
-        </header>
-
-        <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <div class="card p-4 h-100 border-bottom border-secondary border-3">
-                    <h6 class="card-label small fw-bold text-secondary" data-i18n="txt_last_scan">แสกนเข้าห้องครั้งล่าสุด</h6>
-                    <h2 class="fw-bold my-2"><span id="last-user" data-i18n="wait_data">รอข้อมูล...</span></h2>
-                    <div id="last-detail-box" class="mt-2">
-                        <span id="last-time" class="small text-muted">---</span>
-                        <span id="last-status-badge" class="badge ms-2">---</span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card p-4 h-100 stat-card shadow-lg">
-                    <h6 class="text-white opacity-75 fw-bold small" data-i18n="txt_people">จำนวนคนในห้องปัจจุบัน</h6>
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-people-fill me-3" style="font-size: 2.5rem;"></i>
-                        <div><span id="people-count" class="display-5 fw-bold">0</span> <span class="fs-4" data-i18n="txt_unit">คน</span></div>
-                    </div>
-                    <div id="names-list" class="mt-3 d-flex flex-wrap gap-2"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card p-4 shadow-sm">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold m-0"><i class="bi bi-clock-history me-2"></i><span data-i18n="txt_history">ประวัติการเข้า-ออก</span></h5>
-                <button id="clear-btn" class="btn btn-sm btn-outline-danger px-3" data-i18n="btn_clear">ล้างประวัติ</button>
-            </div>
-            <div class="table-responsive">
-                <table class="table align-middle text-center">
-                    <thead><tr><th data-i18n="th_date">วันที่</th><th data-i18n="th_time">เวลา</th><th data-i18n="th_name">ชื่อผู้ใช้</th><th data-i18n="th_device">อุปกรณ์</th><th data-i18n="th_status">สถานะ</th></tr></thead>
-                    <tbody id="table-body"><tr><td colspan="5" class="text-muted" data-i18n="wait_data">กำลังโหลดข้อมูล...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, remove, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    const firebaseConfig = { 
-        apiKey: "AIzaSyCZ0MK0LRsZLpzAclPxflIa7eWAXAdRchM", 
-        databaseURL: "https://smart-access-door-lock-default-rtdb.asia-southeast1.firebasedatabase.app" 
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-    let allLogs = [];
-    let userProfiles = {};
-    let currentLoggedInUser = "";
-    let fingerUnsub = null;
-    let rfidUnsub = null;
-
-    function getRole(username) {
-        if(!username) return "Visitor";
-        if(username.toLowerCase() === "nonthaphat") return "Admin";
-        return "Visitor";
-    }
-
-    const i18n = {
-        th: {
-            menu_hw: "รหัสผ่านเข้าห้องของฉัน", menu_users: "ข้อมูลผู้ใช้ทั้งหมด", menu_settings: "การตั้งค่า dashboard",
-            menu_logout: "ออกจากระบบ", menu_delete: "ลบบัญชีของฉัน",
-            title_main: "ระบบควบคุมระบบการล็อกและการเข้า-ออกอาคาร", 
-            title_sub: "ระบบล็อกประตูผ่านเครือข่าย IoT พร้อมแดชบอร์ดควบคุมตรวจสอบสถานะแบบเรียลไทม์",
-            txt_login_as: "ล็อกอินในฐานะ:", txt_last_scan: "แสกนเข้าห้องครั้งล่าสุด", wait_data: "รอข้อมูล...",
-            txt_people: "จำนวนคนในห้องปัจจุบัน", txt_unit: "คน",
-            txt_history: "ประวัติการเข้า-ออก", btn_clear: "ล้างประวัติ",
-            th_date: "วันที่", th_time: "เวลา", th_name: "ชื่อผู้ใช้", th_device: "อุปกรณ์", th_status: "สถานะ",
-            set_display: "รูปแบบการแสดงผล", set_dark: "เปลี่ยนโหมด มืด/สว่าง", set_auto: "เปลี่ยนโหมดอัตโนมัติตามเวลา (06:00-18:00)",
-            set_lang: "ภาษา / Language",
-            auth_login_title: "เข้าสู่ระบบ", auth_sys_title: "ระบบควบคุมระบบการล็อกและการเข้า-ออกอาคาร",
-            auth_user_ph: "ชื่อผู้ใช้", auth_pass_ph: "รหัสผ่าน", auth_login_btn: "เข้าสู่ระบบ",
-            auth_no_account: "ยังไม่มีบัญชี? สมัครสมาชิก", auth_reg_title: "สมัครบัญชีใหม่",
-            auth_reg_sub: "สำหรับเพิ่มผู้ใช้ในระบบ Access Control", auth_reg_user_ph: "ตั้งชื่อผู้ใช้ (ภาษาอังกฤษ)",
-            auth_reg_pass_ph: "ตั้งรหัสผ่าน (6 ตัวอักษรขึ้นไป)", auth_reg_btn: "ลงทะเบียนผู้ใช้",
-            auth_has_account: "มีบัญชีแล้ว? กลับไปหน้าเข้าสู่ระบบ",
-            err_reg_len: "❌ กรุณากรอกชื่อและรหัสผ่านอย่างน้อย 6 ตัวอักษร",
-            msg_creating_acc: "กำลังสร้างบัญชีผู้ใช้...",
-            err_user_exists: "❌ ชื่อผู้ใช้นี้มีในระบบแล้ว",
-            err_general: "❌ เกิดข้อผิดพลาด: ",
-            msg_logging_in: "กำลังเข้าสู่ระบบ...",
-            err_invalid_login: "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
-            err_cannot_login: "❌ คุณไม่สามารถเข้าสู่ระบบได้",
-            welcome_title: "เข้าสู่ระบบสำเร็จ!",
-            welcome_btn: "เริ่มต้นใช้งาน",
-            welcome_admin: "ยินดีต้อนรับกลับมานะ ผู้ดูแลระบบ คุณ <b>{name}</b>",
-            welcome_user: "ยินดีต้อนรับเข้าสู่ระบบจัดการประตูอัจฉริยะ คุณ <b>{name}</b>"
-        },
-        en: {
-            menu_hw: "My Door Access", menu_users: "All Users Info", menu_settings: "Dashboard Settings",
-            menu_logout: "Logout", menu_delete: "Delete My Account",
-            title_main: "Access Control & Door Lock System", 
-            title_sub: "IoT-Based Door Lock System with Real-time Dashboard Monitoring",
-            txt_login_as: "Logged in as:", txt_last_scan: "Last Entry Scan", wait_data: "Waiting...",
-            txt_people: "Current People in Room", txt_unit: "Persons",
-            txt_history: "Access History", btn_clear: "Clear History",
-            th_date: "Date", th_time: "Time", th_name: "User", th_device: "Device", th_status: "Status",
-            set_display: "Display Options", set_dark: "Toggle Dark/Light Mode", set_auto: "Auto theme switch (06:00-18:00)",
-            set_lang: "Language / ภาษา",
-            auth_login_title: "Login", auth_sys_title: "Access Control & Door Lock System",
-            auth_user_ph: "Username", auth_pass_ph: "Password", auth_login_btn: "Login",
-            auth_no_account: "Don't have an account? Register", auth_reg_title: "Register",
-            auth_reg_sub: "Add new user to Access Control system", auth_reg_user_ph: "Set Username",
-            auth_reg_pass_ph: "Set Password (Min 6 chars)", auth_reg_btn: "Register User",
-            auth_has_account: "Already have an account? Back to login",
-            err_reg_len: "❌ Please enter a username and password (min 6 chars)",
-            msg_creating_acc: "Creating account...",
-            err_user_exists: "❌ Username already exists",
-            err_general: "❌ Error: ",
-            msg_logging_in: "Logging in...",
-            err_invalid_login: "❌ Invalid username or password",
-            err_cannot_login: "❌ You cannot log in",
-            welcome_title: "Login Successful!",
-            welcome_btn: "Get Started",
-            welcome_admin: "Welcome back, Admin <b>{name}</b>",
-            welcome_user: "Welcome to Smart Door System, <b>{name}</b>"
-        }
-    };
-
-    const getErrMsg = (key) => {
-        const lang = localStorage.getItem('dashboard_lang') || 'th';
-        return i18n[lang][key] || key;
-    };
-
-    window.changeLanguage = (lang) => {
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (i18n[lang] && i18n[lang][key]) {
-                if(el.tagName === 'INPUT') {
-                    el.placeholder = i18n[lang][key];
-                } else {
-                    el.innerHTML = i18n[lang][key];
-                }
-            }
-        });
-        
-        if(document.getElementById('language-select')) document.getElementById('language-select').value = lang;
-        if(document.getElementById('auth-language-select')) document.getElementById('auth-language-select').value = lang;
-        
-        localStorage.setItem('dashboard_lang', lang);
-        updateClockAndDate();
-        
-        document.getElementById('error-msg').innerText = '';
-        document.getElementById('reg-error-msg').innerText = '';
-    };
-
-    const savedLang = localStorage.getItem('dashboard_lang') || 'th';
-    document.getElementById('language-select').value = savedLang;
-    if(document.getElementById('auth-language-select')) document.getElementById('auth-language-select').value = savedLang;
-    changeLanguage(savedLang);
-
-    function applyTheme(isDark) {
-        if (isDark) {
-            document.body.classList.add('dark-mode');
-            document.getElementById('mode-icon').className = "bi bi-sun-fill";
-        } else {
-            document.body.classList.remove('dark-mode');
-            document.getElementById('mode-icon').className = "bi bi-moon-stars-fill";
-        }
-    }
-
-    document.getElementById('dark-mode-toggle-btn').onclick = () => {
-        document.getElementById('auto-theme-switch').checked = false;
-        applyTheme(!document.body.classList.contains('dark-mode'));
-    };
-
-    window.toggleSidebar = () => {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.querySelector('.sidebar-overlay').classList.toggle('active');
-    };
-
-    window.showModal = (id) => {
-        if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
-        
-        // ถ้าเปิดหน้าต่างผู้ใช้ทั้งหมด ให้เคลียร์ไปที่หน้าหลักเสมอก่อน
-        if(id === 'userListModal') {
-            showFullList();
-        }
-        
-        new bootstrap.Modal(document.getElementById(id)).show();
-    };
-
-    window.uploadProfileImage = (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_SIZE = 200;
-                let width = img.width;
-                let height = img.height;
-                
-                if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
-                
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-
-                set(ref(db, `users/${currentLoggedInUser}/profile_img`), dataUrl).then(() => {
-                    alert('อัปเดตรูปโปรไฟล์สำเร็จแล้ว!');
-                }).catch(err => {
-                    alert('เกิดข้อผิดพลาดในการอัปโหลดรูป: ' + err.message);
-                });
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    };
-
-    window.openHardwareModal = () => {
-        if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
-        const data = userProfiles[currentLoggedInUser];
-        
-        cancelScan('finger'); cancelScan('rfid');
-
-        if(data) {
-            document.getElementById('hw-keypad').value = data.keypad_pin || '000000';
-            document.getElementById('hw-finger-id').value = data.fingerprint_id || '';
-            document.getElementById('hw-rfid-code').value = data.rfid_code || 'ยังไม่มีข้อมูลบัตร';
-            
-            if(data.rfid_code) {
-                document.getElementById('btn-start-rfid').innerHTML = `แก้ไข RFID code <i class="bi bi-pencil-square ms-1"></i>`;
-            } else {
-                document.getElementById('btn-start-rfid').innerHTML = `เริ่มการแสกน <i class="bi bi-play-circle-fill ms-1"></i>`;
-            }
-        }
-        new bootstrap.Modal(document.getElementById('hwModal')).show();
-    };
-
-    window.saveKeypad = () => {
-        const val = document.getElementById('hw-keypad').value;
-        if(val.length === 6) {
-            set(ref(db, `users/${currentLoggedInUser}/keypad_pin`), val).then(() => {
-                alert("บันทึกรหัสผ่านล็อกประตูของคุณสำเร็จแล้ว");
-            });
-        } else {
-            alert("กรุณากรอกรหัสผ่านให้ครบ 6 หลัก");
-        }
-    };
-
-    window.checkFingerprintID = () => {
-        const id = document.getElementById('hw-finger-id').value;
-        if(!id) return alert("กรุณาระบุ ID ก่อนลงทะเบียน");
-        
-        let exists = false;
-        for(let key in userProfiles) {
-            if(userProfiles[key].fingerprint_id == id && key !== currentLoggedInUser) {
-                exists = true; break;
-            }
-        }
-        
-        if(exists) {
-            if(!confirm(`มีไอดี ${id} ในระบบแล้ว คุณต้องการแก้ไข/เขียนทับลายนิ้วมือนี้หรือไม่?`)) return;
-        }
-        
-        document.getElementById('finger-scan-area').style.display = 'block';
-        document.getElementById('btn-check-finger').innerText = "เปลี่ยน ID ใหม่";
-    };
-
-    window.startFingerprintScan = () => {
-        const id = document.getElementById('hw-finger-id').value;
-        document.getElementById('finger-spinner').style.display = 'inline-block';
-        document.getElementById('btn-start-finger').style.display = 'none';
-        document.getElementById('finger-status-text').innerText = "กำลังรอการแสกนนิ้วครั้งที่ 1 (จากตัวเครื่อง)...";
-        document.getElementById('finger-status-text').className = "mb-3 fw-bold text-primary";
-
-        set(ref(db, 'commands/fingerprint'), { command: 'enroll', id: id, user: currentLoggedInUser, status: 'waiting_1' });
-
-        if(fingerUnsub) fingerUnsub();
-        fingerUnsub = onValue(ref(db, 'commands/fingerprint/status'), (snap) => {
-            const status = snap.val();
-            if(status === 'waiting_2') {
-                Swal.fire({ icon: 'info', title: 'แสกนครั้งที่ 1 ผ่าน', text: 'กรุณาวางลายนิ้วมืออีกครั้ง!', confirmButtonText: 'ตกลง' });
-                document.getElementById('finger-status-text').innerText = "กรุณาวางลายนิ้วมืออีกครั้ง...";
-                document.getElementById('finger-status-text').className = "mb-3 fw-bold text-warning";
-            } else if(status === 'success') {
-                document.getElementById('finger-status-text').innerText = "บันทึกลายนิ้วมือสำเร็จ!";
-                document.getElementById('finger-status-text').className = "mb-3 fw-bold text-success";
-                document.getElementById('finger-spinner').style.display = 'none';
-                document.getElementById('btn-start-rfid').style.display = 'inline-block'; // fixed logic error in original file
-                document.getElementById('btn-start-finger').innerHTML = `ลงทะเบียนอีกครั้ง <i class="bi bi-arrow-repeat ms-1"></i>`;
-                
-                set(ref(db, `users/${currentLoggedInUser}/fingerprint_id`), id);
-                if(fingerUnsub) { fingerUnsub(); fingerUnsub = null; }
-            } else if(status === 'failed' || status === 'mismatch') {
-                document.getElementById('finger-status-text').innerText = "การแสกนไม่ตรงกัน กรุณาเริ่มใหม่";
-                document.getElementById('finger-status-text').className = "mb-3 fw-bold text-danger";
-                document.getElementById('finger-spinner').style.display = 'none';
-                document.getElementById('btn-start-finger').style.display = 'inline-block';
-                document.getElementById('btn-start-finger').innerHTML = `เริ่มการแสกนใหม่ <i class="bi bi-play-circle-fill ms-1"></i>`;
-                if(fingerUnsub) { fingerUnsub(); fingerUnsub = null; }
-            }
-        });
-    };
-
-    // ===============================================
-    // 👉 แก้ไขโค้ดระบบ RFID ฝั่งหน้าเว็บ ให้ตรงกับ ESP32
-    // ===============================================
-    window.startRFIDScan = () => {
-        document.getElementById('rfid-spinner').style.display = 'inline-block';
-        document.getElementById('btn-start-rfid').style.display = 'none';
-        document.getElementById('btn-cancel-rfid').style.display = 'inline-block';
-        document.getElementById('rfid-status-text').innerText = "กรุณาแตะบัตรที่เครื่องอ่าน...";
-        document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-primary";
-
-        // 👉 แก้ไข 1: เปลี่ยนมาใช้ new_tag ให้ตรงกับ ESP32
-        set(ref(db, 'commands/rfid'), { command: 'enroll', user: currentLoggedInUser, status: 'waiting', new_tag: '' });
-
-        if(rfidUnsub) rfidUnsub();
-        rfidUnsub = onValue(ref(db, 'commands/rfid'), (snap) => {
-            const data = snap.val();
-            if(!data) return;
-            
-            // 👉 แก้ไข 2: ใช้ตัวแปร new_tag ในการตรวจสอบและดึงข้อมูล
-            if(data.status === 'success' && data.new_tag) {
-                document.getElementById('rfid-status-text').innerText = "บันทึกบัตรสำเร็จ!";
-                document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-success";
-                document.getElementById('rfid-spinner').style.display = 'none';
-                document.getElementById('btn-start-rfid').style.display = 'inline-block';
-                document.getElementById('btn-cancel-rfid').style.display = 'none';
-                document.getElementById('btn-start-rfid').innerHTML = `แก้ไข RFID code <i class="bi bi-pencil-square ms-1"></i>`;
-                
-                // นำเลขบัตรไปโชว์ในช่อง Input และบันทึกลง Profile ผู้ใช้
-                document.getElementById('hw-rfid-code').value = data.new_tag;
-                set(ref(db, `users/${currentLoggedInUser}/rfid_code`), data.new_tag);
-                
-                if(rfidUnsub) { rfidUnsub(); rfidUnsub = null; }
-            } else if(data.status === 'failed') {
-                document.getElementById('rfid-status-text').innerText = "อ่านบัตรไม่สำเร็จ หรือหมดเวลา";
-                document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-danger";
-                document.getElementById('rfid-spinner').style.display = 'none';
-                document.getElementById('btn-start-rfid').style.display = 'inline-block';
-                document.getElementById('btn-cancel-rfid').style.display = 'none';
-                document.getElementById('btn-start-rfid').innerHTML = `เริ่มการแสกนใหม่ <i class="bi bi-play-circle-fill ms-1"></i>`;
-                if(rfidUnsub) { rfidUnsub(); rfidUnsub = null; }
-            }
-        });
-    };
-
-    window.cancelScan = (type) => {
-        if(type === 'finger') {
-            document.getElementById('finger-scan-area').style.display = 'none';
-            document.getElementById('finger-spinner').style.display = 'none';
-            document.getElementById('btn-start-finger').style.display = 'inline-block';
-            document.getElementById('btn-check-finger').innerText = "ลงทะเบียนใหม่";
-            set(ref(db, 'commands/fingerprint/command'), 'idle');
-            if(fingerUnsub) { fingerUnsub(); fingerUnsub = null; }
-        } else {
-            document.getElementById('rfid-status-text').innerText = "กดปุ่มด้านล่างเพื่อสแกนบัตรใบใหม่";
-            document.getElementById('rfid-status-text').className = "mb-3 fw-bold text-info";
-            document.getElementById('rfid-spinner').style.display = 'none';
-            document.getElementById('btn-start-rfid').style.display = 'inline-block';
-            document.getElementById('btn-cancel-rfid').style.display = 'none';
-            set(ref(db, 'commands/rfid/command'), 'idle');
-            if(rfidUnsub) { rfidUnsub(); rfidUnsub = null; }
-        }
-    };
-
-    window.showDeleteSelfModal = () => {
-        if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
-        document.getElementById('delete-step-1').style.display = 'block';
-        document.getElementById('delete-step-2').style.display = 'none';
-        document.getElementById('del-self-password').value = '';
-        new bootstrap.Modal(document.getElementById('deleteSelfModal')).show();
-    };
-    window.nextDeleteSelf = () => { document.getElementById('delete-step-1').style.display = 'none'; document.getElementById('delete-step-2').style.display = 'block'; };
-    window.confirmDeleteSelf = () => {
-        const pass = document.getElementById('del-self-password').value;
-        const user = auth.currentUser;
-        if(!user || !pass) return alert('กรุณากรอกรหัสผ่านเพื่อยืนยัน');
-        const credential = EmailAuthProvider.credential(user.email, pass);
-        reauthenticateWithCredential(user, credential).then(() => {
-            const uName = user.email.split('@')[0];
-            remove(ref(db, 'users/' + uName)).then(() => {
-                deleteUser(user).then(() => { alert('ลบบัญชีของคุณออกจากระบบเรียบร้อยแล้ว'); bootstrap.Modal.getInstance(document.getElementById('deleteSelfModal')).hide(); });
-            });
-        }).catch(() => alert('รหัสผ่านไม่ถูกต้อง หรือเกิดข้อผิดพลาด'));
-    };
-
-    window.showRegisterUI = () => {
-        document.getElementById('login-section').style.display = 'none'; document.getElementById('register-section').style.display = 'flex';
-        document.getElementById('reg-error-msg').innerText = ''; document.getElementById('reg-username').value = ''; document.getElementById('reg-password').value = '';
-    };
-    window.showLoginUI = () => { document.getElementById('register-section').style.display = 'none'; document.getElementById('login-section').style.display = 'flex'; document.getElementById('error-msg').innerText = ''; };
-
-    document.getElementById('do-register-btn').onclick = () => {
-        const u = document.getElementById('reg-username').value.trim();
-        const p = document.getElementById('reg-password').value;
-        if(!u || p.length < 6) { document.getElementById('reg-error-msg').innerText = getErrMsg('err_reg_len'); return; }
-        
-        document.getElementById('reg-error-msg').innerHTML = `<span class='text-primary'>${getErrMsg('msg_creating_acc')}</span>`;
-        sessionStorage.setItem('justLoggedIn', 'true'); 
-        createUserWithEmailAndPassword(auth, u + "@insight.com", p).then(() => {
-            set(ref(db, 'users/' + u), { username: u, keypad_pin: "000000" });
-        }).catch(e => {
-            sessionStorage.removeItem('justLoggedIn');
-            document.getElementById('reg-error-msg').innerText = (e.code === 'auth/email-already-in-use') ? getErrMsg('err_user_exists') : getErrMsg('err_general') + e.message;
-        });
-    };
-
-    window.updateUserAuth = () => {
-        const newPass = document.getElementById('p-new-password').value;
-        if(newPass.length >= 6 && auth.currentUser) {
-            updatePassword(auth.currentUser, newPass).then(() => { alert("เปลี่ยนรหัสผ่านสำเร็จ!"); document.getElementById('p-new-password').value = ''; });
-        } else { alert("กรุณากรอกรหัสผ่านอย่างน้อย 6 ตัวอักษร"); }
-    };
-
-    document.getElementById('login-btn').onclick = () => {
-        const u = document.getElementById('username').value.trim();
-        const p = document.getElementById('password').value;
-        document.getElementById('error-msg').innerHTML = `<span class='text-primary'>${getErrMsg('msg_logging_in')}</span>`;
-        sessionStorage.setItem('justLoggedIn', 'true'); 
-        signInWithEmailAndPassword(auth, u + "@insight.com", p).catch(() => {
-            sessionStorage.removeItem('justLoggedIn');
-            document.getElementById('error-msg').innerText = getErrMsg('err_invalid_login');
-        });
-    };
-
-    // --- ส่วนฟังก์ชันสำหรับ Admin เข้าดูรหัสผ่าน ---
-    window.showAccessDataView = () => {
-        document.getElementById('full-user-list').style.display = 'none';
-        document.getElementById('personal-history').style.display = 'none';
-        document.getElementById('access-data-view').style.display = 'block';
-
-        const keypadList = document.getElementById('admin-keypad-list');
-        const rfidList = document.getElementById('admin-rfid-list');
-        const fingerList = document.getElementById('admin-finger-list');
-
-        keypadList.innerHTML = '';
-        rfidList.innerHTML = '';
-        fingerList.innerHTML = '';
-
-        let fingers = [];
-
-        Object.keys(userProfiles).forEach(key => {
-            const data = userProfiles[key];
-            const uname = data.username || key;
-
-            // Keypad
-            const pin = data.keypad_pin || '<span class="text-muted small">ไม่มีข้อมูล</span>';
-            keypadList.insertAdjacentHTML('beforeend', `<li class="list-group-item d-flex justify-content-between align-items-center"><span><i class="bi bi-person-fill text-primary me-2"></i> ${uname}</span> <strong class="fs-5">${pin}</strong></li>`);
-
-            // RFID
-            const rfid = data.rfid_code || '<span class="text-muted small">ไม่มีข้อมูล</span>';
-            rfidList.insertAdjacentHTML('beforeend', `<li class="list-group-item d-flex justify-content-between align-items-center"><span><i class="bi bi-person-fill text-info me-2"></i> ${uname}</span> <strong>${rfid}</strong></li>`);
-
-            // Fingerprint
-            if (data.fingerprint_id) {
-                fingers.push({ id: parseInt(data.fingerprint_id), name: uname });
-            }
-        });
-
-        // เรียงลำดับนิ้วมือตาม ID 1, 2, 3...
-        fingers.sort((a, b) => a.id - b.id);
-        
-        if (fingers.length === 0) {
-            fingerList.innerHTML = `<tr><td colspan="2" class="text-muted text-center py-3">ไม่มีข้อมูลลายนิ้วมือในระบบ</td></tr>`;
-        } else {
-            fingers.forEach(f => {
-                fingerList.insertAdjacentHTML('beforeend', `<tr><td class="fw-bold text-success fs-5">${f.id}</td><td>${f.name}</td></tr>`);
-            });
-        }
-    };
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            const uName = user.email.split('@')[0];
-            const targetUser = uName.toLowerCase();
-            currentLoggedInUser = targetUser;
-            
-            get(ref(db, 'users/' + targetUser)).then((snapshot) => {
-                if (!snapshot.exists()) {
-                    signOut(auth).then(() => {
-                        document.getElementById('error-msg').innerHTML = getErrMsg('err_cannot_login');
-                        sessionStorage.removeItem('justLoggedIn');
-                    });
-                    return;
-                }
-                
-                document.getElementById('auth-lang-container').style.display = 'none';
-                
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('register-section').style.display = 'none';
-                document.getElementById('main-dashboard').style.display = 'block';
-                
-                document.getElementById('admin-name').innerText = uName;
-                document.getElementById('p-username').value = uName;
-                document.getElementById('menu-user-name').innerText = uName;
-                document.getElementById('menu-user-role').innerText = getRole(uName);
-                
-                onValue(ref(db, 'users'), (snap) => {
-                    userProfiles = snap.val() || {};
-                    updateSidebarAvatar(uName);
-                    updateFullUserList(); 
-                });
-                runAppLogs();
-
-                if (sessionStorage.getItem('justLoggedIn') === 'true') {
-                    const lang = localStorage.getItem('dashboard_lang') || 'th';
-                    let welcomeTemplate = targetUser === 'nonthaphat' 
-                        ? i18n[lang].welcome_admin
-                        : i18n[lang].welcome_user;
-                        
-                    let welcomeText = welcomeTemplate.replace('{name}', uName);
-                    
-                    document.getElementById('welcome-message').innerHTML = welcomeText;
-                    new bootstrap.Modal(document.getElementById('welcomeModal')).show();
-                    sessionStorage.removeItem('justLoggedIn');
-                }
-            });
-        } else {
-            currentLoggedInUser = "";
-            
-            document.getElementById('auth-lang-container').style.display = 'block';
-            
-            document.getElementById('login-section').style.display = 'flex';
-            document.getElementById('register-section').style.display = 'none';
-            document.getElementById('main-dashboard').style.display = 'none';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            
-            if(document.getElementById('error-msg').innerHTML.includes("text-primary")) {
-                document.getElementById('error-msg').innerText = '';
-            }
-        }
-    });
-
-    function updateSidebarAvatar(uName) {
-        const userData = userProfiles[uName];
-        if(!userData) return;
-        
-        const color = getColorFromName(uName);
-        const els = [document.getElementById('menu-avatar'), document.getElementById('p-preview')];
-        
-        els.forEach(el => {
-            if (userData.profile_img) {
-                el.style.backgroundImage = `url(${userData.profile_img})`;
-                el.innerText = '';
-                el.style.backgroundColor = 'transparent';
-            } else {
-                el.style.backgroundImage = "none";
-                el.style.backgroundColor = color;
-                el.innerText = uName[0].toUpperCase();
-            }
-        });
-    }
-
-    function updateFullUserList() {
-        const list = document.getElementById('full-user-list');
-        list.innerHTML = "";
-        
-        const currentRole = getRole(currentLoggedInUser); 
-        
-        // --- เพิ่มปุ่มดูรหัสผ่านทั้งหมดสำหรับ Admin ไว้ด้านบนของรายชื่อ ---
-        if (currentRole === 'Admin') {
-            list.insertAdjacentHTML('beforeend', `
-                <div class="mb-3 text-end">
-                    <button class="btn btn-warning fw-bold text-dark shadow-sm" onclick="showAccessDataView()">
-                        <i class="bi bi-key-fill"></i> ดูข้อมูลรหัสผ่านทั้งหมด
-                    </button>
-                </div>
-            `);
-        }
-        
-        const keys = Object.keys(userProfiles);
-        if(keys.length === 0) { list.innerHTML = "<div class='text-center text-muted py-3'>ไม่พบข้อมูลผู้ใช้ในระบบ</div>"; return; }
-
-        keys.forEach(key => {
-            const userData = userProfiles[key];
-            if (!userData || !userData.username) return; 
-            
-            const uName = userData.username;
-            const targetUser = uName.toLowerCase();
-            const role = getRole(uName); 
-            const isSelf = (targetUser === currentLoggedInUser);
-            
-            let canDelete = false;
-            if (currentRole === 'Admin') canDelete = !isSelf;
-            
-            let deleteBtnHtml = canDelete ? `<button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteUserProfile('${uName}', event)" title="ลบผู้ใช้"><i class="bi bi-trash"></i></button>` : '';
-            
-            let avatarHtml = '';
-            if (userData.profile_img) {
-                avatarHtml = `<div class="user-avatar me-3" style="background-image:url(${userData.profile_img}); background-color:transparent; cursor:pointer;" onclick="showPersonalHistory('${uName}')"></div>`;
-            } else {
-                avatarHtml = `<div class="user-avatar me-3" style="background:${getColorFromName(uName)}; cursor:pointer;" onclick="showPersonalHistory('${uName}')">${uName[0].toUpperCase()}</div>`;
-            }
-            
-            list.insertAdjacentHTML('beforeend', `
-                <div class="list-group-item list-group-item-action d-flex align-items-center py-3">
-                    ${avatarHtml}
-                    <div class="flex-grow-1" onclick="showPersonalHistory('${uName}')" style="cursor:pointer;">
-                        <div class="fw-bold">${uName} ${isSelf ? '<span class="badge bg-primary ms-1" style="font-size:0.6rem;" data-i18n="txt_you">คุณ</span>' : ''}</div>
-                        <small class="${role === 'Admin' ? 'text-danger fw-bold' : 'text-primary'}">${role}</small>
-                    </div>
-                    ${deleteBtnHtml}
-                    <i class="bi bi-chevron-right ms-3 text-muted" onclick="showPersonalHistory('${uName}')" style="cursor:pointer;"></i>
-                </div>
-            `);
-        });
-        
-        const currentLang = localStorage.getItem('dashboard_lang') || 'th';
-        document.querySelectorAll('[data-i18n="txt_you"]').forEach(el => {
-            el.innerText = currentLang === 'en' ? 'You' : 'คุณ';
-        });
-    }
-
-    window.deleteUserProfile = (uName, event) => {
-        event.stopPropagation(); 
-        if(confirm(`คุณต้องการลบข้อมูลของ "${uName}" ออกจากระบบ ใช่หรือไม่?`)) remove(ref(db, 'users/' + uName)).then(() => alert(`ลบ ${uName} เรียบร้อยแล้ว!`));
-    };
-
-    window.showPersonalHistory = (name) => {
-        document.getElementById('full-user-list').style.display = 'none'; 
-        document.getElementById('access-data-view').style.display = 'none';
-        document.getElementById('personal-history').style.display = 'block';
-        
-        document.getElementById('hist-name').innerText = name; document.getElementById('hist-role-label').innerText = "Role: " + getRole(name);
-        
-        const logs = allLogs.filter(l => l.name === name).reverse();
-        if(logs.length === 0) document.getElementById('hist-table-body').innerHTML = "<tr><td colspan='4' class='text-muted'>ยังไม่มีประวัติการเข้า-ออก</td></tr>";
-        else document.getElementById('hist-table-body').innerHTML = logs.map(l => `<tr><td>${l.date}</td><td>${l.timestamp}</td><td>${l.type}</td><td><span class="badge ${l.status=='In'?'bg-success':'bg-danger'}">${l.status}</span></td></tr>`).join('');
-    };
-
-    window.showFullList = () => { 
-        document.getElementById('full-user-list').style.display = 'block'; 
-        document.getElementById('personal-history').style.display = 'none'; 
-        document.getElementById('access-data-view').style.display = 'none'; 
-    };
-
-    function runAppLogs() {
-        onValue(ref(db, 'access_logs'), (snap) => {
-            allLogs = []; const tbody = document.getElementById('table-body'); tbody.innerHTML = ""; let peopleIn = [];
-            
-            if(!snap.exists()) {
-                tbody.innerHTML = "<tr><td colspan='5' class='text-muted py-3' data-i18n='wait_data'>ไม่มีประวัติการสแกนในระบบ</td></tr>";
-                document.getElementById('people-count').innerText = "0"; document.getElementById('names-list').innerHTML = ""; document.getElementById('last-user').innerText = "ยังไม่มีข้อมูล"; return;
-            }
-
-            snap.forEach(c => {
-                const d = c.val(); const displayName = d.name || "Unknown";
-                allLogs.push({...d, name: displayName});
-                const bClass = d.status == 'In' ? 'bg-success' : 'bg-danger';
-                tbody.insertAdjacentHTML('afterbegin', `<tr><td>${d.date}</td><td>${d.timestamp}</td><td class="fw-bold">${displayName}</td><td><small>${d.type}</small></td><td><span class="badge ${bClass}">${d.status}</span></td></tr>`);
-                if(d.status == "In") { if(!peopleIn.includes(displayName)) peopleIn.push(displayName); } else { peopleIn = peopleIn.filter(p => p !== displayName); }
-            });
-            
-            document.getElementById('people-count').innerText = peopleIn.length;
-            document.getElementById('names-list').innerHTML = peopleIn.map(n => `<div class="bg-white bg-opacity-10 rounded-pill px-3 py-1 border small fw-bold">${n}</div>`).join('');
-            
-            if(allLogs.length > 0) {
-                const last = allLogs[allLogs.length-1];
-                document.getElementById('last-user').innerText = last.name; document.getElementById('last-time').innerText = last.date + " " + last.timestamp;
-                const lb = document.getElementById('last-status-badge'); lb.innerText = last.status; lb.className = `badge ms-2 ${last.status=='In'?'bg-success':'bg-danger'}`;
-            }
-        });
-    }
-
-    function getColorFromName(name) {
-        if(!name) return '#000';
-        const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800'];
-        let hash = 0; for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        return colors[Math.abs(hash) % colors.length];
-    }
-
-    function updateClockAndDate() {
-        const now = new Date();
-        const currentLang = localStorage.getItem('dashboard_lang') || 'th';
-        const locale = currentLang === 'en' ? 'en-US' : 'th-TH';
-        
-        document.getElementById('clock-display').innerText = now.toLocaleTimeString(locale, { hour12: false });
-        
-        const dateOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-        document.getElementById('live-date').innerText = now.toLocaleDateString(locale, dateOptions);
-    }
-
-    setInterval(() => {
-        updateClockAndDate();
-        if(document.getElementById('auto-theme-switch').checked) { 
-            const hour = new Date().getHours(); 
-            applyTheme(hour < 6 || hour >= 18); 
-        }
-    }, 1000);
-
-    if(document.getElementById('logout-btn-side')) document.getElementById('logout-btn-side').onclick = () => { signOut(auth).then(() => { document.getElementById('error-msg').innerText = ''; }); };
-    
-    // 👉 เพิ่มเติม: แก้ไขปุ่มล้างประวัติ ให้ใช้ SweetAlert2 สวยงาม แทน Alert ทื่อๆ ของเดิม
-    if(document.getElementById('clear-btn')) {
-        document.getElementById('clear-btn').onclick = () => { 
-            Swal.fire({
-                title: 'ต้องการล้างประวัติ?',
-                text: "คุณกำลังจะลบประวัติการเข้า-ออกทั้งหมด (ข้อมูลนี้จะไม่สามารถกู้คืนได้)",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'ลบทิ้งถาวร',
-                cancelButtonText: 'ยกเลิก',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    remove(ref(db, 'access_logs')).then(() => {
-                        Swal.fire('สำเร็จ!', 'ล้างประวัติเรียบร้อยแล้ว', 'success');
-                    });
-                }
-            });
-        }; 
-    }
-</script>
-</body>
-</html>
+<section class="scr" id="home"><svg class="b0" viewBox="0 0 120 120"><defs><radialGradient id="bg0" cx=".35" cy=".3"><stop offset="0" stop-color="#6a6d63"/><stop offset="1" stop-color="#15160f"/></radialGradient></defs><circle cx="55" cy="74" r="40" fill="url(#bg0)"/><rect x="48" y="28" width="14" height="12" fill="#55584d"/><path d="M55 28C58 14 78 20 84 10" stroke="#b8925a" stroke-width="3" fill="none"/><circle class="sp" cx="85" cy="10" r="5" fill="#ffd54a"/></svg>
+<h1>กู้ระเบิด<br>เดอะโปรเจ็ก</h1><p class="sub0">สามคน • ปิดตา • ปิดหู • ปิดปาก</p>
+<div class="menu"><button class="nav hb" id="hs">เริ่มเกม</button><button class="nav hb" id="hp">โหมดมือถือ (หูฟังคนปิดตา)</button></div>
+<div class="ctl">จอย: D-pad/สติ๊กซ้าย เลื่อน • A กด • B ไป Needy / กลับ • L1/R1 หมุน (ค้างหมุนต่อเนื่อง) • L2/R2 สลับหน้าระเบิด<br>คีย์บอร์ด: ลูกศร • Space/Enter • B • Q/E หมุน • Z/C สลับหน้า</div></section>
+<section class="scr" id="lvs"><h2>เลือกระดับและด่าน</h2><div id="tiers"></div><button class="nav hb" id="lb">กลับ</button></section>
+<section class="scr" id="game"><div class="hud"><button class="hb2" id="hm">เมนู</button><b id="hl"></b><span id="hf"></span><button class="hb2" id="hfl">สลับหน้า</button><button class="hb2" id="nb">NEEDY (B)</button></div>
+<div class="bomb" id="bomb"><div class="face on" id="f1"></div><div class="face" id="f2"></div></div>
+<div id="needy" hidden>
+<div class="mod nyc" id="nT"><div class="tdisp"><b id="tv">27</b><i class="dg"></i>C</div><div class="nav tbn" style="left:12%" data-k="tu"><svg viewBox="0 0 10 10"><path d="M5 2L9 8H1Z"/></svg></div><div class="nav tbn" style="left:38%" data-k="td"><svg viewBox="0 0 10 10"><path d="M1 2H9L5 8Z"/></svg></div><div class="thermo"><u id="tfill"></u></div></div>
+<div class="mod nyc" id="nR"><div class="fm"><span>FM</span><b id="fr">88.0</b><div class="fbar"><u id="fmk"></u></div></div><div class="knob" id="kn"><i></i></div><div class="nav lockb" data-k="lk">LOCK</div><div class="nav rbn" style="left:8%" data-k="rl"><svg viewBox="0 0 10 10"><path d="M7 1L2 5L7 9Z"/></svg></div><div class="nav rbn" style="left:30%" data-k="rr"><svg viewBox="0 0 10 10"><path d="M3 1L8 5L3 9Z"/></svg></div><div class="ftg" id="ft">—</div></div>
+<div class="nyh">กด B เพื่อกลับ</div></div>
+<div class="intro" id="intro" hidden><b id="it"></b></div>
+<div class="ov" id="res" hidden><div class="card"><h1 id="rt"></h1><p id="rp"></p><button class="nav go" id="rn">ด่านถัดไป</button><button class="nav go" id="rr">เล่นซ้ำ</button><button class="nav go" id="rm">เมนูด่าน</button></div></div></section>
+<div class="ov" id="phv" hidden><div class="card"><h1>โหมดมือถือ</h1><p>สำหรับต่อหูฟังข้างเดียวของคนปิดตา พิมพ์รหัสห้อง 4 หลักที่ไอแพดแสดง แล้วแตะเชื่อมต่อ</p>
+ <input id="pc" inputmode="numeric" maxlength="4" placeholder="รหัสห้อง" style="width:100%;font:inherit;font-size:26px;text-align:center;padding:10px;border-radius:8px;border:2px solid #55584d;background:#15160f;color:#ece8dc">
+ <button class="go" id="pcon">เชื่อมต่อ</button><button class="go" id="ptest" style="background:#3a3d36">ทดสอบเสียง</button><p id="pst">ยังไม่ได้เชื่อม</p></div></div>
+<div class="ov" id="ov" hidden><div class="card">
+ <h1 id="ovT">ตัดสายไฟ</h1><p id="ovP">กู้ระเบิดสามคน เวลา 10 นาที ผิดได้ไม่เกิน 3 ครั้ง</p>
+ <div id="roles">
+  <div class="role"><b>ปิดตา</b><span>ถือคอนโทรลเลอร์ เลื่อนเคอร์เซอร์ (ขอบขาวเรืองแสง) แล้วกด A ตัดสาย/กดปุ่ม ได้ยินและพูดได้</span></div>
+  <div class="role"><b>ปิดหู</b><span>มองจอและพูดสั่งคนปิดตา แต่ไม่ได้ยินใคร</span></div>
+  <div class="role"><b>ปิดปาก</b><span>ถือคู่มือ ได้ยินและเห็น แต่พูดไม่ได้ ต้องใช้ท่าทาง/เขียนบอกคนปิดหู</span></div>
+ </div>
+<button class="go" id="gp" style="background:#3a3d36;margin-bottom:0">โหมดมือถือ (หูฟังคนปิดตา)</button>
+ <button class="go" id="go">เริ่มเกม</button>
+ <div class="hint">จอยสติ๊ก/D-pad เลื่อน | A กด/ตัด | คีย์บอร์ด: ลูกศร + Space/Enter</div>
+</div></div>
+<script>
+const $=s=>document.querySelector(s);
+const HEX={red:'#e5484d',blue:'#3b82f6',yellow:'#f5c518',white:'#f4f4f5',black:'#3a3a3a',green:'#2f9e5a'};
+const WC=['red','yellow','green','blue','black','white'];
+const LAB=['กด','กฎ','ปล่อย','ระเบิด','จุดชนวน','ห้าม','ยกเลิก','n','อื่นๆ'];
+const CNT={'กด':[0,3,2,4,6,5],'กฎ':[1,1,1,1,1,1],'ปล่อย':[4,5,7,2,1,0],'จุดชนวน':[5,4,3,2,1,0],'ห้าม':[10,0,0,0,0,0],'ยกเลิก':[0,1,2,3,4,5],'อื่นๆ':[7,4,5,2,8,10]};
+const F='fill="currentColor"';
+const GL={
+A:'<path d="M5 20L12 5L19 20M8 15H16"/>',
+AE:'<path d="M2 20L10 6M10 6H21M12 6V20H21M12 13H19M4.8 16H11"/>',
+a:'<circle cx="11.8" cy="14.5" r="4.4"/><path d="M16.2 9.5V20"/>',
+ae:'<circle cx="7" cy="15.5" r="3.7"/><path d="M10.7 11.5V20M10.7 15.8H21C21 9 10.7 9 10.7 15.8C10.7 21.5 17.5 22 20.6 19"/>',
+Am:'<path d="M5 21L12 9L19 21M8 17.2H16M8.5 4H15.5"/>',
+Ab:'<path d="M5 21L12 9L19 21M8 17.2H16M8.5 3C9 7 15 7 15.5 3"/>',
+ac:'<circle cx="11.8" cy="16" r="4.4"/><path d="M16.2 11V21M8.5 8L12 4.5L15.5 8"/>',
+ab:'<circle cx="11.8" cy="16" r="4.4"/><path d="M16.2 11V21M8.5 4.5C9 9 15 9 15.5 4.5"/>',
+E:'<path d="M18 5H7V20H18M7 12.5H16"/>',
+X:'<path d="M6 5L18 20M18 5L6 20"/>',
+P:'<path d="M7 20V5H14A4.5 4.5 0 0 1 14 14H7"/>',
+L:'<path d="M7 5V20H18"/>',
+O:'<ellipse cx="12" cy="12.5" rx="6" ry="8"/>',
+D:'<path d="M7 5V20H11C20 20 20 5 11 5Z"/>',
+S:'<path d="M17.5 7C14 3.5 6 5.5 8 10C9.5 13 16.5 12 16.5 16C16.5 20.5 8 21.5 6 17.5"/>',
+amp:'<path d="M18 20L8 9C6 6 9 4 11 5.5C13 7 12 9 9 11.5C5 14.5 5.5 20 11 20C14 20 16 17.5 17 14"/>',
+hash:'<path d="M9 4L7 21M16 4L14 21M4.5 9H19.5M3.5 16H18.5"/>',
+at:'<circle cx="12" cy="12" r="3.2"/><path d="M15.2 9V14C15.2 16.5 19.5 16.5 19.5 12A7.5 7.5 0 1 0 15 18.8"/>',
+bang:'<path d="M12 4.5V14.5"/><circle cx="12" cy="19.5" r="1.4" '+F+'/>',
+q:'<path d="M7.5 8C8 3.5 17 3.5 16.5 8.5C16 12 12 12 12 15"/><circle cx="12" cy="19.5" r="1.4" '+F+'/>',
+colon:'<circle cx="12" cy="9" r="1.6" '+F+'/><circle cx="12" cy="17" r="1.6" '+F+'/>',
+plus:'<path d="M12 6V18M6 12H18"/>',
+comma:'<circle cx="12" cy="17" r="1.8" '+F+'/><path d="M12.5 18.5Q12.5 21.8 9.5 23"/>',
+circ:'<circle cx="12" cy="12" r="7.5"/>',
+dot:'<circle cx="12" cy="12" r="7.5" '+F+'/>',
+tri:'<path d="M12 4L20.5 19H3.5Z" '+F+'/>',
+trio:'<path d="M12 4L20.5 19H3.5Z"/>',
+sq:'<rect x="5" y="5" width="14" height="14"/>',
+sqf:'<rect x="5" y="5" width="14" height="14" '+F+'/>',
+star:'<path d="M12 4L14 9.75L20.1 9.9L15.2 13.55L17 19.4L12 15.9L7 19.4L8.8 13.55L3.9 9.9L10 9.75Z"/>',
+starf:'<path d="M12 4L14 9.75L20.1 9.9L15.2 13.55L17 19.4L12 15.9L7 19.4L8.8 13.55L3.9 9.9L10 9.75Z" '+F+'/>',
+pi:'<path d="M4.5 7.5H19.5M8.5 7.5L8 20M15.5 7.5C15.5 14 15 17 18 20"/>',
+alpha:'<path d="M19 9.5C12 7 5 10 5 14.5C5 19 11 20 14 15L19 20"/>',
+beta:'<path d="M8 22V8C8 3.5 14.5 3.5 14.5 7.5C14.5 11 11 11.5 9.5 11.5C14.5 11.5 17 13 17 16.5C17 21 11 21.5 8 17"/>',
+sigma:'<path d="M18 5H6L12.5 12.5L6 20H18"/>',
+delta:'<path d="M12 4.5L19 19.5H5Z"/>',
+theta:'<ellipse cx="12" cy="12.5" rx="6.5" ry="8.5"/><path d="M8.5 12.5H15.5"/>',
+mu:'<path d="M5.5 8V22M5.5 15C5.5 21 13 21 13.5 15V8M13.5 15.5C13.5 19 17 20 19 17.5"/>',
+omega:'<path d="M4.5 9C4.5 21 11.5 21 12 13C12.5 21 19.5 21 19.5 9"/>',
+wrench:'<path d="M14.8 4.2A4.8 4.8 0 0 0 11.2 10.4L4.6 17A2.1 2.1 0 0 0 7.6 20L14.2 13.4A4.8 4.8 0 0 0 19.8 9.2L16.8 11.4L13.4 10.6L12.6 7.2L14.8 4.2Z"/>',
+bulb:'<path d="M9 16.5H15M9.8 19.5H14.2M8.2 14C4.5 10 7 4 12 4C17 4 19.5 10 15.8 14C15 15 14.8 15.5 14.8 16.5H9.2C9.2 15.5 9 15 8.2 14Z"/>',
+plug:'<rect x="7" y="9" width="10" height="7" rx="2"/><path d="M10 9V4.5M14 9V4.5M12 16V21"/>',
+watch:'<circle cx="12" cy="13.5" r="7"/><path d="M10 3.5H14M12 3.5V6.5M12 13.5V9.5M12 13.5L15 15M18 7L19.5 5.5"/>',
+fader:'<rect x="8" y="3.5" width="8" height="17" rx="2"/><path d="M12 6V18"/><rect x="6" y="10" width="12" height="4" rx="1" '+F+'/>',
+hammer:'<path d="M4.5 19.5L15 9" stroke-width="2.8"/><path d="M9.5 8L14.5 3L21 9.5L16 14.5Z" '+F+'/>',
+gear:'<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2.5"/><path stroke-width="3" d="M12 2.5V5.5M12 18.5V21.5M2.5 12H5.5M18.5 12H21.5M5.3 5.3L7.4 7.4M16.6 16.6L18.7 18.7M18.7 5.3L16.6 7.4M7.4 16.6L5.3 18.7"/>',
+bomb:'<circle cx="10.5" cy="14" r="7" '+F+'/><path d="M14.5 8.5L17 6C18.5 4.5 19.5 5 20.5 3.5M19.5 4.5L21.5 3.5M20.5 7L22.5 7"/>'};
+const COLS=[['A','AE','a','ae','Am','Ab','ac','ab'],['E','ex','ep','el','eo','ed','ee','es'],['amp','hash','at','bang','q','colon','plus','comma'],['circ','dot','tri','trio','sq','sqf','star','starf'],['pi','alpha','beta','sigma','delta','theta','mu','omega'],['wrench','bulb','plug','watch','fader','hammer','gear','bomb']];
+Object.assign(GL,{
+ee:'<path d="M6.5 14.5H18C18 8 6.5 8 6.5 14.5C6.5 21 14.5 22 18 18.5"/>',
+ex:'<path d="M6 9L18 20M18 9L6 20"/>',
+ep:'<path d="M7.5 9V22"/><circle cx="12.5" cy="14" r="5"/>',
+el:'<path d="M12 4V20"/>',
+eo:'<circle cx="12" cy="14.5" r="5.5"/>',
+ed:'<circle cx="11.5" cy="14.5" r="5"/><path d="M16.5 4V20"/>',
+es:'<path d="M17 10.5C14 7.5 7 8.5 8 12C9 14.5 16.5 14 16.5 17.5C16.5 21.5 9 21.5 6.5 18.5"/>'});
+const svg=id=>`<svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${GL[id]}</g></svg>`;
+const rnd=a=>a[Math.random()*a.length|0];
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
+let G={running:false},cur=null,ac=null,last=0,prevA=false,lastMove=0,lastDir='';
+function beep(f,d,t='square',v=.05){try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+
+function wireTargets(w,ser){const n=w.length,ix=c=>w.map((x,i)=>x==c?i:-1).filter(i=>i>=0);
+ if(n==3){const r=ix('red');if(r.length)return r;if(ix('black').length)return[0];return[2]}
+ if(n==4){const d=w.map((c,i)=>ix(c).length>1?i:-1).filter(i=>i>=0);if(d.length)return d;const r=ix('red');if(r.length)return r;if(w[3]=='black')return[3];
+  const y=w.indexOf('yellow');if(y>=0)return[y-1,y+1].filter(i=>i>=0&&i<4);return[0,3]}
+ const m=+ser[0],dg=[...ser].filter(c=>c<='9').reduce((a,c)=>a+ +c,0),vw='AEIOU'.includes(ser[1]),cut=[],u=()=>w.map((_,i)=>i).filter(i=>!cut.includes(i));
+ {const l=u();cut.push(l[m>l.length?l.length-1:m-1])}
+ {const l=u();cut.push(vw?l[l.length-1]:l[0])}
+ {const l=u();cut.push(dg>10?l[0]:dg==10?l[1]:l[l.length-1])}
+ return cut}
+const okIdx=()=>G.tg.filter(t=>!G.cut.includes(t));
+function btnNeed(lab,ci,n,ser){
+ if(lab=='ระเบิด')return[...ser].filter(c=>c<='9').reduce((a,c)=>a+ +c,0);
+ if(lab=='n')return[n+4,n+1,n+2,n+3,n+5,0][ci];
+ return CNT[lab][ci]}
+
+const MUL='<svg viewBox="0 0 10 10"><path d="M2 2L8 8M8 2L2 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>';
+const SG={a:'3 2 13 2',b:'14 3 14 13',c:'14 15 14 25',d:'3 26 13 26',e:'2 15 2 25',f:'2 3 2 13',g:'3 14 13 14'},DG=['abcdef','bc','abdeg','abcdg','bcfg','acdfg','acdefg','abc','abcdefg','abcdfg'];
+const dig=(d,x)=>Object.keys(SG).map(k=>{const[a,b,c,e]=SG[k].split(' ');return `<line x1="${+a+x}" y1="${b}" x2="${+c+x}" y2="${e}" class="${DG[d].includes(k)?'on':''}"/>`}).join('');
+const fmt=()=>{const s=Math.max(0,Math.ceil(G.time/1000));return String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+function newEq(avoid){let h,v;do{const k=2+(Math.random()*2|0),T=[];v=0;for(let i=0;i<k;i++){const r=Math.random(),a=1+(Math.random()*9|0),b=1+(Math.random()*9|0),c=2+(Math.random()*6|0);
+ if(r<.35){T.push(a+MUL+b);v+=a*b}else if(r<.6){T.push(c+'<sup>2</sup>');v+=c*c}else{T.push(String(a));v+=a}}h=T.join('+')}while(v<5||v>63||v==avoid);return{h,v}}
+function showEq(){const e=$('#eq'),h=G.N.eq.h,len=h.replace(/<svg.*?<\/svg>/g,'x').replace(/<\/?sup>/g,'').length;e.style.fontSize=Math.min(13,115/len)+'cqw';e.innerHTML=h}
+const MC={A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..'};
+const RL2=()=>String.fromCharCode(65+Math.random()*26|0),RC=1000+(Math.random()*9000|0);
+let RM=null,phones=0;
+function stRC(){$('#rc').textContent=RM?('รหัสห้อง '+RC+' • มือถือ: '+(phones?'เชื่อมแล้ว':'ยังไม่เชื่อม')):'ทำงานคนเดียว (ไม่มีการเชื่อมมือถือ)'}
+function beepCode(c){try{ac=ac||new AudioContext();let t=ac.currentTime+.05;for(const x of c){const d=x=='.'?.15:.45,o=ac.createOscillator(),g=ac.createGain();o.frequency.value=620;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.25,t+.01);g.gain.setValueAtTime(.25,t+d-.02);g.gain.linearRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d);t+=d+.15}}catch(e){}}
+(async()=>{stRC();try{const r=window.claude&&await claude.use('room');if(!r)return;RM=await r.join('b'+RC);RM.presence({role:'game'});RM.onPeers(c=>{phones=c.peers.filter(p=>p.presence&&p.presence.role=='phone').length;stRC()});stRC()}catch(e){}})();
+function newB(){const t=G.M.t,v=[...'AEIOU'].filter(x=>x!=t),s=new Set([t,v[Math.random()*v.length|0]]);while(s.size<6)s.add(RL2());G.M.b=shuf([...s])}
+function showM(f){$('#mbox').innerHTML=G.M.b.map((l,i)=>`<div class="nav mb" data-k="mb" data-i="${i}">${l}</div>`).join('');$('#mbar').innerHTML=[0,1,2].map(i=>`<i class="${i<G.M.r?'on':''}"></i>`).join('');if(f!=null)setCur(document.querySelectorAll('.mb')[f])}
+function playM(){const c=MC[G.M.t],e=$('#mplay');e.classList.add('pl');setTimeout(()=>e.classList.remove('pl'),c.length*600);if(RM&&phones)RM.emit('morse',{c});else beepCode(c)}
+function pickM(i){const M=G.M;if(M.b[i]==M.t){M.r++;beep(800,.1,'sine',.07);if(M.r==3){G.solved.M=true;$('#mM').classList.add('ok')}else M.t=RL2()}else strike($('#mM'));newB();showM(i)}
+$('#gp').onclick=()=>{$('#ov').hidden=true;$('#phv').hidden=false};
+$('#ptest').onclick=()=>{ac=ac||new AudioContext();beepCode('.-')};
+$('#pcon').onclick=async()=>{ac=ac||new AudioContext();const c=$('#pc').value.trim(),st=$('#pst');st.textContent='กำลังเชื่อม…';
+ try{const r=window.claude&&await claude.use('room');if(!r){st.textContent='เชื่อมไม่ได้ ต้องเปิดจากลิงก์ในบัญชีที่ล็อกอิน';return}
+  const g=await r.join('b'+c);g.presence({role:'phone'});g.on('morse',m=>{beepCode(String(m.data&&m.data.c||'').replace(/[^.-]/g,'').slice(0,6))});
+  g.onPeers(ch=>{st.textContent=ch.peers.some(p=>p.presence&&p.presence.role=='game')?'เชื่อมกับเกมแล้ว':'รอเกม…'})}catch(e){st.textContent='เชื่อมไม่สำเร็จ'}};
+const PT={first:[1],third:[3],point:[5],array:[1,2,3],cross:[1,5,9],chess:[1,3,5,7,9],block:[4,5,6,7,8,9],cubes:[1,2,4,5],evens:[2,4,6,8],perpe:[1,2,3,6,9],steps:[3,4,9],stars:[2,4,5,6,8],equal:[1,2,3,7,8,9],prime:[2,3,5,7],corns:[1,3,7,9],fishy:[2,4,5,6,7,8],verti:[3,6,9],canes:[1,2,5,8],sides:[1,3,4,6,7,9],bored:[2,4,5,6],fibon:[1,3,5,8]};
+function newX(){const ws=Object.keys(PT),w=ws[Math.random()*ws.length|0];
+ const sub=(v,l)=>{for(const c of v){const i=l.indexOf(c);if(i<0)return false;l=l.slice(0,i)+l.slice(i+1)}return true};
+ let x,seq;do{x=RL2().toLowerCase()}while(ws.some(v=>v!=w&&sub(v,w+x)));
+ do{seq=shuf([...w+x])}while(seq.join('').includes(w));
+ G.X={w,t:new Set(PT[w]),on:Array(9).fill(0)};
+ $('#xs').innerHTML=seq.map(c=>`<span>${c.charCodeAt(0).toString(16).toUpperCase()}</span>`).join('');
+ $('#xg').innerHTML=[0,1,2,3,4,5,6,7,8].map(i=>`<div class="nav xc" data-k="xc" data-i="${i}"></div>`).join('')}
+let SC='home',FACE=0,CUR={ti:0,si:0},PR=[0,0,0,0],prevB=0,pl2=0,pr2=0,grot=0,krot=0,rot=0,rotT=0,rotH=0,SW={s:[],todo:[]};
+try{PR=JSON.parse(localStorage.getItem('bm_pr'))||PR}catch(e){}
+const NY={open:false,prev:null,m:{},deg:0};
+const TIERS=[{n:'ลูกมือ',c:6,m:[2,3],t:[480,420],s:5,ny:[],p:'WBS'},{n:'ช่างเทคนิค',c:7,m:[3,4],t:[420,360],s:4,ny:['T'],p:'WBSN'},{n:'ผู้เชี่ยวชาญ',c:8,m:[4,6],t:[400,300],s:3,ny:['T','R'],p:'WBSNMX'},{n:'ตำนานนักเก็บกู้',c:10,m:[6,6],t:[360,240],s:3,ny:['T','R'],p:'WBSNMX'}];
+const scopeEl=()=>SC=='res'?$('#res'):SC=='ph'?$('#phv'):SC=='game'?(NY.open?$('#needy'):$('.face.on')):$('#'+SC);
+const navs=()=>[...scopeEl().querySelectorAll('.nav')].filter(e=>e.getClientRects().length);
+function show(n){const o=document.querySelector('.scr.on');if(o&&o.id!=n){o.classList.remove('on');o.classList.add('out');setTimeout(()=>o.classList.remove('out'),450)}$('#'+n).classList.add('on');SC=n;setTimeout(()=>setCur(navs()[0]),80)}
+function showFace(i){[0,1].forEach(j=>$('#f'+(j+1)).classList.toggle('on',j==i));FACE=i;$('#hf').textContent='หน้า '+(i+1)+'/'+G.faces;const f=$('.face.on');f.classList.remove('flip');void f.offsetWidth;f.classList.add('flip');setCur(navs()[0])}
+function flip(d){if(SC!='game'||!G.running||NY.open||G.faces<2)return;showFace((FACE+d+G.faces)%G.faces);beep(300,.08)}
+function needyToggle(){if(SC!='game'||!G.running)return;if(!G.ny.length){beep(150,.1);return}const n=$('#needy');
+ if(!NY.open){NY.prev=cur;NY.open=true;n.hidden=false;n.classList.remove('in');void n.offsetWidth;n.classList.add('in');setCur(navs()[0])}
+ else{NY.open=false;n.hidden=true;setCur(NY.prev&&NY.prev.isConnected?NY.prev:navs()[0])}}
+const nyW=()=>Math.max(8,22-4*CUR.ti-CUR.si/2)+Math.random()*10;
+function updT(v){$('#tv').textContent=Math.round(v);$('#tfill').style.height=Math.max(4,Math.min(100,(v-15)/40*100))+'%'}
+function updR(){const f=88+NY.deg/360*20;$('#fr').textContent=f.toFixed(1);$('#fmk').style.left=NY.deg/360*100+'%';$('#kn').style.transform='rotate('+NY.deg+'deg)'}
+function rotate(d){if(!NY.open)return;NY.deg=(NY.deg+d+360)%360;updR()}
+function nyReset(l){NY.open=false;NY.m={};NY.deg=0;$('#needy').hidden=true;
+ ['T','R'].forEach(k=>{const c=$('#n'+k);c.style.display=l.includes(k)?'':'none';c.classList.remove('act');if(l.includes(k))NY.m[k]={act:false,wait:nyW()}});
+ updT(27);updR();$('#ft').textContent='—';$('#nb').classList.remove('on');$('#nb').style.display=l.length?'':'none'}
+function nyOn(k){const n=NY.m[k];n.act=true;n.left=28;n.beep=0;$('#n'+k).classList.add('act');
+ if(k=='T'){n.temp=36+(Math.random()*13|0);updT(n.temp)}else{n.target=90+(Math.random()*160|0)/10;$('#ft').textContent='เป้าหมาย '+n.target.toFixed(1)}}
+function nyOff(k,ok){const n=NY.m[k];n.act=false;n.wait=nyW();$('#n'+k).classList.remove('act');if(k=='T')updT(27);else $('#ft').textContent='—';if(ok)beep(900,.15,'sine',.07);else strike($('#n'+k))}
+function needyTick(dt){let any=0;for(const k in NY.m){const n=NY.m[k];
+ if(!n.act){n.wait-=dt/1000;if(n.wait<=0)nyOn(k)}else{any=1;n.left-=dt/1000;n.beep-=dt/1000;if(n.beep<=0){n.beep=1.2;beep(900,.12,'square',.05)}if(n.left<=0)nyOff(k,false)}}
+ $('#nb').classList.toggle('on',!!any)}
+function swRule(s){const on=[1,2,3,4].filter(i=>s[i-1]),n=on.length,e=a=>on.join()==a.join();
+ if(n==0)return[1];if(n==3)return[1,2,3,4].filter(i=>!s[i-1]);
+ if(n==2&&(e([1,3])||e([2,4])))return[3,4];if(e([4]))return[4];if(e([3,4]))return[4,1];if(e([1,4]))return[4];
+ if(e([1]))return[2];if(e([1,2]))return[3];if(e([2,3]))return[2,1];if(e([3]))return[1];if(e([2]))return[2,4];return[]}
+function swDraw(){document.querySelectorAll('#sl i').forEach((e,i)=>e.classList.toggle('on',!!SW.s[i]));document.querySelectorAll('#tgs .tg').forEach((e,i)=>e.classList.toggle('up',!!SW.s[i]))}
+function swInit(){let s;do{s=[0,0,0,0].map(()=>rn2())}while(s.every(x=>x));SW.s=s;SW.todo=swRule(s);
+ $('#sl').innerHTML='<i class="sled"></i>'.repeat(4);$('#tgs').innerHTML=[0,1,2,3].map(i=>`<div class="nav tg" data-k="sw" data-i="${i}"><i></i></div>`).join('');swDraw()}
+const rn2=()=>Math.random()<.5?1:0;
+function swPress(i){const j=i+1;if(!SW.todo.includes(j)){strike($('#mS'));return}SW.s[i]^=1;SW.todo=SW.todo.filter(x=>x!=j);swDraw();beep(700,.05,'square',.05);
+ if(!SW.todo.length){if(SW.s.every(x=>x)){G.solved.S=true;$('#mS').classList.add('ok')}else SW.todo=swRule(SW.s)}}
+function cfg(ti,si){const t=TIERS[ti],f=si/(t.c-1),k=Math.min(t.p.length,Math.round(t.m[0]+(t.m[1]-t.m[0])*f));return{mods:shuf([...t.p]).slice(0,k),time:Math.round(t.t[0]+(t.t[1]-t.t[0])*f),strikes:t.s,ny:si>0?t.ny:[]}}
+function startStage(ti,si){const c=cfg(ti,si);CUR={ti,si};$('#res').hidden=true;const pool=$('#pool');
+ 'WBKNMXS'.split('').forEach(k=>pool.append($('#m'+k)));pool.append($('.center'));
+ const els=c.mods.map(k=>$('#m'+k)),emp=()=>{const d=document.createElement('div');d.className='mod empty';return d};
+ const a=els.slice(0,5),b=els.slice(5);while(a.length<5)a.push(emp());while(b.length&&b.length<6)b.push(emp());
+ $('#f1').replaceChildren(a[0],$('.center'),a[1],a[2],a[3],a[4]);$('#f2').replaceChildren(...b);
+ init();swInit();Object.assign(G,{running:false,time:c.time*1000,lastSec:c.time,maxS:c.strikes,need:c.mods,faces:b.length?2:1,ny:c.ny});delete G.dt;
+ nyReset(c.ny);drawStrikes();drawTime();$('#hl').textContent=TIERS[ti].n+' • ด่าน '+(si+1);show('game');showFace(0);
+ const it=$('#intro');$('#it').innerHTML=TIERS[ti].n+'<br>ด่าน '+(si+1);it.hidden=false;it.classList.remove('go');void it.offsetWidth;it.classList.add('go');
+ setTimeout(()=>{it.hidden=true;G.running=true;setCur(navs()[0])},1600)}
+function renderLv(){$('#tiers').innerHTML=TIERS.map((t,ti)=>`<div class="tier"><h3>${t.n} <small>${t.c} ด่าน</small></h3><div class="stg">${[...Array(t.c)].map((_,si)=>`<button class="nav sb ${si>PR[ti]?'lk':''}" data-t="${ti}" data-s="${si}">${si+1}</button>`).join('')}</div></div>`).join('')}
+$('#tiers').onclick=e=>{const b=e.target.closest('.sb');if(b&&!b.classList.contains('lk'))startStage(+b.dataset.t,+b.dataset.s)};
+$('#hs').onclick=()=>{ac=ac||new AudioContext();show('lvs')};$('#lb').onclick=()=>show('home');
+$('#hp').onclick=()=>{$('#phv').hidden=false;SC='ph'};
+$('#hm').onclick=()=>{G.running=false;NY.open=false;$('#needy').hidden=true;renderLv();show('lvs')};
+$('#hfl').onclick=()=>flip(1);$('#nb').onclick=needyToggle;
+$('#rn').onclick=()=>startStage(CUR.ti,CUR.si+1);$('#rr').onclick=()=>startStage(CUR.ti,CUR.si);$('#rm').onclick=()=>{$('#res').hidden=true;renderLv();show('lvs')};
+function init(){
+ const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ',p=()=>L[Math.random()*26|0],d=()=>Math.random()*10|0;
+ const ser=(1+(Math.random()*9|0))+p()+d()+p()+d()+p();
+ let wires,tg;do{wires=Array.from({length:3+(Math.random()*4|0)},()=>rnd(WC));tg=wireTargets(wires,ser)}while(tg===null);
+ const ci=Math.random()*6|0,lab=rnd(LAB),n=1+(Math.random()*9|0),txt=lab=='n'?String(n):lab=='อื่นๆ'?rnd(['เริ่ม','หยุด','OK']):lab;
+ const col=rnd(COLS),shown=shuf([0,1,2,3,4,5,6,7]).slice(0,4).sort((a,b)=>a-b).map(r=>col[r]);
+ G={running:true,wires,tg,cut:[],ci,need:btnNeed(lab,ci,n,ser),presses:0,keys:shown,
+  order:shown,step:0,solved:{W:false,B:false,K:false,N:false,M:false,X:false,S:false},strikes:0,time:600000,lastSec:600};
+ $('#serial').textContent='S/N '+ser;
+ $('#wires').innerHTML='<defs><linearGradient id="mg" x1="0" x2="1"><stop offset="0" stop-color="#6a6d63"/><stop offset=".5" stop-color="#34362f"/><stop offset="1" stop-color="#555950"/></linearGradient></defs><rect class="blk" x="12.6" y="16.6" width="8.7" height="67" rx="1"/><rect class="blk" x="74.9" y="29.8" width="8.7" height="53" rx="1"/>'+wires.map((c,i)=>{const n=wires.length,h=i-(n-1)/2,y0=51+h*10,y1=57.5+h*8;let d=`M17 ${y0}`,px=17,py=y0;
+  for(let s=1;s<=4;s++){const x=17+62.5*s/4,y=y0+(y1-y0)*s/4+(s<4?(Math.random()-.5)*5:0);d+=` C${(px+x)/2} ${py} ${(px+x)/2} ${y} ${x} ${y}`;px=x;py=y}
+  return `<g class="nav wire" data-k="w" data-i="${i}"><g class="halo"><path d="${d}" pathLength="100" stroke-width="7" opacity=".25"/><path d="${d}" pathLength="100" stroke-width="4.6" opacity=".6"/><path d="${d}" pathLength="100" stroke-width="3.4"/></g><path class="wp" d="${d}" pathLength="100" style="stroke:${HEX[c]}" stroke-width="1.9"/><path d="${d}" pathLength="100" stroke="#fff" stroke-width=".55" opacity=".4" transform="translate(0 -.55)"/><path class="hit" d="${d}" pathLength="100" stroke-width="6"/><circle cx="17" cy="${y0}" r="1.4" fill="#b8925a"/><circle cx="79.5" cy="${y1}" r="1.4" fill="#b8925a"/></g>`}).join('');
+ const b=$('#btn'),cn=WC[ci],vis=txt.replace(/[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g,'').length;
+ b.style.setProperty('--c',HEX[cn]);b.style.color=cn=='yellow'||cn=='white'?'#111':'#fff';
+ b.style.fontSize=Math.min(24,90/vis)+'cqmin';if(lab=='π')b.innerHTML=svg('pi');else b.textContent=txt;b.classList.remove('down');
+ $('#keys').innerHTML=shuf(shown).map(s=>`<div class="nav key" data-k="k" data-s="${s}">${svg(s)}</div>`).join('');
+ ['mW','mB','mK','mN','mM','mX','mS'].forEach(i=>$('#'+i).classList.remove('ok'));
+ G.N={bits:[0,0,0,0,0,0],round:0,eq:newEq(0)};$('#bits').innerHTML=[0,1,2,3,4,5].map(i=>`<div class="nav bit" data-k="t" data-i="${i}"></div>`).join('');$('#leds').innerHTML='<i></i><i></i><i></i>';showEq();
+ G.M={r:0,t:RL2()};newB();showM();newX();
+ drawStrikes();drawTime();setCur(document.querySelector('.nav'));$('#ov').hidden=true}
+
+function drawStrikes(){const m=G.maxS||3;$('#strikes').innerHTML=[...Array(m)].map((_,i)=>`<b class="${i<G.strikes?'on':''}"><svg viewBox="0 0 10 10"><path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5"/></svg></b>`).join('')}
+function drawTime(){const s=Math.max(0,Math.ceil(G.time/1000)),m=s/60|0,r=s%60;if(G.dt===s)return;G.dt=s;$('#timer').innerHTML=`<svg viewBox="0 0 80 28">${dig(m/10|0,0)}${dig(m%10,18)}<circle cx="40" cy="9" r="1.7"/><circle cx="40" cy="19" r="1.7"/>${dig(r/10|0,46)}${dig(r%10,64)}</svg>`}
+function setCur(el){if(cur)cur.classList.remove('f');cur=el;if(el)el.classList.add('f')}
+function strike(m){G.strikes++;drawStrikes();beep(120,.4,'sawtooth',.08);if(m){m.classList.add('bad');setTimeout(()=>m.classList.remove('bad'),250)}if(G.strikes>=(G.maxS||3))end(false)}
+function end(win){G.running=false;SC='res';NY.open=false;$('#needy').hidden=true;const t=CUR.ti,i=CUR.si,last=i>=TIERS[t].c-1;
+ $('#rt').textContent=win?'กู้ระเบิดสำเร็จ':(G.time<=0?'หมดเวลา — ระเบิด!':'ผิดเกินกำหนด — ระเบิด!');
+ $('#rp').textContent=win?'เหลือเวลา '+fmt():'ลองใหม่อีกครั้ง';
+ if(win){PR[t]=Math.max(PR[t],Math.min(i+1,TIERS[t].c-1));try{localStorage.setItem('bm_pr',JSON.stringify(PR))}catch(e){}}
+ $('#rn').style.display=win&&!last?'':'none';const r=$('#res');r.hidden=false;r.classList.remove('in');void r.offsetWidth;r.classList.add('in');setTimeout(()=>setCur(navs()[0]),80);
+ if(win)[660,880,1100].forEach((f,k)=>setTimeout(()=>beep(f,.15,'sine',.07),k*130));else beep(70,1,'sawtooth',.15)}
+function check(){const s=G.solved;if(G.need.every(k=>s[k]))end(true)}
+
+function move(dir){
+ const els=navs();if(!cur||!els.includes(cur))return setCur(els[0]);
+ const r=cur.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let best=null,bs=1e9;
+ for(const e of els){if(e===cur)continue;const q=e.getBoundingClientRect(),dx=q.left+q.width/2-cx,dy=q.top+q.height/2-cy;
+  const[p,o]=dir=='L'?[-dx,dy]:dir=='R'?[dx,dy]:dir=='U'?[-dy,dx]:[dy,dx];
+  if(p<=2)continue;const sc=p+Math.abs(o)*2;if(sc<bs){bs=sc;best=e}}
+ if(best){setCur(best);beep(500,.03,'sine',.03)}}
+
+function aDown(){
+ if(SC!='game'){cur&&cur.click();return}if(!G.running)return;
+ const k=cur&&cur.dataset.k;
+ if(k=='w'&&!G.solved.W){const i=+cur.dataset.i;if(G.cut.includes(i))return;
+  if(okIdx().includes(i)){G.cut.push(i);cur.classList.add('cut');beep(900,.08);
+   if(G.tg.every(t=>G.cut.includes(t))){G.solved.W=true;$('#mW').classList.add('ok')}}
+  else strike($('#mW'))}
+ else if(k=='k'&&!G.solved.K){if(cur.classList.contains('lit'))return;
+  if(cur.dataset.s==G.order[G.step]){cur.classList.add('lit');G.step++;beep(700,.08,'sine',.07);if(G.step==4){G.solved.K=true;$('#mK').classList.add('ok')}}else{G.step=0;document.querySelectorAll('.key').forEach(x=>x.classList.remove('lit'));strike($('#mK'))}}
+ else if(k=='tu'||k=='td'){const n=NY.m.T;if(n&&n.act){n.temp+=k=='tu'?3:-3;updT(n.temp);beep(500,.04,'square',.04);if(n.temp>=24&&n.temp<=30)nyOff('T',true)}}
+ else if(k=='rl'||k=='rr'){rotate(k=='rr'?5:-5)}
+ else if(k=='lk'){const n=NY.m.R;if(n&&n.act){if(Math.abs(88+NY.deg/360*20-n.target)<=.3)nyOff('R',true);else strike($('#nR'))}}
+ else if(k=='sw'&&!G.solved.S){swPress(+cur.dataset.i)}
+ else if(k=='xc'&&!G.solved.X){const i=+cur.dataset.i;G.X.on[i]^=1;cur.classList.toggle('on');beep(G.X.on[i]?900:500,.04,'square',.04)}
+ else if(k=='xs'&&!G.solved.X){cur.classList.add('down');if(G.X.on.every((v,i)=>!!v==G.X.t.has(i+1))){G.solved.X=true;$('#mX').classList.add('ok');beep(800,.1,'sine',.07)}else strike($('#mX'))}
+ else if(k=='mp'&&!G.solved.M){playM()}
+ else if(k=='mb'&&!G.solved.M){pickM(+cur.dataset.i)}
+ else if(k=='t'&&!G.solved.N){const i=+cur.dataset.i;G.N.bits[i]^=1;cur.classList.toggle('on');beep(G.N.bits[i]?900:500,.04,'square',.04)}
+ else if(k=='n'&&!G.solved.N){cur.classList.add('down');
+  if(parseInt(G.N.bits.join(''),2)==G.N.eq.v){G.N.round++;$('#leds').children[G.N.round-1].classList.add('on');beep(800,.1,'sine',.07);
+   if(G.N.round==3){G.solved.N=true;$('#mN').classList.add('ok')}else{G.N.eq=newEq(G.N.eq.v);showEq()}}
+  else strike($('#mN'))}
+ else if(k=='b'&&!G.solved.B){G.presses++;cur.classList.add('down');beep(600,.05,'square',.05)}
+ else if(k=='s'&&!G.solved.B){cur.classList.add('down');
+  if(G.presses==G.need){G.solved.B=true;$('#mB').classList.add('ok');beep(800,.1,'sine',.07)}else{G.presses=0;strike($('#mB'))}}
+ check()}
+function aUp(){document.querySelectorAll('.down').forEach(x=>x.classList.remove('down'))}
+
+addEventListener('keydown',e=>{
+ const m={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D'}[e.key];
+ if(m){e.preventDefault();if(G.running||SC!='game')move(m)}else if(e.key=='b'||e.key=='B'){needyToggle()}else if(e.key=='z'){flip(-1)}else if(e.key=='c'){flip(1)}else if(e.key=='q'){krot=-1}else if(e.key=='e'){krot=1}
+ else if((e.key==' '||e.key=='Enter')&&!e.repeat){if(document.activeElement.tagName=='BUTTON')return;e.preventDefault();aDown()}});
+addEventListener('keyup',e=>{if(e.key==' '||e.key=='Enter')aUp();if(e.key=='q'||e.key=='e')krot=0});
+$('#go').onclick=()=>{ac=ac||new AudioContext();init()};
+document.addEventListener('click',e=>{const n=e.target.closest('.nav');if(n&&G.running&&e.detail&&n.dataset.k!='b'&&n.dataset.k!='s'&&n.dataset.k!='n'&&n.dataset.k!='xs'){setCur(n);aDown()}});
+['#btn','#sub','#sub2','#sub3'].forEach(s=>$(s).addEventListener('pointerdown',e=>{if(G.running){setCur(e.currentTarget);aDown()}}));
+addEventListener('pointerup',aUp);
+
+function loop(t){
+ const dt=t-(last||t);last=t;
+ const gp=(navigator.getGamepads?[...navigator.getGamepads()]:[]).find(Boolean);
+ if(gp){
+  const b=i=>gp.buttons[i]&&gp.buttons[i].pressed,x=gp.axes[0]||0,y=gp.axes[1]||0;
+  const dir=b(14)||x<-.6?'L':b(15)||x>.6?'R':b(12)||y<-.6?'U':b(13)||y>.6?'D':'';
+  if(dir&&(G.running||SC!='game')&&(dir!=lastDir||t-lastMove>260)){move(dir);lastMove=t}
+  lastDir=dir;const a=b(0);if(a&&!prevA)aDown();if(!a&&prevA)aUp();prevA=a;const bb=b(1);if(bb&&!prevB)needyToggle();prevB=bb;const l2=b(6),r2=b(7);if(l2&&!pl2)flip(-1);if(r2&&!pr2)flip(1);pl2=l2;pr2=r2;grot=b(5)?1:b(4)?-1:0}
+ if(G.running){
+  G.time-=dt*(1+.35*G.strikes);
+  const s=Math.ceil(G.time/1000);if(s!=G.lastSec){G.lastSec=s;beep(1000,.04,'square',.03)}
+  drawTime();if(G.time<=0){G.time=0;drawTime();end(false)}needyTick(dt)}
+ rot=grot||krot;if(rot){if(!rotT){rotate(rot);rotT=t}else if(t-rotT>(rotH?40:350)){rotate(rot);rotT=t;rotH=1}}else{rotT=0;rotH=0}
+ requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+renderLv();show('home');
+</script></body></html>
