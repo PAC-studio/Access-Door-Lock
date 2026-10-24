@@ -118,7 +118,7 @@ h2.ttl{margin:0 0 2.4vmin;font-size:min(4.6vmin,34px);font-weight:600;letter-spa
 .bulb{fill:#3b3a22;transition:fill .15s,filter .15s}.bulb.lit{fill:#ffe27a;filter:drop-shadow(0 0 3px #ffcc3a) drop-shadow(0 0 6px rgba(255,200,60,.8))}
 .lever{transition:transform .18s}.lever{transform:translateY(0)}.lever.up{transform:translateY(-14px)}
 /* direction */
-.dled{fill:#0b0b0b;transition:fill .08s}.dled.flash{fill:var(--c);filter:brightness(1.3) drop-shadow(0 0 5px var(--c))}.dled.green{fill:#2dff7a!important;filter:brightness(1.4) drop-shadow(0 0 4px #2dff7a)}
+.dled{fill:#0b0b0b;transition:fill .08s}.dled.lit{fill:var(--c);filter:brightness(1.3) drop-shadow(0 0 5px var(--c))}.dled.green{fill:#2dff7a!important;filter:brightness(1.4) drop-shadow(0 0 4px #2dff7a)}
 /* simon */
 .sq{filter:brightness(.62);transition:filter .08s}.sq.lit{filter:brightness(1.7) drop-shadow(0 0 5px #fff)}
 .sled2{fill:#2a1010;stroke:#000;stroke-width:.4}.sled2.on{fill:#ff3b30;filter:drop-shadow(0 0 2px #f33)}
@@ -131,7 +131,7 @@ h2.ttl{margin:0 0 2.4vmin;font-size:min(4.6vmin,34px);font-weight:600;letter-spa
 .gasbar{fill:#5dff7c;opacity:.9;transition:y .8s,height .8s}
 .pstar{fill:#ffcf3a;stroke:#6b4e00;stroke-width:.4;filter:drop-shadow(0 0 1.5px #fc3)}.pstar.got{fill:#3a4a3a;stroke:#2a3;filter:none;opacity:.55}
 #tok{transition:transform .22s cubic-bezier(.3,1.4,.5,1)}
-.wlamp{fill:#3a1010;transition:fill .1s}.wlamp.flash{animation:wl .5s infinite}@keyframes wl{0%,100%{fill:#3a1010}50%{fill:#ff3a2a;filter:drop-shadow(0 0 4px #f33)}}
+.wlamp{fill:#3a1010;transition:fill .1s}.wlamp.fast{animation:wl .16s infinite}@keyframes wl{0%,100%{fill:#2a0a0a;filter:none}50%{fill:#ff5a3a;filter:brightness(1.8) drop-shadow(0 0 7px #ff3a1a) drop-shadow(0 0 3px #fff)}}
 .lvr{transition:transform .2s}
 .symimg{filter:sepia(1) saturate(6) brightness(1.15) drop-shadow(0 0 1.5px rgba(255,170,30,.8))}
 /* file manager */
@@ -592,26 +592,29 @@ const Speak = {
   },
   unlock(){ if(!this.ok) return; try{ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); }catch(e){} },
   say(text, lang, rate){
-    if(!this.ok) return;
+    if(!this.ok) return Promise.resolve();
+    return new Promise(res=>{ const to=setTimeout(res,2500);
     try{
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang==='th' ? 'th-TH' : 'en-US';
       const v = this.voiceFor(lang); if(v) u.voice = v;
       u.rate = rate || 0.8; u.pitch = 1; u.volume = clamp(Aud.blindVol*1.0,0,1);
+      u.onend=u.onerror=()=>{ clearTimeout(to); res(); };
       speechSynthesis.speak(u);
-    }catch(e){}
+    }catch(e){ clearTimeout(to); res(); } });
   },
   clips:{},
   /* คำอังกฤษ: ใช้เสียงอ่านจาก Google Translate (ชัดกว่า TTS ของเครื่อง) ถ้าออนไลน์ ไม่ได้ก็ใช้ TTS ช้า ๆ */
   clip(w){
     let a=this.clips[w];
-    if(!a){ try{ a=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='+encodeURIComponent(w)); a.preload='auto'; a.addEventListener('error',()=>{ a._bad=true; if(a._want){ a._want=false; this.say(w,'en',0.6); } }); }catch(e){ return null; } this.clips[w]=a; }
+    if(!a){ try{ a=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='+encodeURIComponent(w)); a.preload='auto'; a.addEventListener('error',()=>{ a._bad=true; a._want=false; }); }catch(e){ return null; } this.clips[w]=a; }
     return a;
   },
   sayWord(w){
     const a=this.clip(w);
-    if(!a||a._bad){ this.say(w,'en',0.6); return; }
-    a._want=true; try{ a.volume=clamp(Aud.blindVol,0,1); a.currentTime=0; const pr=a.play(); if(pr&&pr.catch) pr.catch(()=>{ a._want=false; a._bad=true; this.say(w,'en',0.6); }); }catch(e){ this.say(w,'en',0.6); }
+    if(!a) return;
+    if(a._bad){ try{ a.load(); a._bad=false; }catch(e){} }
+    a._want=true; try{ a.volume=clamp(Aud.blindVol,0,1); a.currentTime=0; const pr=a.play(); if(pr&&pr.catch) pr.catch(()=>{ a._want=false; }); }catch(e){}
     a.onended=()=>{ a._want=false; };
   },
   preload(ws){ ws.forEach(w=>this.clip(w)); },
@@ -633,7 +636,7 @@ const BlindSynth = {
           lang = (Speak.digitsLang==='th' && Speak.has('th')) ? 'th' : 'en';
           text = lang==='th' ? TH_DIGITS[m.d] : EN_DIGITS[m.d];
         }
-        Speak.say(text, lang, m.r);
+        this.lastSay=Speak.say(text, lang, m.r);
         break; }
       case 'words': {
         Speak.cancel();
@@ -649,6 +652,7 @@ const BlindSynth = {
       case 'tick': Aud.tone(b,{f:m.f||600,f2:(m.f||600)*0.6,dur:0.035,type:'triangle',vol:0.22}); Aud.noise(b,{ftype:'lowpass',f:1000,dur:0.02,vol:0.08}); break;
       case 'beep': Aud.tone(b,{f:m.f||880,dur:m.d||0.09,vol:m.v||0.45,type:'sine'}); break;
       case 'static': this.setStatic(m.v); break;
+      case 'sig': this.setSig(m.f); break;
       case 'stop': this.stopAll(); break;
       case 'test': this.test(); break;
     }
@@ -687,7 +691,14 @@ const BlindSynth = {
     }
     this.staticLevel=v;
   },
-  stopAll(){ Speak.cancel(); this.stopMorse(); this.setStatic(0); },
+  /* สัญญาณยาวต่อเนื่อง (ปรับคลื่น): ยิ่งใกล้คลื่นที่ถูก เสียงยิ่งสูง */
+  setSig(f){
+    const c=Aud.ctx; if(!c) return;
+    if(!f){ if(this.sigG) this.sigG.gain.setTargetAtTime(0,c.currentTime,0.05); return; }
+    if(!this.sigO){ const o=c.createOscillator(), g=c.createGain(); o.type='sine'; g.gain.value=0; o.connect(g); g.connect(Aud.blindBus); o.start(); this.sigO=o; this.sigG=g; }
+    this.sigO.frequency.setTargetAtTime(f,c.currentTime,0.04); this.sigG.gain.setTargetAtTime(0.16,c.currentTime,0.05);
+  },
+  stopAll(){ Speak.cancel(); this.stopMorse(); this.setStatic(0); this.setSig(0); },
   test(){
     Speak.say(Speak.digitsLang==='th' && Speak.has('th') ? 'ทดสอบเสียง หนึ่ง สอง สาม' : 'sound test one two three', Speak.digitsLang==='th' && Speak.has('th')?'th':'en');
     this.handle({k:'beep',f:660,d:0.15}); setTimeout(()=>this.handle({k:'click',v:'sharp'}),400);
@@ -703,12 +714,16 @@ const Blind = {
     if(this.local && (!remote || this.alsoLocal)) BlindSynth.handle(m);
   },
   say(d){ this.send({k:'say',d}); },
+  /* พูดตัวเลขแล้วรอจนพูดจบ (ถ้าส่งไปโทรศัพท์ ประมาณเวลาเอา) */
+  sayWait(d){ const remote=Link.connected(); BlindSynth.lastSay=null; this.send({k:'say',d}); const est=sleep(1600);
+    if(remote&&!this.alsoLocal) return est; const l=BlindSynth.lastSay; return l?Promise.all([l,sleep(700)]):est; },
   words(w){ this.send({k:'words',w}); },
   morse(w,u){ this.send({k:'morse',w,u}); },
   click(v){ this.send({k:'click',v}); },
   tick(f){ this.send({k:'tick',f}); },
   beep(f,d){ this.send({k:'beep',f,d}); },
   stat(v){ this.send({k:'static',v:Math.round(v*100)/100}); },
+  sig(f){ this.send({k:'sig',f}); },
   stop(){ this.send({k:'stop'}); }
 };
 
@@ -1572,7 +1587,7 @@ ModReg.direction = class extends Mod {
     for(const k in mp) this.f(this.q('#'+mp[k]+'h'),k,{press:()=>this.arrow(k)});
     this.f(this.q('#bSh'),'start',{press:()=>this.start()});
   }
-  dled(i,on){ const e=this.q('#dl'+i); e.classList.toggle('flash',on); }
+  dled(i,on){ const e=this.q('#dl'+i); e.classList.toggle('lit',on); }
   async start(){
     if(this.playing) return;
     if(this.startCnt>=3){ Sfx.p('bad'); return; }
@@ -1580,8 +1595,8 @@ ModReg.direction = class extends Mod {
     const run=this.runId=(this.runId||0)+1;
     for(const e of this.seq){
       if(this.bomb.state!=='playing'||run!==this.runId) break;
-      this.dled(e.ci,true); Blind.say(e.d); Sfx.p('led');
-      await sleep(1100); this.dled(e.ci,false); await sleep(550);
+      this.dled(e.ci,true); Sfx.p('led'); await Blind.sayWait(e.d); if(run!==this.runId||this.bomb.state!=='playing'){ this.dled(e.ci,false); break; }
+      this.dled(e.ci,false); await sleep(600);
     }
     this.playing=false;
   }
@@ -1614,9 +1629,9 @@ function simonColorOf(w){ for(const c of SIMON_COLORS) if(SIMON_WORDS[c].include
 ModReg.simon = class extends Mod {
   constructor(b,i,t){
     super(b,i,t);
-    this.words=[]; while(this.words.length<4){ const c=R.pick(SIMON_COLORS), w=R.pick(SIMON_WORDS[c]); if(!this.words.includes(w)) this.words.push(w); }
-    this.stage=1; this.inp=0; this.build();
+    this.stage=1; this.inp=0; this.newWords(); this.build();
   }
+  newWords(){ this.words=[]; while(this.words.length<this.stage){ const c=R.pick(SIMON_COLORS), w=R.pick(SIMON_WORDS[c]); if(!this.words.includes(w)) this.words.push(w); } }
   sector(a1,a2,R_,r0,cx,cy){
     const P=(a,r)=>[cx+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)].map(v=>v.toFixed(2)).join(',');
     return `M${P(a1,r0)} L${P(a1,R_)} A${R_},${R_} 0 0 1 ${P(a2,R_)} L${P(a2,r0)} A${r0},${r0} 0 0 0 ${P(a1,r0)}Z`;
@@ -1640,15 +1655,15 @@ ModReg.simon = class extends Mod {
   }
   leds(){ for(let i=0;i<4;i++) this.q('#sl'+i).classList.toggle('on',i<this.stage-1); }
   speak(){
-    Sfx.p('press'); this.q('#spkw').classList.add('wave'); setTimeout(()=>this.q('#spkw').classList.remove('wave'),1600);
-    Blind.words([this.words[this.stage-1]]);
+    Sfx.p('press'); this.q('#spkw').classList.add('wave'); setTimeout(()=>this.q('#spkw').classList.remove('wave'),this.stage*1600);
+    Blind.words(this.words.slice());
   }
   hit(c){
     Sfx.p('press');
     const e=this.q('#q-'+c); e.classList.remove('lit'); void e.getBoundingClientRect(); e.classList.add('lit'); setTimeout(()=>e.classList.remove('lit'),260);
     if(c===simonColorOf(this.words[this.inp])){
       this.inp++;
-      if(this.inp>=this.stage){ this.stage++; this.inp=0; Sfx.p('led'); this.leds(); if(this.stage>4){ this.solve(); } }
+      if(this.inp>=this.stage){ this.stage++; this.inp=0; this.okStep(); this.leds(); if(this.stage>4){ this.solve(); } else this.newWords(); }
     } else { this.inp=0; this.strike('simon'); }
   }
   info(){ return {words:this.words,colors:this.words.map(simonColorOf),stage:this.stage,inp:this.inp}; }
@@ -1896,6 +1911,8 @@ ModReg.passkey = class extends Mod {
     if(t.every((v,i)=>v===this.pos[i])){
       this.cur=t.slice(); this.phase++; this.okStep();
       if(this.phase>=3){ this.draw(); this.solve(); return; }
+      // ขั้นตอน 2 สั่ง "หมุนใหม่จนคลิก": เลขที่คลิกเป็นชุดใหม่ ไม่ซ้ำชุดก่อนหน้า
+      if(this.order[this.phase]===2) this.cur=this.cur.map(d=>{ let n; do{ n=R.int(0,9); }while(n===d); return n; });
       this.scramble(); this.draw();
     } else this.strike('passkey');
   }
@@ -1939,10 +1956,9 @@ ModReg.pressure = class extends Mod {
     const stp=rep<14?1:(rep<30?2:4), old=this.dial;
     const nv=clamp(old+d*stp,0,150); if(nv===old) return;
     this.dial=nv;
-    if(!this.revealed){
-      const crossed=(old<this.c&&nv>=this.c)||(old>this.c&&nv<=this.c)||nv===this.c;
-      if(crossed){ this.revealed=true; Blind.click('sharp'); Sfx.p('led'); } else Blind.tick(260+nv*3.2);
-    } else Blind.tick(260+nv*3.2);
+    const crossed=(old<this.c&&nv>=this.c)||(old>this.c&&nv<=this.c)||nv===this.c;
+    Sfx.p('flip');
+    if(crossed){ this.revealed=true; Blind.click('sharp'); Sfx.p('led'); } else Blind.click('soft');
     this.draw();
   }
   draw(){
@@ -1952,8 +1968,9 @@ ModReg.pressure = class extends Mod {
     this.q('#sdsp').textContent=String(this.dial).padStart(3,'0');
     this.showP();
   }
-  disp(){ return this.revealed?this.P:clamp(this.P+(this.dial-this.c)*this.k,0,9999); }
-  showP(){ const t=this.q('#pdsp'); t.textContent=String(Math.round(this.disp())).padStart(4,' '); t.classList.toggle('noisy',!this.revealed); }
+  /* ค่าบนจอเปลี่ยนตามการหมุนเสมอ (ขวา=เพิ่ม ซ้าย=ลด) ตรงจุดคลิกจะเป็น P และค้างค่า P ไว้ ±3 สเต็ปให้อ่านง่าย */
+  disp(){ const d=this.dial-this.c, a=Math.abs(d); if(a<=3) return this.P; return clamp(this.P+Math.sign(d)*(a-3)*this.k,0,9999); }
+  showP(){ const t=this.q('#pdsp'); t.textContent=String(Math.round(this.disp())).padStart(4,' '); t.classList.toggle('noisy',false); }
   release(){
     Sfx.p('press');
     if(this.revealed && this.dial===this.scale){
@@ -2039,7 +2056,9 @@ ModReg.complicated = class extends Mod {
     o+=`<circle cx="50" cy="60" r="19" fill="#0b0b0c" stroke="#555"/><circle cx="50" cy="60" r="16.5" fill="url(#gSteel)"/><g id="bigc"><circle cx="50" cy="60" r="14.5" fill="url(#gb-black)" stroke="#000" stroke-width=".8"/><ellipse cx="45" cy="54" rx="8" ry="3.8" fill="#fff" opacity=".16"/><text x="50" y="${this.word.length>6?61.4:62}" class="btxt" fill="#e8e8e8" font-size="${this.word.length>8?4.7:(this.word.length>5?5.7:7.4)}">${this.word}</text></g><circle id="bigh" cx="50" cy="60" r="15" fill="transparent"/>`;
     this.btns.forEach((b,i)=>{ const [x,y]=pos[i], tc=(b.color==='white'||b.color==='yellow')?'#222':'#f4f4f4';
       o+=`<circle cx="${x}" cy="${y}" r="11.5" fill="#0b0b0c" stroke="#555" stroke-width=".7"/><g id="sb${i}"><circle cx="${x}" cy="${y}" r="9.5" fill="url(#gb-${b.color})" stroke="#000" stroke-width=".7"/>${shapeSVG(b.shape,x,y,5.2,`fill="none" stroke="${tc}" stroke-width="1.5" stroke-linejoin="round"`)}</g><circle id="sh${i}" cx="${x}" cy="${y}" r="10.5" fill="transparent"/>`; });
+    o+=`<rect x="34" y="86" width="32" height="11" rx="3" fill="url(#gb-green)" stroke="#111" stroke-width=".6"/><text x="50" y="93.8" class="btxt" font-size="6" fill="#fff" pointer-events="none">ยืนยัน</text><rect id="cfh" x="34" y="86" width="32" height="11" fill="transparent"/>`;
     this.svg(o);
+    this.f(this.q('#cfh'),'confirm',{press:()=>this.confirm()});
     this.btns.forEach((b,i)=>this.f(this.q('#sh'+i),'b'+(i+1),{press:()=>this.small(i)}));
     this.f(this.q('#bigh'),'big',{press:()=>this.big()});
     this.draw();
@@ -2057,14 +2076,15 @@ ModReg.complicated = class extends Mod {
   big(){
     Sfx.p('press'); this.push('bigc');
     if(this.pi<this.plan.length){ this.fail(); return; }
-    this.bigCnt++; this.bigT=1.8;
+    this.bigCnt++;
     if(this.bigCnt>this.total){ this.fail(); }
   }
-  fail(){ this.cnt=0; this.bigCnt=0; this.bigT=0; this.strike('complicated'); }
-  update(dt){
-    if(this.solved) return;
-    if(this.bigCnt>0 && this.pi>=this.plan.length){ this.bigT-=dt; if(this.bigT<=0){ if(this.bigCnt===this.total) this.solve(); else { this.bigT=0; } } }
+  confirm(){
+    Sfx.p('press');
+    if(this.pi<this.plan.length||this.bigCnt!==this.total){ this.fail(); return; }
+    this.solve();
   }
+  fail(){ this.cnt=0; this.bigCnt=0; this.bigT=0; this.strike('complicated'); }
   info(){ return {word:this.word,order:this.row.o,btns:this.btns,cols:this.cols,plan:this.plan,total:this.total,pi:this.pi}; }
 };
 
@@ -2186,12 +2206,16 @@ ModReg.filemanager = class extends Mod {
       const k=R.int(3,4); const l=R.sample(names,k), t=fmTarget(b.info,l);
       if(l.includes(t)){ this.folders=l; this.target=t; break; }
     }
-    const spec=FM_FOLDERS[this.target]; const k=Math.min(spec.length,R.int(4,6));
+    const spec=FM_FOLDERS[this.target]; const k=Math.min(spec.length,R.int(3,8));
     this.files=R.sample(spec,k).map(([name,cond])=>{
       const want=R.chance(0.5); let s,l,tr=0;
       do{ s=R.pick(FM_SIZES); l=R.chance(0.45); tr++; }while(cond(s,l)!==want && tr<300);
       return {name,size:s,locked:l,orig:{size:s,locked:l},ok:cond(s,l),loc:'F'};
     });
+    // โฟลเดอร์อื่น ๆ เข้าได้และมีไฟล์ (ตัวหลอก)
+    this.decoys={}; this.folders.forEach(n=>{ if(n===this.target) return; const sp=FM_FOLDERS[n]; const kk=Math.min(sp.length,R.int(3,7));
+      this.decoys[n]=R.sample(sp,kk).map(([name])=>{ const s=R.pick(FM_SIZES), l=R.chance(0.45); return {name,size:s,locked:l,orig:{size:s,locked:l},ok:false,loc:'F'}; }); });
+    this.curName=this.target; this.cf=this.files;
     this.view='root'; this.drag=null; this.msg='C:\\BOMB>'; this.build();
   }
   build(){ this.body.innerHTML='<div class="fm"></div>'; this.fm=this.body.firstChild; this.render(); }
@@ -2213,7 +2237,7 @@ ModReg.filemanager = class extends Mod {
       html+='<div class="tiles">';
       tiles.forEach(([k,n])=>{ html+=`<div class="tile ${k} ${this.view===k?'open':''}" data-k="t:${k}">${k==='bin'?'<svg class="ficon" viewBox="0 0 20 22"><path d="M3,5 h14 l-1.2,15 h-11.6z M1.5,3 h17 M7,3 v-1.5 h6 v1.5" fill="#7a8a96" stroke="#334"/></svg>':ico}<b>${n}</b></div>`; });
       html+='</div><div class="files">';
-      const here=this.files.filter(f=>f.loc===(this.view==='F'?'F':this.view));
+      const here=this.cf.filter(f=>f.loc===(this.view==='F'?'F':this.view));
       here.forEach(f=>{ html+=`<div class="row file ${this.drag===f?'dragging':''}" data-k="f:${f.name}">${fico}<b>${f.name}</b><u>${f.size} KB</u>${lock(f.locked)}</div>`; });
       if(!here.length) html+='<div class="empty">(ว่าง)</div>';
       html+='</div>';
@@ -2228,10 +2252,9 @@ ModReg.filemanager = class extends Mod {
     if(this.solved) this.items.forEach(n=>n.setAttribute('data-off',''));
     if(prevKey){ const n=this.fm.querySelector(`[data-f="${prevKey}"]`); if(n){ Focus.set(n); } else if(Focus.cur && !document.body.contains(Focus.cur)){ Focus.cur=null; Focus.ensure(); } }
   }
-  pathStr(){ const v={root:'C:\\BOMB>',F:`C:\\BOMB\\${this.target}>`,archive:`C:\\BOMB\\${this.target}\\Archive>`,backup:`C:\\BOMB\\${this.target}\\Backup>`}; return v[this.view]; }
+  pathStr(){ const v={root:'C:\\BOMB>',F:`C:\\BOMB\\${this.curName}>`,archive:`C:\\BOMB\\${this.curName}\\Archive>`,backup:`C:\\BOMB\\${this.curName}\\Backup>`}; return v[this.view]; }
   openRoot(n){
-    if(n===this.target){ Sfx.p('press'); this.view='F'; this.msg='เปิดโฟลเดอร์แล้ว'; this.render(); Focus.ensure(); }
-    else { Sfx.p('bad'); this.msg='ACCESS DENIED'; this.render(); }
+    Sfx.p('press'); this.curName=n; this.cf=(n===this.target)?this.files:this.decoys[n]; this.view='F'; this.msg='เปิดโฟลเดอร์แล้ว'; this.render(); Focus.ensure();
   }
   tileOpen(k){
     if(this.drag) return;
@@ -2248,7 +2271,7 @@ ModReg.filemanager = class extends Mod {
     if(ev.t==='btn' && ev.b==='X'){
       if(ev.down && !this.drag){
         const n=Focus.cur, key=n&&n.getAttribute('data-f'); const m=key&&key.match(/^\d+:f:(.+)$/);
-        if(m){ const f=this.files.find(x=>x.name===m[1]); if(f){ this.drag=f; this.dragNode=n; n.classList.add('dragging'); this.root.classList.add('dragging-on'); Focus.filter=nd=>nd.getAttribute('data-f').startsWith(this.idx+':t:'); Focus.ensure(); Sfx.p('flip'); this.msg='ลาก '+f.name+' → เลือกปลายทาง แล้วปล่อย X'; this.fm.querySelector('.fm-msg').textContent=this.msg; } }
+        if(m){ const f=this.cf.find(x=>x.name===m[1]); if(f){ this.drag=f; this.dragNode=n; n.classList.add('dragging'); this.root.classList.add('dragging-on'); Focus.filter=nd=>nd.getAttribute('data-f').startsWith(this.idx+':t:'); Focus.ensure(); Sfx.p('flip'); this.msg='ลาก '+f.name+' → เลือกปลายทาง แล้วปล่อย X'; this.fm.querySelector('.fm-msg').textContent=this.msg; } }
       } else if(!ev.down && this.drag){ this.drop(); }
       return true;
     }
@@ -2396,13 +2419,13 @@ NeedyReg.radio = class extends NeedyBase {
   tune(d,rep=0){ const s=rep<12?0.2:(rep<30?0.4:0.8); this.f0=clamp(Math.round((this.f0+d*s)*10)/10,88,108); Sfx.p('flip'); Blind.click('soft'); this.draw(); this.setStatic(); }
   dist(){ return Math.abs(this.f0-this.tgt); }
   lvl(){ return this.state==='active'?clamp((this.dist()-1.6)/6,0,1):0; }
-  scr(){ return this.state==='active'?Math.max(this.lvl(),0.3):0; }
+  scr(){ return this.state==='active'?0.5:0; }
   draw(){ this.q('#ind').setAttribute('x',11+(this.f0-88)/20*72-1.3); this.q('#rk').setAttribute('transform',`rotate(${(this.f0-88)*27} 42 66)`); }
-  setStatic(){ const v=this.lvl(); this.bomb.setNoise(this.idx,this.scr()); Blind.stat(v); }
+  setStatic(){ const v=this.lvl(); this.bomb.setNoise(this.idx,this.scr()); Blind.sig(this.state==='active'?Math.round(350+(1-v)*850):0); }
   onActivate(){ this.left=60; do{ this.tgt=Math.round((88.5+rnd()*19)*10)/10; this.f0=Math.round((88+rnd()*20)*10)/10; }while(this.dist()<4); this.draw(); this.setStatic(); }
   tickActive(dt){ this.sendT-=dt; if(this.sendT<=0){ this.sendT=0.25; this.setStatic(); } this.left-=dt; if(this.left<=0){ this.finish(false); this.strike('radio-timeout'); } }
   lock(){ Sfx.p('press'); if(this.state==='active'&&this.dist()<=1.6){ this.finish(true); } else Sfx.p('bad'); }
-  onFinish(){ this.bomb.setNoise(this.idx,0); Blind.stat(0); }
+  onFinish(){ this.bomb.setNoise(this.idx,0); Blind.sig(0); }
 };
 
 /* ====================== ปรับเทียบ ====================== */
@@ -2428,11 +2451,12 @@ NeedyReg.calibration = class extends NeedyBase {
     const z=this.q('#gz'); z.setAttribute('x',x0); z.setAttribute('width',x1-x0);
     z.style.opacity=this.state==='active'?1:0.25; this.q('#nd').style.opacity=this.state==='active'?1:0.5;
   }
-  onActivate(){ this.gc=0.2+rnd()*0.6; this.hw=Math.max(0.045,0.09-0.008*this.di); this.p=rnd(); this.v=rnd()<0.5?1:-1; this.left=30; this.beepT=0; this.draw(); }
+  onActivate(){ this.gc=0.2+rnd()*0.6; this.hw=Math.max(0.07,0.125-0.008*this.di); this.p=rnd(); this.pp=this.p; this.v=rnd()<0.5?1:-1; this.left=30; this.beepT=0; this.draw(); }
   tickActive(dt){
     const sp=0.42+0.07*this.di+0.01*this.bomb.level; this.p+=this.v*sp*dt;
     if(this.p>=1){ this.p=1; this.v=-1; } if(this.p<=0){ this.p=0; this.v=1; }
     this.left-=dt; this.draw();
+    for(const e of [this.gc-this.hw,this.gc+this.hw]){ if(this.pp!=null&&(this.pp-e)*(this.p-e)<0) Blind.click('sharp'); } this.pp=this.p;
     const d=Math.abs(this.p-this.gc);
     if(d<0.34){ this.beepT-=dt; if(this.beepT<=0){ this.beepT=0.07+d*0.9; Blind.beep(d<this.hw?1320:880,0.07); } }
     if(this.left<=0){ this.finish(false); this.strike('calib-timeout'); }
@@ -2446,24 +2470,24 @@ NeedyReg.calibration = class extends NeedyBase {
 
 /* ====================== สับสวิตช์ ====================== */
 NeedyReg.switchswap = class extends NeedyBase {
-  constructor(b,i,t){ super(b,i,t); this.up=[1,0,1,0].map(()=>R.int(0,1)); this.e=0; this.left=30; this.build(); }
+  constructor(b,i,t){ super(b,i,t); this.up=[1,0,1,0].map(()=>R.int(0,1)); this.lit=[0,0,0,0]; this.left=30; this.build(); }
   build(){
     let o='';
     for(let i=0;i<4;i++){ const x=18+i*21.3;
-      o+=`<circle cx="${x}" cy="24" r="8" fill="#101010" stroke="#555"/><circle id="wl${i}" class="wlamp" cx="${x}" cy="24" r="6"/>
+      o+=`<circle cx="${x}" cy="24" r="8.6" fill="#101010" stroke="#777"/><circle id="wl${i}" class="wlamp" cx="${x}" cy="24" r="6.8"/>
       <rect x="${x-7}" y="42" width="14" height="44" rx="3" fill="#0b0b0c" stroke="#666" stroke-width=".8"/>
       <g id="lv${i}" class="lvr"><rect x="${x-2.6}" y="-17" width="5.2" height="19" rx="2.2" fill="url(#gSteel)" stroke="#111" stroke-width=".5"/><circle cx="${x}" cy="-17" r="4.4" fill="url(#gb-red)" stroke="#000" stroke-width=".5"/></g>
       <rect id="lh${i}" x="${x-8}" y="40" width="16" height="48" fill="transparent"/>`; }
     this.svg(o); for(let i=0;i<4;i++) this.f(this.q('#lh'+i),'l'+i,{press:()=>this.flip(i)});
     this.draw();
   }
-  draw(){ for(let i=0;i<4;i++){ this.q('#lv'+i).style.transform=`translateY(${this.up[i]?56:72}px)`; this.q('#wl'+i).classList.toggle('flash',this.state==='active'&&i===this.e); } }
-  onActivate(){ this.e=R.int(0,3); this.left=30; this.bomb.setBlackout(true); this.draw(); }
+  draw(){ for(let i=0;i<4;i++){ this.q('#lv'+i).style.transform=`translateY(${this.up[i]?56:72}px)`; this.q('#wl'+i).classList.toggle('fast',this.state==='active'&&!!this.lit[i]); } }
+  onActivate(){ do{ this.lit=[0,0,0,0].map(()=>R.int(0,1)); }while(!this.lit.some(Boolean)); this.left=30; this.bomb.setBlackout(true); this.draw(); }
   tickActive(dt){ this.left-=dt; if(this.left<=0){ this.finish(false); this.strike('swap-timeout'); } }
   flip(i){
     Sfx.p('flip'); this.up[i]^=1; this.draw();
     if(this.state!=='active') return;
-    if(i===this.e){ this.finish(true); } else { this.strike('swap'); }
+    if(this.lit[i]){ this.lit[i]=0; this.draw(); Sfx.p('led'); if(!this.lit.some(Boolean)) this.finish(true); } else { this.strike('swap'); }
   }
   onFinish(){ this.bomb.setBlackout(false); this.draw(); }
 };
@@ -2561,7 +2585,7 @@ const Game = {
   },
   s_title(el){
     const pad=Input.padConnected;
-    el.innerHTML=`<div class="logo">CONFUSING<br>DEFUSER<smallรวมกันเราอยู่ แยกหมู่เราระเบิด!</small></div><div class="tagline">3 คน · 1 ระเบิด · ไม่มีใครทำงานครบทุกประสาท</div><div class="menu"></div>
+    el.innerHTML=`<div class="logo">CONFUSING<br>DEFUSER<small>สับสน งงงวย ช่วยกันกู้ระเบิด</small></div><div class="tagline">3 คน · 1 ระเบิด · ไม่มีใครทำงานครบทุกประสาท</div><div class="menu"></div>
       <div class="hint">${pad?'🎮 ตรวจพบจอยแล้ว':'ยังไม่พบจอย — ใช้คีย์บอร์ด/สัมผัสแทนได้'} &nbsp; <b>A</b> เลือก &nbsp;<b>B</b> ย้อน</div>`;
     const m=$('.menu',el);
     m.append(this.btn('▶ เริ่มเกม',()=>this.go('diff'),'primary','start'),this.btn('🎧 เชื่อมต่อโทรศัพท์ (เสียงคนตาบอด)',()=>this.go('setup'),'','setup'),
