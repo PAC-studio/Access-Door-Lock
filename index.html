@@ -548,6 +548,17 @@ const Sfx = {
       [[880,.28],[1760*1.003,.12],[2637,.07],[3520*0.998,.04]].forEach(([f,v])=>Aud.tone(b,{f,dur:2.0,vol:v*(k?0.8:1),at:t+d,attack:0.003}));
     });
   },
+  modok(){ const b=Aud.mainBus,t=Aud.ctx.currentTime; [523,659,784,1047].forEach((f,i)=>{ Aud.tone(b,{f,dur:0.35,vol:0.22,type:'triangle',at:t+i*0.09}); Aud.tone(b,{f:f*2,dur:0.25,vol:0.04,at:t+i*0.09}); }); },
+  _st:null,
+  staticOn(){
+    if(!Aud.ctx||this._st) return; const c=Aud.ctx;
+    const src=c.createBufferSource(); src.buffer=Aud.noiseBuf; src.loop=true;
+    const bp=c.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2000; bp.Q.value=0.4;
+    const g=c.createGain(); g.gain.value=0.0; src.connect(bp); bp.connect(g); g.connect(Aud.mainBus); src.start();
+    const tm=setInterval(()=>{ if(!Aud.ctx) return; g.gain.setTargetAtTime(0.10+Math.random()*0.12,c.currentTime,0.02); bp.frequency.setTargetAtTime(700+Math.random()*3000,c.currentTime,0.03); },80);
+    this._st={src,g,tm};
+  },
+  staticOff(){ const s=this._st; if(!s) return; this._st=null; clearInterval(s.tm); try{ s.g.gain.setTargetAtTime(0,Aud.ctx.currentTime,0.05); setTimeout(()=>{ try{s.src.stop();}catch(e){} },400); }catch(e){} },
   fireworks(){
     const b=Aud.mainBus,c=Aud.ctx,t0=c.currentTime+0.5;
     for(let k=0;k<9;k++){
@@ -603,22 +614,21 @@ const Speak = {
       speechSynthesis.speak(u);
     }catch(e){ clearTimeout(to); res(); } });
   },
-  clips:{},
-  /* คำอังกฤษ: ใช้เสียงอ่านจาก Google Translate (ชัดกว่า TTS ของเครื่อง) ถ้าออนไลน์ ไม่ได้ก็ใช้ TTS ช้า ๆ */
-  clip(w){
-    let a=this.clips[w];
-    if(!a){ try{ a=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='+encodeURIComponent(w)); a.preload='auto'; a.addEventListener('error',()=>{ a._bad=true; a._want=false; }); }catch(e){ return null; } this.clips[w]=a; }
-    return a;
+  pl:null, wrun:0, wstat:'',
+  setStat(t){ this.wstat=t; const e=document.getElementById('pdbg'); if(e) e.textContent=t; },
+  /* คำอังกฤษ: ใช้เสียงอ่านจาก Google Translate เท่านั้น (ใช้ <audio> ตัวเดียวที่ปลดล็อกแล้ว เพื่อให้ iOS เล่นได้) */
+  ensurePlayer(){ if(!this.pl){ this.pl=new Audio(); this.pl.setAttribute('playsinline',''); this.pl.preload='auto'; } return this.pl; },
+  playWord(w){
+    return new Promise(res=>{
+      const a=this.ensurePlayer(); let done=false; const fin=(t)=>{ if(done) return; done=true; clearTimeout(to); a.onended=a.onerror=null; if(t) this.setStat(t); res(); };
+      const to=setTimeout(()=>fin(w+': หมดเวลา'),4000);
+      a.onended=()=>fin(); a.onerror=()=>fin(w+': โหลดเสียงไม่สำเร็จ (ต้องออนไลน์)');
+      try{ a.volume=clamp(Aud.blindVol,0,1); a.src='https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='+encodeURIComponent(w); const pr=a.play(); this.setStat('เล่นคำ: '+w); if(pr&&pr.catch) pr.catch(e=>fin(w+': เล่นไม่ได้ ('+(e&&e.name||e)+') แตะหน้าจอแล้วลองใหม่')); }catch(e){ fin(w+': error'); }
+    });
   },
-  sayWord(w){
-    const a=this.clip(w);
-    if(!a) return;
-    if(a._bad){ try{ a.load(); a._bad=false; }catch(e){} }
-    a._want=true; try{ a.volume=clamp(Aud.blindVol,0,1); a.currentTime=0; const pr=a.play(); if(pr&&pr.catch) pr.catch(()=>{ a._want=false; }); }catch(e){}
-    a.onended=()=>{ a._want=false; };
-  },
-  preload(ws){ ws.forEach(w=>this.clip(w)); },
-  cancel(){ this.timers.forEach(clearTimeout); this.timers=[]; if(this.ok){ try{ speechSynthesis.cancel(); }catch(e){} } }
+  async sayWords(ws,gap){ const run=++this.wrun; for(const w of ws){ if(run!==this.wrun) return; await this.playWord(w); await new Promise(r=>setTimeout(r,gap||350)); } },
+  preload(ws){},
+  cancel(){ this.wrun++; try{ if(this.pl) this.pl.pause(); }catch(e){} this.timers.forEach(clearTimeout); this.timers=[]; if(this.ok){ try{ speechSynthesis.cancel(); }catch(e){} } }
 };
 const TH_DIGITS = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
 const EN_DIGITS = ['zero','one','two','three','four','five','six','seven','eight','nine'];
@@ -639,8 +649,7 @@ const BlindSynth = {
         this.lastSay=Speak.say(text, lang, m.r);
         break; }
       case 'words': {
-        Speak.cancel();
-        (m.w||[]).forEach((w,i)=>{ Speak.timers.push(setTimeout(()=>Speak.sayWord(w), i*(m.gap||1600))); });
+        Speak.cancel(); Speak.sayWords(m.w||[],m.gap);
         break; }
       case 'morse': this.morse(m.w, m.u||0.16); break;
       case 'click': {
@@ -741,7 +750,7 @@ const AudUnlock = {
       if(!this.el){ const a=new Audio(); a.src=this.wav(); a.loop=true; a.volume=0.01; a.setAttribute('playsinline',''); this.el=a; }
       this.el.play().catch(()=>{});
       Speak.unlock();
-      if(!this._pre&&typeof SIMON_WORDS!=='undefined'){ this._pre=1; Speak.preload([].concat(...Object.values(SIMON_WORDS))); }
+      { const a=Speak.ensurePlayer(); if(!a._unl){ a._unl=1; a.src=this.wav(); a.play().catch(()=>{}); } }
     }catch(e){}
     this.update();
   },
@@ -930,8 +939,8 @@ const Link = {
       peer.on('error',e=>{ clearTimeout(to); rej(new Error(e&&e.type==='peer-unavailable'?'ไม่พบรหัสนี้':'เชื่อมต่อไม่ได้: '+(e&&e.type||e))); });
       peer.on('open',()=>{
         const c=peer.connect('sbomb-'+code,{reliable:true,serialization:'json'});
-        c.on('open',()=>{ clearTimeout(to); this._pwire(c); this.pconn=c; this.raw({k:'hello',role:this.role}); this.status(); res(); });
         this._pwire(c);
+        c.on('open',()=>{ clearTimeout(to); res(); });
       });
     });
   }
@@ -953,11 +962,22 @@ const Input = {
     }
     this.emit({t:'btn',b,down});
   },
+  rumbleInfo:'',
   rumble(ms=200,s=0.5,w=0.5){
-    try{ const pads=navigator.getGamepads?navigator.getGamepads():[];
-      for(const p of pads){ if(!p||!p.connected) continue; const a=p.vibrationActuator;
-        if(a&&a.playEffect) a.playEffect('dual-rumble',{startDelay:0,duration:ms,strongMagnitude:s,weakMagnitude:w}).catch(()=>{});
-        else if(p.hapticActuators&&p.hapticActuators[0]&&p.hapticActuators[0].pulse) p.hapticActuators[0].pulse(s,ms); } }catch(e){}
+    try{ const pads=navigator.getGamepads?navigator.getGamepads():[]; let n=0;
+      for(const p of pads){ if(!p||!p.connected) continue; n++;
+        const a=p.vibrationActuator;
+        if(a&&a.playEffect){
+          const eff={startDelay:0,duration:ms,strongMagnitude:s,weakMagnitude:w};
+          let pr; try{ pr=a.playEffect(a.type||'dual-rumble',eff); }catch(e){ this.rumbleInfo='playEffect error: '+e.message; continue; }
+          if(pr&&pr.then) pr.then(r=>{ this.rumbleInfo='ok ('+r+')'; }).catch(e=>{ this.rumbleInfo='rejected: '+(e&&e.message||e); try{ p.hapticActuators&&p.hapticActuators[0]&&p.hapticActuators[0].pulse(s,ms); }catch(_){} });
+          else this.rumbleInfo='ok';
+        } else if(p.hapticActuators&&p.hapticActuators[0]&&p.hapticActuators[0].pulse){ try{ p.hapticActuators[0].pulse(s,ms); this.rumbleInfo='ok (pulse)'; }catch(e){ this.rumbleInfo='pulse error: '+e.message; } }
+        else this.rumbleInfo='เบราว์เซอร์/จอยนี้ไม่รองรับการสั่น ('+p.id+')';
+      }
+      if(!n) this.rumbleInfo='ไม่พบจอย (กดปุ่มบนจอยหนึ่งครั้งก่อน)';
+    }catch(e){ this.rumbleInfo='error: '+e.message; }
+    return this.rumbleInfo;
   },
   setRS(dx,dy){
     const key=dx+','+dy; if(this.rsDir===key) return; this.rsDir=key; this.rsT=0.5;
@@ -1151,10 +1171,13 @@ class Mod {
   solve(){
     if(this.solved) return; this.solved=true; this.led.classList.add('on');
     this.root.classList.add('solved'); this.items.forEach(n=>n.setAttribute('data-off',''));
-    Sfx.p('solve'); Input.rumble(150,0.3,0.3); this.onSolved&&this.onSolved(); this.bomb.moduleSolved(this);
+    Sfx.p('solve'); Sfx.p('modok'); Input.rumble(150,0.3,0.3); this.onSolved&&this.onSolved(); this.bomb.moduleSolved(this);
     if(Focus.cur && this.root.contains(Focus.cur)) setTimeout(()=>Focus.ensure(),0);
   }
   update(dt){}
+  /* แถว LED แสดงความคืบหน้า (โมดูลที่ต้องทำหลายรอบ) */
+  progMarkup(n,cx,y,gap=5.2,r=1.7){ this._pn=n; let o=''; for(let i=0;i<n;i++) o+=`<circle id="pg${i}" class="sled2" cx="${cx+(i-(n-1)/2)*gap}" cy="${y}" r="${r}"/>`; return o; }
+  setProg(k){ for(let i=0;i<(this._pn||0);i++){ const e=this.q('#pg'+i); if(e) e.classList.toggle('on',i<k); } }
   okStep(){ Sfx.p('led'); this.led.classList.remove('okb'); void this.led.offsetWidth; this.led.classList.add('okb'); clearTimeout(this._okT); this._okT=setTimeout(()=>this.led.classList.remove('okb'),1500); }
   onInput(ev){ return false; }
   /* ใช้ทดสอบ */
@@ -1265,7 +1288,11 @@ class Bomb {
   toggleNeedy(){
     if(this.needyPage<0){ Sfx.p('bad'); return; }
     if(this.pageIdx===this.needyPage){ this.goPage(this.returnPage||0,-1); }
-    else { this.returnPage=this.pageIdx; this.goPage(this.needyPage,1); }
+    else {
+      this.returnPage=this.pageIdx; this.goPage(this.needyPage,1);
+      const m=this.needies.find(n=>n.state==='active'&&n.warning!==false&&this.needyActive.has(n))||this.needies.find(n=>this.needyActive.has(n));
+      if(m){ const it=m.items.find(n=>!n.hasAttribute('data-off')); if(it){ Focus.cur=null; Focus.set(it); } }
+    }
   }
   start(){
     this.state='playing';
@@ -1332,14 +1359,14 @@ class Bomb {
   win(){
     if(this.state!=='playing') return;
     this.state='won'; this.needyActive.clear(); this.noise={}; this.blackout=0; this.el.classList.remove('blackout');
-    Blind.stop(); setTimeout(()=>Sfx.p('bell'),250); setTimeout(()=>Sfx.p('fireworks'),900); Input.rumble&&Input.rumble(600,0.6,0.6);
+    Blind.stop(); Sfx.p('staticOff'); setTimeout(()=>Sfx.p('bell'),250); setTimeout(()=>Sfx.p('fireworks'),900); Input.rumble&&Input.rumble(600,0.6,0.6);
     this.flash.className='flash green'; void this.flash.offsetWidth; this.flash.className='flash green go';
     this.onEnd&&this.onEnd({win:true,timeLeft:this.timeLeft,strikes:this.strikes});
   }
   explode(why){
     if(this.state!=='playing') return;
     this.state='dead'; this.blackout=0; this.el.classList.remove('blackout'); this.noise={};
-    Blind.stop(); Sfx.p('explode'); Input.rumble(1200,1,1);
+    Blind.stop(); Sfx.p('staticOff'); Sfx.p('explode'); Input.rumble(1200,1,1);
     this.onEnd&&this.onEnd({win:false,why,timeLeft:this.timeLeft,strikes:this.strikes});
   }
   /* ส่งอินพุตให้โมดูลที่โฟกัสอยู่ก่อน */
@@ -1427,7 +1454,7 @@ ModReg.wires = class extends Mod {
         </g>
         <rect class="hit" x="12" y="${y-4.5}" width="76" height="9" fill="transparent"/></g>`;
     }
-    this.svg(`
+    this.svg(`${this.progMarkup(this.need.length,50,8,6)}
       <rect x="8" y="14" width="10" height="72" rx="2" fill="url(#gSteel)" stroke="#111" stroke-width=".6"/>
       <rect x="82" y="14" width="10" height="72" rx="2" fill="url(#gSteel)" stroke="#111" stroke-width=".6"/>
       ${Array.from({length:n},(_,i)=>{const y=n===1?50:y0+step*i; return `<circle cx="13" cy="${y}" r="2.1" fill="#222"/><circle cx="87" cy="${y}" r="2.1" fill="#222"/><circle cx="13" cy="${y}" r="1" fill="#777"/><circle cx="87" cy="${y}" r="1" fill="#777"/>`}).join('')}
@@ -1454,7 +1481,7 @@ ModReg.wires = class extends Mod {
     Sfx.p('cut'); g.classList.add('cut');
     this.cut[i]=true;
     if(!ok){ this.strike('wire'); return; }
-    this.step++; if(this.need.every(k=>this.cut[k])) this.solve(); else this.okStep();
+    this.step++; this.setProg(this.need.filter(k=>this.cut[k]).length); if(this.need.every(k=>this.cut[k])) this.solve(); else this.okStep();
   }
   info(){ return {n:this.n,cols:this.cols,need:this.need,cut:this.cut,step:this.step}; }
 };
@@ -1582,6 +1609,7 @@ ModReg.direction = class extends Mod {
     const btn=(id,x,y,rot)=>`<g id="${id}"><rect x="${x-9}" y="${y-9}" width="18" height="18" rx="3" fill="url(#gSteel)" stroke="#111" stroke-width=".7"/><rect x="${x-7}" y="${y-7}" width="14" height="14" rx="2" fill="#2a2d31"/><path d="M${x},${y-4.2} L${x+4.2},${y+3} L${x-4.2},${y+3}Z" fill="#e8e8e8" transform="rotate(${rot} ${x} ${y})"/><rect x="${x-9}" y="${y-9}" width="18" height="18" fill="transparent" id="${id}h"/></g>`;
     o+=btn('bU',50,42,0)+btn('bD',50,80,180)+btn('bL',31,61,-90)+btn('bR',69,61,90);
     o+=`<circle cx="50" cy="61" r="8.2" fill="#0b0b0b" stroke="#555"/><circle id="bS" cx="50" cy="61" r="6.6" fill="url(#gb-red)"/><circle id="bSh" cx="50" cy="61" r="8.4" fill="transparent"/>`;
+    o+=this.progMarkup(3,50,95.5,6);
     this.svg(o);
     const mp={U:'bU',D:'bD',L:'bL',R:'bR'};
     for(const k in mp) this.f(this.q('#'+mp[k]+'h'),k,{press:()=>this.arrow(k)});
@@ -1610,7 +1638,7 @@ ModReg.direction = class extends Mod {
     } else { this.inp=0; this.startCnt=0; this.strike('dir'); }
   }
   async roundDone(){
-    this.round++; this.playing=true; this.roundBusy=true; this.runId=(this.runId||0)+1;
+    this.round++; this.setProg(this.round); this.playing=true; this.roundBusy=true; this.runId=(this.runId||0)+1;
     for(let r=0;r<2;r++){ for(let i=0;i<4;i++){ this.q('#dl'+i).classList.add('green'); } await sleep(220); for(let i=0;i<4;i++) this.q('#dl'+i).classList.remove('green'); await sleep(160); }
     for(let i=0;i<4;i++) this.q('#dl'+i).classList.add('green');
     this.playing=false;
@@ -1861,10 +1889,13 @@ function pkStep(n,c,S0){
   c=c.slice(); const sw=(a,b)=>{ const t=c[a]; c[a]=c[b]; c[b]=t; };
   if(n===1){
     if(c[3]%2===1) sw(3,0); else sw(1,2);
-    c=c.map(d=>[3,6,9].includes(d)?(d+1)%10:(d+9)%10);
+    // มีเลข 3, 6, 9 บนล้อใดล้อหนึ่งหรือไม่ -> เลื่อน "ทุกล้อ" ขึ้น 1 ไม่ใช่ -> ลง 1
+    const up=c.some(d=>[3,6,9].includes(d));
+    c=c.map(d=>up?(d+1)%10:(d+9)%10);
   } else if(n===2){
     c = c[0]>4 ? c.sort((a,b)=>b-a) : c.sort((a,b)=>a-b);
     const dup=c.map(d=>c.filter(x=>x===d).length>1);
+    // มีเลขซ้ำ -> เลื่อนเฉพาะล้อที่ซ้ำลง 1 ; ไม่มี -> เลื่อนทุกล้อขึ้น 1
     c = dup.some(Boolean) ? c.map((d,i)=>dup[i]?(d+9)%10:d) : c.map(d=>(d+1)%10);
   } else {
     const sum=S0.reduce((a,b)=>a+b,0);
@@ -1880,7 +1911,14 @@ ModReg.passkey = class extends Mod {
     this.order=passOrder(b.info); this.phase=-1; // -1 = หาเลขชุดแรก, 0..2 = ขั้นตอนตามลำดับ
     this.scramble(); this.build();
   }
+  rnd4(avoid){ return Array.from({length:4},(_,i)=>{ let n; do{ n=R.int(0,9); }while(avoid&&n===avoid[i]); return n; }); }
   scramble(){ this.pos=this.cur.map(d=>{ let p; do{ p=R.int(0,9);}while(p===d); return p; }); }
+  clickMode(){ return this.phase<0 || this.order[this.phase]===2; }
+  /* เริ่มขั้นตอนใหม่: ขั้นตอน 2 = เลขคลิกชุดใหม่ (หมุนหาเอง) ; ขั้นตอน 1/3 = ใช้เลขที่มองเห็นอยู่ */
+  enterStep(first){
+    if(this.order[this.phase]===2){ this.cur=this.rnd4(this.cur); this.scramble(); }
+    else if(first){ this.cur=this.rnd4(this.S0); this.pos=this.cur.slice(); }
+  }
   build(){
     let o='';
     for(let i=0;i<4;i++) o+=`<circle id="pl${i}" class="sled2" cx="${34+i*10.6}" cy="10" r="2.2"/>`;
@@ -1902,19 +1940,23 @@ ModReg.passkey = class extends Mod {
   draw(){ for(let i=0;i<4;i++) this.q('#pd'+i).textContent=this.pos[i]; for(let i=0;i<4;i++) this.q('#pl'+i).classList.toggle('on',i<this.phase+1); }
   turn(i,d){
     this.pos[i]=(this.pos[i]+d+10)%10; this.draw(); Sfx.p('flip');
-    if(this.pos[i]===this.cur[i]) Blind.click('sharp'); else Blind.click('soft');
+    if(this.clickMode()&&this.pos[i]===this.cur[i]) Blind.click('sharp'); else Blind.click('soft');
   }
-  target(){ return this.phase<0 ? this.cur : pkStep(this.order[this.phase],this.cur,this.S0); }
+  target(){ return this.phase<0 ? this.S0 : pkStep(this.order[this.phase],this.cur,this.S0); }
   ok(){
     Sfx.p('press');
     const t=this.target();
     if(t.every((v,i)=>v===this.pos[i])){
+      const first=this.phase<0;
       this.cur=t.slice(); this.phase++; this.okStep();
       if(this.phase>=3){ this.draw(); this.solve(); return; }
-      // ขั้นตอน 2 สั่ง "หมุนใหม่จนคลิก": เลขที่คลิกเป็นชุดใหม่ ไม่ซ้ำชุดก่อนหน้า
-      if(this.order[this.phase]===2) this.cur=this.cur.map(d=>{ let n; do{ n=R.int(0,9); }while(n===d); return n; });
-      this.scramble(); this.draw();
-    } else this.strike('passkey');
+      this.enterStep(first); this.draw();
+    } else {
+      this.strike('passkey');
+      // ทำผิดขั้นตอน -> สุ่มเลขใหม่
+      if(this.phase<0) this.scramble(); else if(this.order[this.phase]===2){ this.cur=this.rnd4(this.cur); this.scramble(); } else { this.cur=this.rnd4(this.cur); this.pos=this.cur.slice(); }
+      this.draw();
+    }
   }
   info(){ return {S0:this.S0,cur:this.cur,pos:this.pos,order:this.order,phase:this.phase,target:this.target()}; }
 };
@@ -1924,11 +1966,11 @@ ModReg.pressure = class extends Mod {
   constructor(b,i,t){
     super(b,i,t);
     this.sorted=PRESSURE_TABLE.slice().sort((x,y)=>y[0]-x[0]);
-    this.dial=R.int(30,120); this.gmax=6; this.level=4; this.done=0; this.k=R.int(11,19); this.nextRound(); this.build();
+    this.dial=R.int(30,120); this.gmax=8; this.level=7; this.done=0; this.k=R.int(11,19); this.nextRound(); this.build();
   }
   nextRound(){
     // รอบแรก ๆ ค่า P สูง รอบหลัง ๆ ค่าลดลง
-    const n=this.sorted.length, q=Math.min(this.done,3), lo=Math.floor(q*n/4), hi=Math.floor((q+1)*n/4)-1;
+    const n=this.sorted.length, q=Math.min(Math.floor(this.done*4/7),3), lo=Math.floor(q*n/4), hi=Math.floor((q+1)*n/4)-1;
     const e=this.sorted[R.int(lo,hi)]; this.P=e[0]; this.scale=e[1];
     const dir=this.dial>110?-1:(this.dial<40?1:R.pick([-1,1]));
     this.c=clamp(this.dial+dir*R.int(8,25),0,150);
@@ -1947,6 +1989,7 @@ ModReg.pressure = class extends Mod {
     o+=`<rect x="82" y="7" width="13" height="70" rx="6" fill="#0a0e10" stroke="#8aa" stroke-width=".9"/><clipPath id="tc${this.idx}"><rect x="83.3" y="8.3" width="10.4" height="67.4" rx="5"/></clipPath><g clip-path="url(#tc${this.idx})"><rect id="gas" class="gasbar" x="83" y="8" width="11" height="68"/></g><rect x="84.4" y="9" width="2.2" height="64" rx="1" fill="#fff" opacity=".25"/>`;
     for(let k=0;k<=this.gmax;k++) o+=`<line x1="95" y1="${8+k*(68/this.gmax)}" x2="98" y2="${8+k*(68/this.gmax)}" stroke="#aaa" stroke-width=".5"/>`;
     o+=`<rect x="18" y="85" width="64" height="11" rx="3" fill="url(#gb-red)" stroke="#111" stroke-width=".6"/><text x="50" y="92.8" class="btxt" font-size="6" fill="#fff" pointer-events="none">ระบายแก๊ส</text><rect id="rh" x="18" y="85" width="64" height="11" fill="transparent"/>`;
+    o+=this.progMarkup(7,50,98.6,5.6,1.5);
     this.svg(o);
     this.f(this.q('#dh'),'dial',{rotate:(d,rep)=>this.rot(d,rep)});
     this.f(this.q('#rh'),'rel',{press:()=>this.release()});
@@ -1965,6 +2008,7 @@ ModReg.pressure = class extends Mod {
     const a=-135+this.dial/150*270; this.q('#knob').setAttribute('transform',`rotate(${a} 36 55)`);
     const lv=this.level/this.gmax; this.q('#gas').setAttribute('y',8+68*(1-lv)); this.q('#gas').setAttribute('height',68*lv);
     this.q('#gas').classList.toggle('danger',this.level>=this.gmax-1);
+    this.setProg(this.done);
     this.q('#sdsp').textContent=String(this.dial).padStart(3,'0');
     this.showP();
   }
@@ -1979,7 +2023,7 @@ ModReg.pressure = class extends Mod {
       this.okStep(); this.nextRound(); this.draw();
     } else {
       this.level++; this.q('#gas').style.transition='all .6s';
-      if(this.level>this.gmax){ this.level=4; this.draw(); this.strike('pressure'); }
+      if(this.level>this.gmax){ this.level=7; this.draw(); this.strike('pressure'); }
       else { Sfx.p('bad'); this.draw(); }
     }
   }
@@ -2348,7 +2392,7 @@ NeedyReg.temperature = class extends NeedyBase {
   draw(){
     const r=Math.round(this.t); this.q('#tt').textContent=r+'°C';
     const y=clamp(this.ty(this.t),13,76); const m=this.q('#merc'); m.setAttribute('y',y); m.setAttribute('height',90-y);
-    const warn=r<=24||r>=36; this.q('#tt').classList.toggle('warn',warn);
+    const warn=r<=23||r>=37; this.q('#tt').classList.toggle('warn',warn);
   }
   setWarn(w){
     if(w===this.warning) return; this.warning=w;
@@ -2357,13 +2401,17 @@ NeedyReg.temperature = class extends NeedyBase {
   }
   /* อุณหภูมิเปลี่ยนตลอดเวลาช้า ๆ แจ้งเตือนเฉพาะเมื่อใกล้ขีดจำกัด (<=24 หรือ >=36) */
   tickActive(dt){
-    const rate=0.10+0.015*this.di+Math.min(0.06,this.bomb.level*0.006);
+    const base=0.10+0.015*this.di+Math.min(0.06,this.bomb.level*0.006);
+    // บางช่วงลง/ขึ้นเร็วกว่าปกติ (surge)
+    this.surgeT=(this.surgeT==null?R.int(12,25):this.surgeT)-dt;
+    if(this.surgeT<=0){ if(this.surging){ this.surging=false; this.surgeT=R.int(14,30); } else { this.surging=true; this.surgeT=R.int(5,9); } }
+    const rate=base*(this.surging?3:1);
     this.t+=this.dir*rate*dt; this.flipT-=dt;
     if(this.flipT<=0){ this.flipT=R.int(12,26); this.dir=(this.t>33?-1:(this.t<27?1:R.pick([-1,1]))); }
     if(this.t>=37&&this.dir>0&&rnd()<0.002) this.dir=-1;
     this.draw();
     const r=Math.round(this.t);
-    this.setWarn(r<=24||r>=36);
+    this.setWarn(r<=23||r>=37);
     if(this.warning){ this._w=(this._w||0)-dt; if(this._w<=0){ this._w=1.2; Sfx.p('warn'); } }
     if(r<20||r>40){ this.t=30; this.dir=R.pick([-1,1]); this.setWarn(false); this.draw(); this.strike('temp'); }
   }
@@ -2416,16 +2464,16 @@ NeedyReg.radio = class extends NeedyBase {
     this.f(this.q('#lkh'),'lock',{press:()=>this.lock()});
     this.draw();
   }
-  tune(d,rep=0){ const s=rep<12?0.2:(rep<30?0.4:0.8); this.f0=clamp(Math.round((this.f0+d*s)*10)/10,88,108); Sfx.p('flip'); Blind.click('soft'); this.draw(); this.setStatic(); }
+  tune(d,rep=0){ const s=rep<12?0.2:(rep<30?0.4:0.8); const od=this.dist(); this.f0=clamp(Math.round((this.f0+d*s)*10)/10,88,108); Sfx.p('flip'); if(this.state==='active'&&od>1.6&&this.dist()<=1.6) Blind.click('sharp'); else Blind.click('soft'); this.draw(); this.setStatic(); }
   dist(){ return Math.abs(this.f0-this.tgt); }
   lvl(){ return this.state==='active'?clamp((this.dist()-1.6)/6,0,1):0; }
   scr(){ return this.state==='active'?0.5:0; }
   draw(){ this.q('#ind').setAttribute('x',11+(this.f0-88)/20*72-1.3); this.q('#rk').setAttribute('transform',`rotate(${(this.f0-88)*27} 42 66)`); }
-  setStatic(){ const v=this.lvl(); this.bomb.setNoise(this.idx,this.scr()); Blind.sig(this.state==='active'?Math.round(350+(1-v)*850):0); }
-  onActivate(){ this.left=60; do{ this.tgt=Math.round((88.5+rnd()*19)*10)/10; this.f0=Math.round((88+rnd()*20)*10)/10; }while(this.dist()<4); this.draw(); this.setStatic(); }
+  setStatic(){ const v=this.lvl(); this.bomb.setNoise(this.idx,this.scr()); }
+  onActivate(){ Sfx.p('staticOn'); this.left=60; do{ this.tgt=Math.round((88.5+rnd()*19)*10)/10; this.f0=Math.round((88+rnd()*20)*10)/10; }while(this.dist()<4); this.draw(); this.setStatic(); }
   tickActive(dt){ this.sendT-=dt; if(this.sendT<=0){ this.sendT=0.25; this.setStatic(); } this.left-=dt; if(this.left<=0){ this.finish(false); this.strike('radio-timeout'); } }
   lock(){ Sfx.p('press'); if(this.state==='active'&&this.dist()<=1.6){ this.finish(true); } else Sfx.p('bad'); }
-  onFinish(){ this.bomb.setNoise(this.idx,0); Blind.sig(0); }
+  onFinish(){ this.bomb.setNoise(this.idx,0); Sfx.p('staticOff'); Blind.sig(0); }
 };
 
 /* ====================== ปรับเทียบ ====================== */
@@ -2451,21 +2499,20 @@ NeedyReg.calibration = class extends NeedyBase {
     const z=this.q('#gz'); z.setAttribute('x',x0); z.setAttribute('width',x1-x0);
     z.style.opacity=this.state==='active'?1:0.25; this.q('#nd').style.opacity=this.state==='active'?1:0.5;
   }
-  onActivate(){ this.gc=0.2+rnd()*0.6; this.hw=Math.max(0.07,0.125-0.008*this.di); this.p=rnd(); this.pp=this.p; this.v=rnd()<0.5?1:-1; this.left=30; this.beepT=0; this.draw(); }
+  onActivate(){ this.gc=0.2+rnd()*0.6; this.hw=Math.max(0.1,0.16-0.008*this.di); this.p=rnd(); this.pp=this.p; this.v=rnd()<0.5?1:-1; this.left=30; this.beepT=0; this.draw(); }
   tickActive(dt){
     const sp=0.42+0.07*this.di+0.01*this.bomb.level; this.p+=this.v*sp*dt;
     if(this.p>=1){ this.p=1; this.v=-1; } if(this.p<=0){ this.p=0; this.v=1; }
     this.left-=dt; this.draw();
     for(const e of [this.gc-this.hw,this.gc+this.hw]){ if(this.pp!=null&&(this.pp-e)*(this.p-e)<0) Blind.click('sharp'); } this.pp=this.p;
-    const d=Math.abs(this.p-this.gc);
-    if(d<0.34){ this.beepT-=dt; if(this.beepT<=0){ this.beepT=0.07+d*0.9; Blind.beep(d<this.hw?1320:880,0.07); } }
+    const inz=Math.abs(this.p-this.gc)<=this.hw; if(inz!==this._inz){ this._inz=inz; Blind.sig(inz?1000:0); }
     if(this.left<=0){ this.finish(false); this.strike('calib-timeout'); }
   }
   stop(){
     Sfx.p('press'); if(this.state!=='active') return;
     if(Math.abs(this.p-this.gc)<=this.hw) this.finish(true); else { this.finish(false); this.strike('calib'); }
   }
-  onFinish(){ this.draw(); }
+  onFinish(){ this._inz=false; Blind.sig(0); this.draw(); }
 };
 
 /* ====================== สับสวิตช์ ====================== */
@@ -2643,7 +2690,7 @@ const Game = {
     $('#r2',el).append(this.btn('เชื่อมต่อ',async()=>{ try{ await Link.acceptAnswer($('#answer',el).value); msg('กำลังเชื่อมต่อ…'); setTimeout(stat,1500); setTimeout(stat,4000); }catch(e){ msg('รหัสไม่ถูกต้อง'); } },'small green','conn'));
     const alsoT=this.btn(Blind.alsoLocal?'เล่นซ้ำบนเครื่องนี้: เปิด':'เล่นซ้ำบนเครื่องนี้: ปิด',()=>{ Blind.alsoLocal=!Blind.alsoLocal; alsoT.textContent=Blind.alsoLocal?'เล่นซ้ำบนเครื่องนี้: เปิด':'เล่นซ้ำบนเครื่องนี้: ปิด'; },'small','also');
     const vol=(lab,get,set)=>{ const b=this.btn(`${lab} ${Math.round(get()*100)}%`,()=>{ let v=get()+0.2; if(v>1.01) v=0.2; set(v); b.textContent=`${lab} ${Math.round(get()*100)}%`; },'small','v'+lab); return b; };
-    $('#r3',el).append(this.btn('🔊 ทดสอบเสียงคนตาบอด',()=>{ Aud.init(); Aud.resume(); Blind.send({k:'test'}); },'small','test'),alsoT,
+    $('#r3',el).append(this.btn('🔊 ทดสอบเสียงคนตาบอด',()=>{ Aud.init(); Aud.resume(); Blind.send({k:'test'}); },'small','test'),this.btn('📳 ทดสอบจอยสั่น',()=>{ Input.rumble(900,1,1); setTimeout(()=>msg('จอยสั่น: '+(Input.rumbleInfo||'ส่งคำสั่งแล้ว')),300); },'small','rumble'),alsoT,
       vol('เสียงหลัก',()=>Aud.vol,v=>Aud.setVol(v)),vol('เสียงคนตาบอด',()=>Aud.blindVol,v=>Aud.setBlindVol(v)),this.btn('← กลับ',()=>this.back(),'small','back'));
     stat();
   },
@@ -2665,7 +2712,7 @@ const Game = {
       <label>วิธีสำรอง (ไม่มีอินเทอร์เน็ต): วางรหัสเชิญจาก iPad ที่นี่ แล้วกด “สร้างรหัสตอบกลับ” จากนั้นคัดลอกรหัสตอบกลับไปวางบน iPad</label>
       <textarea id="poffer" placeholder="รหัสเชิญจาก iPad"></textarea><div class="row-btn" id="p1"></div>
       <textarea id="pans" readonly placeholder="รหัสตอบกลับจะแสดงที่นี่"></textarea><div class="row-btn" id="p2"></div>
-      <div class="eq" id="eq"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="hint" id="pdbg" style="min-height:1.4em"></div><div class="eq" id="eq"><i></i><i></i><i></i><i></i><i></i></div>
       <div class="hint">ใส่หูฟังบลูทูธ <b>ข้างเดียว</b> · อย่าล็อกหน้าจอ · ปรับเสียงให้พอดี</div><div class="row-btn" id="p3"></div></div>`;
     $('#eq',el).style.visibility='hidden';
     $('#p0',el).append(this.btn('🔈 แตะเพื่อเปิดเสียง (ต้องกดก่อน)',()=>{ Aud.init(); Aud.resume(); Speak.unlock(); BlindSynth.handle({k:'test'}); try{ navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{}); }catch(e){} },'primary small','enable'));
@@ -2683,7 +2730,7 @@ const Game = {
   },
   /* ---------- เล่นด่าน ---------- */
   startLevel(di,level,ov){
-    this.cfg={di,level}; Blind.stop();
+    this.cfg={di,level}; Blind.stop(); Sfx.p('staticOff');
     const cfg=Object.assign(levelConfig(di,level),ov||{}); const bomb=new Bomb(cfg); this.bomb=bomb;
     bomb.onEnd=res=>this.onEnd(res);
     const el=this.mk('game'); el.appendChild(bomb.el);
