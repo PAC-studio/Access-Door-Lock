@@ -962,21 +962,31 @@ const Input = {
     }
     this.emit({t:'btn',b,down});
   },
-  rumbleInfo:'',
+  rumbleInfo:'', evPads:{},
   rumble(ms=200,s=0.5,w=0.5){
-    try{ const pads=navigator.getGamepads?navigator.getGamepads():[]; let n=0;
-      for(const p of pads){ if(!p||!p.connected) continue; n++;
-        const a=p.vibrationActuator;
+    const log=[]; let okAny=false;
+    try{
+      const pads=navigator.getGamepads?Array.from(navigator.getGamepads()):[];
+      Object.values(this.evPads).forEach(e=>{ if(e&&!pads.some(p=>p&&p.index===e.index)) pads.push(e); });
+      for(const p of pads){ if(!p||!p.connected) continue;
+        const cand=[p, this.evPads[p.index]].filter(Boolean);
+        let a=null, h=null;
+        for(const q of cand){ if(!a&&q.vibrationActuator) a=q.vibrationActuator; if(!h&&q.hapticActuators&&q.hapticActuators[0]) h=q.hapticActuators[0]; }
+        const tag=(p.id||'pad').slice(0,40)+' [vib:'+(a?(a.playEffect?'playEffect':'obj'):'no')+' hap:'+(h?(h.pulse?'pulse':'obj'):'no')+']';
+        let used=false;
         if(a&&a.playEffect){
-          const eff={startDelay:0,duration:ms,strongMagnitude:s,weakMagnitude:w};
-          let pr; try{ pr=a.playEffect(a.type||'dual-rumble',eff); }catch(e){ this.rumbleInfo='playEffect error: '+e.message; continue; }
-          if(pr&&pr.then) pr.then(r=>{ this.rumbleInfo='ok ('+r+')'; }).catch(e=>{ this.rumbleInfo='rejected: '+(e&&e.message||e); try{ p.hapticActuators&&p.hapticActuators[0]&&p.hapticActuators[0].pulse(s,ms); }catch(_){} });
-          else this.rumbleInfo='ok';
-        } else if(p.hapticActuators&&p.hapticActuators[0]&&p.hapticActuators[0].pulse){ try{ p.hapticActuators[0].pulse(s,ms); this.rumbleInfo='ok (pulse)'; }catch(e){ this.rumbleInfo='pulse error: '+e.message; } }
-        else this.rumbleInfo='เบราว์เซอร์/จอยนี้ไม่รองรับการสั่น ('+p.id+')';
+          used=true;
+          const tries=[[a.type||'dual-rumble',{startDelay:0,duration:ms,strongMagnitude:s,weakMagnitude:w}],['dual-rumble',{duration:ms,strongMagnitude:s,weakMagnitude:w}]];
+          const go=(k)=>{ if(k>=tries.length){ this.rumbleInfo=tag+' → ล้มเหลว'; return; } let pr; try{ pr=a.playEffect(tries[k][0],tries[k][1]); }catch(e){ return go(k+1); } if(pr&&pr.then) pr.then(r=>{ this.rumbleInfo=tag+' → '+r; }).catch(()=>go(k+1)); };
+          go(0);
+        }
+        if(h&&h.pulse){ used=true; try{ h.pulse(s,ms); }catch(e){} }
+        if(used){ okAny=true; log.push(tag+' → ส่งคำสั่งแล้ว'); } else log.push(tag+' → ไม่มีตัวสั่นให้เบราว์เซอร์ใช้');
       }
-      if(!n) this.rumbleInfo='ไม่พบจอย (กดปุ่มบนจอยหนึ่งครั้งก่อน)';
-    }catch(e){ this.rumbleInfo='error: '+e.message; }
+      if(!log.length) log.push('ไม่พบจอย (กดปุ่มบนจอยหนึ่งครั้งก่อน)');
+    }catch(e){ log.push('error: '+e.message); }
+    const ua=navigator.userAgent, br=/Edg\//.test(ua)?'Edge':/Firefox\//.test(ua)?'Firefox':/Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':'?';
+    this.rumbleInfo=log.join(' | ')+' | เบราว์เซอร์: '+br;
     return this.rumbleInfo;
   },
   setRS(dx,dy){
@@ -1056,6 +1066,8 @@ const Input = {
       if(rsm[k]){ rsH.delete(k); updRS(); return; }
       if(map[k]) this.btn(map[k],false);
     });
+    addEventListener('gamepadconnected',e=>{ this.evPads[e.gamepad.index]=e.gamepad; });
+    addEventListener('gamepaddisconnected',e=>{ delete this.evPads[e.gamepad.index]; });
     addEventListener('blur',()=>{ held.clear(); upd(); rsH.clear(); updRS(); for(const b in this.down) if(this.down[b]) this.btn(b,false); });
   }
 };
@@ -2690,7 +2702,7 @@ const Game = {
     $('#r2',el).append(this.btn('เชื่อมต่อ',async()=>{ try{ await Link.acceptAnswer($('#answer',el).value); msg('กำลังเชื่อมต่อ…'); setTimeout(stat,1500); setTimeout(stat,4000); }catch(e){ msg('รหัสไม่ถูกต้อง'); } },'small green','conn'));
     const alsoT=this.btn(Blind.alsoLocal?'เล่นซ้ำบนเครื่องนี้: เปิด':'เล่นซ้ำบนเครื่องนี้: ปิด',()=>{ Blind.alsoLocal=!Blind.alsoLocal; alsoT.textContent=Blind.alsoLocal?'เล่นซ้ำบนเครื่องนี้: เปิด':'เล่นซ้ำบนเครื่องนี้: ปิด'; },'small','also');
     const vol=(lab,get,set)=>{ const b=this.btn(`${lab} ${Math.round(get()*100)}%`,()=>{ let v=get()+0.2; if(v>1.01) v=0.2; set(v); b.textContent=`${lab} ${Math.round(get()*100)}%`; },'small','v'+lab); return b; };
-    $('#r3',el).append(this.btn('🔊 ทดสอบเสียงคนตาบอด',()=>{ Aud.init(); Aud.resume(); Blind.send({k:'test'}); },'small','test'),this.btn('📳 ทดสอบจอยสั่น',()=>{ Input.rumble(900,1,1); setTimeout(()=>msg('จอยสั่น: '+(Input.rumbleInfo||'ส่งคำสั่งแล้ว')),300); },'small','rumble'),alsoT,
+    $('#r3',el).append(this.btn('🔊 ทดสอบเสียงคนตาบอด',()=>{ Aud.init(); Aud.resume(); Blind.send({k:'test'}); },'small','test'),this.btn('📳 ทดสอบจอยสั่น',()=>{ Input.rumble(900,1,1); setTimeout(()=>msg('จอยสั่น: '+Input.rumbleInfo),600); },'small','rumble'),alsoT,
       vol('เสียงหลัก',()=>Aud.vol,v=>Aud.setVol(v)),vol('เสียงคนตาบอด',()=>Aud.blindVol,v=>Aud.setBlindVol(v)),this.btn('← กลับ',()=>this.back(),'small','back'));
     stat();
   },
