@@ -2561,7 +2561,7 @@ const Game = {
   },
   s_title(el){
     const pad=Input.padConnected;
-    el.innerHTML=`<div class="logo">CONFUSING<br>DEFUSER<small>สับสน งงงวย ช่วยกันกู้ระเบิด</small></div><div class="tagline">3 คน · 1 ระเบิด · ไม่มีใครทำงานครบทุกประสาท</div><div class="menu"></div>
+    el.innerHTML=`<div class="logo">CONFUSING<br>DEFUSER<smallรวมกันเราอยู่ แยกหมู่เราระเบิด!</small></div><div class="tagline">3 คน · 1 ระเบิด · ไม่มีใครทำงานครบทุกประสาท</div><div class="menu"></div>
       <div class="hint">${pad?'🎮 ตรวจพบจอยแล้ว':'ยังไม่พบจอย — ใช้คีย์บอร์ด/สัมผัสแทนได้'} &nbsp; <b>A</b> เลือก &nbsp;<b>B</b> ย้อน</div>`;
     const m=$('.menu',el);
     m.append(this.btn('▶ เริ่มเกม',()=>this.go('diff'),'primary','start'),this.btn('🎧 เชื่อมต่อโทรศัพท์ (เสียงคนตาบอด)',()=>this.go('setup'),'','setup'),
