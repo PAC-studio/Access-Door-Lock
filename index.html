@@ -972,7 +972,7 @@ const Input = {
         const cand=[p, this.evPads[p.index]].filter(Boolean);
         let a=null, h=null;
         for(const q of cand){ if(!a&&q.vibrationActuator) a=q.vibrationActuator; if(!h&&q.hapticActuators&&q.hapticActuators[0]) h=q.hapticActuators[0]; }
-        const tag=(p.id||'pad').slice(0,40)+' [vib:'+(a?(a.playEffect?'playEffect':'obj'):'no')+' hap:'+(h?(h.pulse?'pulse':'obj'):'no')+']';
+        const tag=(p.id||'pad').slice(0,40)+' [vib:'+(a?(a.playEffect?'playEffect'+(a.effects?'('+Array.from(a.effects).join(',')+')':''):'obj'):'no')+' hap:'+(h?(h.pulse?'pulse':'obj'):'no')+']';
         let used=false;
         if(a&&a.playEffect){
           used=true;
