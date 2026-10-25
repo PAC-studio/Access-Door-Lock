@@ -632,28 +632,32 @@ const Speak = {
     return all; },
   tryClip(w,url){
     return new Promise(res=>{
-      const a=this.ensurePlayer(); let done=false, started=false;
-      const fin=(ok,why)=>{ if(done) return; done=true; clearTimeout(to); a.onended=a.onerror=null; res({ok,why}); };
+      const a=this.ensurePlayer(); let done=false, started=false; const tok=a._tok=(a._tok||0)+1, mine=()=>a._tok===tok;
+      const fin=(ok,why)=>{ if(done) return; done=true; clearTimeout(to); if(mine()){ a.onended=a.onerror=a.onplaying=null; } res({ok,why}); };
       const to=setTimeout(()=>fin(false,'timeout'),5000);
       a.onerror=()=>fin(started,'error '+(a.error&&a.error.code||''));
-      const go=()=>{ if(started) return; started=true; clearTimeout(to); a.onended=()=>fin(true); setTimeout(()=>fin(true),3500); };
+      const go=()=>{ if(started||!mine()) return; started=true; clearTimeout(to); a.onended=()=>fin(true); setTimeout(()=>fin(true),3500); };
       a.onplaying=go;
       try{ a.volume=clamp(Aud.blindVol,0,1); a.src=url; const pr=a.play(); if(pr&&pr.then) pr.then(go,e=>fin(false,(e&&e.name)||'play')); }catch(e){ fin(false,'exception'); }
     });
   },
-  async playWord(w){
+  async playWord(w,run){
     let why=[];
     for(const [name,u] of this.srcs(w)){
+      if(run!==this.wrun) return;
       this.setStat('เล่นคำ: '+w+' ('+name+')');
       let url=u; if(typeof u==='function'){ try{ url=await u(); }catch(e){ url=null; } } if(!url){ why.push(name+':-'); continue; }
-      const r=await this.tryClip(w,url);
+      let r=await this.tryClip(w,url);
+      if(run!==this.wrun) return;
+      if(!r.ok&&r.why==='AbortError'){ r=await this.tryClip(w,url); if(run!==this.wrun) return; }
       if(r.ok){ this.setStat('เล่นคำ: '+w+' ✓ '+name); this.good[w.toLowerCase()]=name; try{ localStorage.setItem('bd_good',JSON.stringify(this.good)); }catch(e){} return; }
       why.push(name+':'+r.why);
     }
+    if(run!==this.wrun) return;
     this.setStat(w+': ใช้เสียงเครื่อง ['+why.join(' | ')+']');
     await this.say(w,'en',0.6);
   },
-  async sayWords(ws,gap){ const run=++this.wrun; for(const w of ws){ if(run!==this.wrun) return; await this.playWord(w); await new Promise(r=>setTimeout(r,gap||350)); } },
+  async sayWords(ws,gap){ const run=++this.wrun; for(const w of ws){ if(run!==this.wrun) return; await this.playWord(w,run); await new Promise(r=>setTimeout(r,gap||350)); } },
   preload(ws){},
   cancel(){ this.wrun++; try{ if(this.pl) this.pl.pause(); }catch(e){} this.timers.forEach(clearTimeout); this.timers=[]; if(this.ok){ try{ speechSynthesis.cancel(); }catch(e){} } }
 };
@@ -676,6 +680,7 @@ const BlindSynth = {
         this.lastSay=Speak.say(text, lang, m.r);
         break; }
       case 'words': {
+        { const key=(m.w||[]).join(','), now=Date.now(); if(this._lw===key&&now-this._lwT<500){ break; } this._lw=key; this._lwT=now; }
         Speak.cancel(); Speak.sayWords(m.w||[],m.gap);
         break; }
       case 'morse': this.morse(m.w, m.u||0.16); break;
