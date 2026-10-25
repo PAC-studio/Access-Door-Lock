@@ -618,13 +618,37 @@ const Speak = {
   setStat(t){ this.wstat=t; const e=document.getElementById('pdbg'); if(e) e.textContent=t; },
   /* คำอังกฤษ: ใช้เสียงอ่านจาก Google Translate เท่านั้น (ใช้ <audio> ตัวเดียวที่ปลดล็อกแล้ว เพื่อให้ iOS เล่นได้) */
   ensurePlayer(){ if(!this.pl){ this.pl=new Audio(); this.pl.setAttribute('playsinline',''); this.pl.preload='auto'; } return this.pl; },
-  playWord(w){
+  /* ลองหลายแหล่งตามลำดับ: เสียงพจนานุกรมของ Google (ไฟล์สถิตบน gstatic) -> Google Translate TTS -> เสียงอ่านของเครื่อง */
+  good:(()=>{ try{ return JSON.parse(localStorage.getItem('bd_good')||'{}'); }catch(e){ return {}; } })(),
+  srcs(w){ const q=encodeURIComponent(w), lw=w.toLowerCase(), pad=(n)=>(lw.slice(0,n)+'_____').slice(0,n);
+    const camb=`https://dictionary.cambridge.org/media/english/us_pron/${lw[0]}/${pad(3)}/${pad(5)}/${lw}.mp3`;
+    const oxf=`https://www.oxfordlearnersdictionaries.com/media/english/us_pron/${lw[0]}/${pad(3)}/${pad(5)}/${lw}__us_1.mp3`;
+    const all=[['gstatic','https://ssl.gstatic.com/dictionary/static/sounds/20200429/'+q.toLowerCase()+'--_us_1.mp3'],
+            ['cambridge',camb],['oxford',oxf],
+            ['dictapi',async()=>{ const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+q); const j=await r.json(); const a=[].concat(...j.map(e=>(e.phonetics||[]).map(x=>x.audio))).filter(Boolean); return a.find(u=>/-us/.test(u))||a[0]; }],
+            ['translate','https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='+q],
+            ['translate2','https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en&q='+q]];
+    const g=this.good[lw]; if(g){ const k=all.findIndex(x=>x[0]===g); if(k>0) all.unshift(all.splice(k,1)[0]); }
+    return all; },
+  tryClip(w,url){
     return new Promise(res=>{
-      const a=this.ensurePlayer(); let done=false; const fin=(t)=>{ if(done) return; done=true; clearTimeout(to); a.onended=a.onerror=null; if(t) this.setStat(t); res(); };
-      const to=setTimeout(()=>fin(w+': หมดเวลา'),4000);
-      a.onended=()=>fin(); a.onerror=()=>fin(w+': โหลดเสียงไม่สำเร็จ (ต้องออนไลน์)');
-      try{ a.volume=clamp(Aud.blindVol,0,1); a.src='https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='+encodeURIComponent(w); const pr=a.play(); this.setStat('เล่นคำ: '+w); if(pr&&pr.catch) pr.catch(e=>fin(w+': เล่นไม่ได้ ('+(e&&e.name||e)+') แตะหน้าจอแล้วลองใหม่')); }catch(e){ fin(w+': error'); }
+      const a=this.ensurePlayer(); let done=false;
+      const fin=(ok,why)=>{ if(done) return; done=true; clearTimeout(to); a.onended=a.onerror=a.onplaying=null; res({ok,why}); };
+      const to=setTimeout(()=>fin(false,'timeout'),4000);
+      a.onerror=()=>fin(false,'error '+(a.error&&a.error.code||''));
+      a.onplaying=()=>{ clearTimeout(to); a.onended=()=>fin(true); a.onerror=()=>fin(true); setTimeout(()=>fin(true),3500); };
+      try{ a.volume=clamp(Aud.blindVol,0,1); a.src=url; const pr=a.play(); if(pr&&pr.catch) pr.catch(e=>fin(false,(e&&e.name)||'play')); }catch(e){ fin(false,'exception'); }
     });
+  },
+  async playWord(w){
+    for(const [name,u] of this.srcs(w)){
+      this.setStat('เล่นคำ: '+w+' ('+name+')');
+      let url=u; if(typeof u==='function'){ try{ url=await u(); }catch(e){ url=null; } } if(!url) continue;
+      const r=await this.tryClip(w,url);
+      if(r.ok){ this.setStat('เล่นคำ: '+w+' ✓ '+name); this.good[w.toLowerCase()]=name; try{ localStorage.setItem('bd_good',JSON.stringify(this.good)); }catch(e){} return; }
+    }
+    this.setStat(w+': โหลดเสียงออนไลน์ไม่ได้ ใช้เสียงเครื่องแทน');
+    await this.say(w,'en',0.6);
   },
   async sayWords(ws,gap){ const run=++this.wrun; for(const w of ws){ if(run!==this.wrun) return; await this.playWord(w); await new Promise(r=>setTimeout(r,gap||350)); } },
   preload(ws){},
@@ -962,33 +986,6 @@ const Input = {
     }
     this.emit({t:'btn',b,down});
   },
-  rumbleInfo:'', evPads:{},
-  rumble(ms=200,s=0.5,w=0.5){
-    const log=[]; let okAny=false;
-    try{
-      const pads=navigator.getGamepads?Array.from(navigator.getGamepads()):[];
-      Object.values(this.evPads).forEach(e=>{ if(e&&!pads.some(p=>p&&p.index===e.index)) pads.push(e); });
-      for(const p of pads){ if(!p||!p.connected) continue;
-        const cand=[p, this.evPads[p.index]].filter(Boolean);
-        let a=null, h=null;
-        for(const q of cand){ if(!a&&q.vibrationActuator) a=q.vibrationActuator; if(!h&&q.hapticActuators&&q.hapticActuators[0]) h=q.hapticActuators[0]; }
-        const tag=(p.id||'pad').slice(0,40)+' [vib:'+(a?(a.playEffect?'playEffect'+(a.effects?'('+Array.from(a.effects).join(',')+')':''):'obj'):'no')+' hap:'+(h?(h.pulse?'pulse':'obj'):'no')+']';
-        let used=false;
-        if(a&&a.playEffect){
-          used=true;
-          const tries=[[a.type||'dual-rumble',{startDelay:0,duration:ms,strongMagnitude:s,weakMagnitude:w}],['dual-rumble',{duration:ms,strongMagnitude:s,weakMagnitude:w}]];
-          const go=(k)=>{ if(k>=tries.length){ this.rumbleInfo=tag+' → ล้มเหลว'; return; } let pr; try{ pr=a.playEffect(tries[k][0],tries[k][1]); }catch(e){ return go(k+1); } if(pr&&pr.then) pr.then(r=>{ this.rumbleInfo=tag+' → '+r; }).catch(()=>go(k+1)); };
-          go(0);
-        }
-        if(h&&h.pulse){ used=true; try{ h.pulse(s,ms); }catch(e){} }
-        if(used){ okAny=true; log.push(tag+' → ส่งคำสั่งแล้ว'); } else log.push(tag+' → ไม่มีตัวสั่นให้เบราว์เซอร์ใช้');
-      }
-      if(!log.length) log.push('ไม่พบจอย (กดปุ่มบนจอยหนึ่งครั้งก่อน)');
-    }catch(e){ log.push('error: '+e.message); }
-    const ua=navigator.userAgent, br=/Edg\//.test(ua)?'Edge':/Firefox\//.test(ua)?'Firefox':/Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':'?';
-    this.rumbleInfo=log.join(' | ')+' | เบราว์เซอร์: '+br;
-    return this.rumbleInfo;
-  },
   setRS(dx,dy){
     const key=dx+','+dy; if(this.rsDir===key) return; this.rsDir=key; this.rsT=0.5;
     if(dx||dy) this.emit({t:'rs',dx,dy});
@@ -1183,7 +1180,7 @@ class Mod {
   solve(){
     if(this.solved) return; this.solved=true; this.led.classList.add('on');
     this.root.classList.add('solved'); this.items.forEach(n=>n.setAttribute('data-off',''));
-    Sfx.p('solve'); Sfx.p('modok'); Input.rumble(150,0.3,0.3); this.onSolved&&this.onSolved(); this.bomb.moduleSolved(this);
+    Sfx.p('solve'); Sfx.p('modok'); this.onSolved&&this.onSolved(); this.bomb.moduleSolved(this);
     if(Focus.cur && this.root.contains(Focus.cur)) setTimeout(()=>Focus.ensure(),0);
   }
   update(dt){}
@@ -1329,7 +1326,7 @@ class Bomb {
     if(this.needyGap>0) this.needyGap-=dt;
     this.needies.forEach(m=>m.update(dt));
     this.updateBanner();
-    if(this.needyActive.size){ this.alarmT-=dt; if(this.alarmT<=0){ this.alarmT=1.4; Sfx.p('alarm'); Input.rumble(450,0.8,0.8); } }
+    if(this.needyActive.size){ this.alarmT-=dt; if(this.alarmT<=0){ this.alarmT=1.4; Sfx.p('alarm'); } }
   }
   notifyNeedy(m){ this.banner.classList.remove('pop'); void this.banner.offsetWidth; this.banner.classList.add('pop'); }
   updateBanner(){
@@ -1357,7 +1354,7 @@ class Bomb {
   setBlackout(on){ this.blackout+=on?1:-1; this.el.classList.toggle('blackout',this.blackout>0); }
   strike(mod, why){
     if(this.state!=='playing') return;
-    this.strikes++; Sfx.p('strike'); Input.rumble(350,0.9,0.5);
+    this.strikes++; Sfx.p('strike');
     this.flash.className='flash red'; void this.flash.offsetWidth; this.flash.className='flash red go';
     this.stage.classList.remove('shake'); void this.stage.offsetWidth; this.stage.classList.add('shake');
     this.history.push({t:this.elapsed,mod:mod&&mod.type,why});
@@ -1371,14 +1368,14 @@ class Bomb {
   win(){
     if(this.state!=='playing') return;
     this.state='won'; this.needyActive.clear(); this.noise={}; this.blackout=0; this.el.classList.remove('blackout');
-    Blind.stop(); Sfx.p('staticOff'); setTimeout(()=>Sfx.p('bell'),250); setTimeout(()=>Sfx.p('fireworks'),900); Input.rumble&&Input.rumble(600,0.6,0.6);
+    Blind.stop(); Sfx.p('staticOff'); setTimeout(()=>Sfx.p('bell'),250); setTimeout(()=>Sfx.p('fireworks'),900);
     this.flash.className='flash green'; void this.flash.offsetWidth; this.flash.className='flash green go';
     this.onEnd&&this.onEnd({win:true,timeLeft:this.timeLeft,strikes:this.strikes});
   }
   explode(why){
     if(this.state!=='playing') return;
     this.state='dead'; this.blackout=0; this.el.classList.remove('blackout'); this.noise={};
-    Blind.stop(); Sfx.p('staticOff'); Sfx.p('explode'); Input.rumble(1200,1,1);
+    Blind.stop(); Sfx.p('staticOff'); Sfx.p('explode');
     this.onEnd&&this.onEnd({win:false,why,timeLeft:this.timeLeft,strikes:this.strikes});
   }
   /* ส่งอินพุตให้โมดูลที่โฟกัสอยู่ก่อน */
@@ -2372,7 +2369,7 @@ class NeedyBase extends Mod {
     else if(this.state==='active') this.tickActive(dt);
     this.anim&&this.anim(dt);
   }
-  activate(){ this.state='active'; this.bomb.needyActive.add(this); this.bomb.needyGap=18; this.root.classList.add('alert'); this.led.classList.add('blink'); Sfx.p('alarm'); Input.rumble(600,1,1); this.bomb.notifyNeedy&&this.bomb.notifyNeedy(this); this.onActivate&&this.onActivate(); }
+  activate(){ this.state='active'; this.bomb.needyActive.add(this); this.bomb.needyGap=18; this.root.classList.add('alert'); this.led.classList.add('blink'); Sfx.p('alarm'); this.bomb.notifyNeedy&&this.bomb.notifyNeedy(this); this.onActivate&&this.onActivate(); }
   finish(ok){
     this.state='idle'; this.timer=this.idleDelay(); this.bomb.needyActive.delete(this); this.bomb.needyGap=Math.max(this.bomb.needyGap,R.int(20,35));
     this.root.classList.remove('alert'); this.led.classList.remove('blink'); this.onFinish&&this.onFinish(ok);
@@ -2408,7 +2405,7 @@ NeedyReg.temperature = class extends NeedyBase {
   }
   setWarn(w){
     if(w===this.warning) return; this.warning=w;
-    if(w){ this.bomb.needyActive.add(this); this.root.classList.add('alert'); this.led.classList.add('blink'); Sfx.p('alarm'); Input.rumble(600,1,1); this.bomb.notifyNeedy&&this.bomb.notifyNeedy(this); }
+    if(w){ this.bomb.needyActive.add(this); this.root.classList.add('alert'); this.led.classList.add('blink'); Sfx.p('alarm'); this.bomb.notifyNeedy&&this.bomb.notifyNeedy(this); }
     else { this.bomb.needyActive.delete(this); this.root.classList.remove('alert'); this.led.classList.remove('blink'); }
   }
   /* อุณหภูมิเปลี่ยนตลอดเวลาช้า ๆ แจ้งเตือนเฉพาะเมื่อใกล้ขีดจำกัด (<=24 หรือ >=36) */
@@ -2419,8 +2416,9 @@ NeedyReg.temperature = class extends NeedyBase {
     if(this.surgeT<=0){ if(this.surging){ this.surging=false; this.surgeT=R.int(14,30); } else { this.surging=true; this.surgeT=R.int(5,9); } }
     const rate=base*(this.surging?3:1);
     this.t+=this.dir*rate*dt; this.flipT-=dt;
-    if(this.flipT<=0){ this.flipT=R.int(12,26); this.dir=(this.t>33?-1:(this.t<27?1:R.pick([-1,1]))); }
-    if(this.t>=37&&this.dir>0&&rnd()<0.002) this.dir=-1;
+    if(this.flipT<=0){ this.flipT=R.int(12,26); if(this.t>26&&this.t<34) this.dir=R.pick([-1,1]); }
+    // เข้าเขตเตือนแล้วต้องไม่แก้เอง: ทิศทางต้องออกนอกจนกว่าผู้เล่นจะปรับ
+    if(this.t<=24) this.dir=-1; else if(this.t>=36) this.dir=1;
     this.draw();
     const r=Math.round(this.t);
     this.setWarn(r<=23||r>=37);
@@ -2702,7 +2700,7 @@ const Game = {
     $('#r2',el).append(this.btn('เชื่อมต่อ',async()=>{ try{ await Link.acceptAnswer($('#answer',el).value); msg('กำลังเชื่อมต่อ…'); setTimeout(stat,1500); setTimeout(stat,4000); }catch(e){ msg('รหัสไม่ถูกต้อง'); } },'small green','conn'));
     const alsoT=this.btn(Blind.alsoLocal?'เล่นซ้ำบนเครื่องนี้: เปิด':'เล่นซ้ำบนเครื่องนี้: ปิด',()=>{ Blind.alsoLocal=!Blind.alsoLocal; alsoT.textContent=Blind.alsoLocal?'เล่นซ้ำบนเครื่องนี้: เปิด':'เล่นซ้ำบนเครื่องนี้: ปิด'; },'small','also');
     const vol=(lab,get,set)=>{ const b=this.btn(`${lab} ${Math.round(get()*100)}%`,()=>{ let v=get()+0.2; if(v>1.01) v=0.2; set(v); b.textContent=`${lab} ${Math.round(get()*100)}%`; },'small','v'+lab); return b; };
-    $('#r3',el).append(this.btn('🔊 ทดสอบเสียงคนตาบอด',()=>{ Aud.init(); Aud.resume(); Blind.send({k:'test'}); },'small','test'),this.btn('📳 ทดสอบจอยสั่น',()=>{ Input.rumble(900,1,1); setTimeout(()=>msg('จอยสั่น: '+Input.rumbleInfo),600); },'small','rumble'),alsoT,
+    $('#r3',el).append(this.btn('🔊 ทดสอบเสียงคนตาบอด',()=>{ Aud.init(); Aud.resume(); Blind.send({k:'test'}); },'small','test'),alsoT,
       vol('เสียงหลัก',()=>Aud.vol,v=>Aud.setVol(v)),vol('เสียงคนตาบอด',()=>Aud.blindVol,v=>Aud.setBlindVol(v)),this.btn('← กลับ',()=>this.back(),'small','back'));
     stat();
   },
