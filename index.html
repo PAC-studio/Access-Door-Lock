@@ -620,16 +620,8 @@ const Speak = {
   ensurePlayer(){ if(!this.pl){ this.pl=new Audio(); this.pl.setAttribute('playsinline',''); this.pl.preload='auto'; } return this.pl; },
   /* ลองหลายแหล่งตามลำดับ: เสียงพจนานุกรมของ Google (ไฟล์สถิตบน gstatic) -> Google Translate TTS -> เสียงอ่านของเครื่อง */
   good:(()=>{ try{ return JSON.parse(localStorage.getItem('bd_good')||'{}'); }catch(e){ return {}; } })(),
-  srcs(w){ const q=encodeURIComponent(w), lw=w.toLowerCase(), pad=(n)=>(lw.slice(0,n)+'_____').slice(0,n);
-    const camb=`https://dictionary.cambridge.org/media/english/us_pron/${lw[0]}/${pad(3)}/${pad(5)}/${lw}.mp3`;
-    const oxf=`https://www.oxfordlearnersdictionaries.com/media/english/us_pron/${lw[0]}/${pad(3)}/${pad(5)}/${lw}__us_1.mp3`;
-    const all=[['gstatic','https://ssl.gstatic.com/dictionary/static/sounds/20200429/'+q.toLowerCase()+'--_us_1.mp3'],
-            ['cambridge',camb],['oxford',oxf],
-            ['dictapi',async()=>{ const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+q); const j=await r.json(); const a=[].concat(...j.map(e=>(e.phonetics||[]).map(x=>x.audio))).filter(Boolean); return a.find(u=>/-us/.test(u))||a[0]; }],
-            ['translate','https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='+q],
-            ['translate2','https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en&q='+q]];
-    const g=this.good[lw]; if(g){ const k=all.findIndex(x=>x[0]===g); if(k>0) all.unshift(all.splice(k,1)[0]); }
-    return all; },
+  srcs(w){ const lw=w.toLowerCase(), pad=(n)=>(lw.slice(0,n)+'_____').slice(0,n);
+    return [['cambridge',`https://dictionary.cambridge.org/media/english/us_pron/${lw[0]}/${pad(3)}/${pad(5)}/${lw}.mp3`]]; },
   tryClip(w,url){
     return new Promise(res=>{
       const a=this.ensurePlayer(); let done=false, started=false; const tok=a._tok=(a._tok||0)+1, mine=()=>a._tok===tok;
@@ -645,21 +637,22 @@ const Speak = {
     let why=[];
     for(const [name,u] of this.srcs(w)){
       if(run!==this.wrun) return;
-      this.setStat('เล่นคำ: '+w+' ('+name+')');
+      
       let url=u; if(typeof u==='function'){ try{ url=await u(); }catch(e){ url=null; } } if(!url){ why.push(name+':-'); continue; }
       let r=await this.tryClip(w,url);
       if(run!==this.wrun) return;
       if(!r.ok&&r.why==='AbortError'){ r=await this.tryClip(w,url); if(run!==this.wrun) return; }
-      if(r.ok){ this.setStat('เล่นคำ: '+w+' ✓ '+name); this.good[w.toLowerCase()]=name; try{ localStorage.setItem('bd_good',JSON.stringify(this.good)); }catch(e){} return; }
+      if(r.ok){ this.setStat('เล่นคำ: '+w+' ✓'); this.good[w.toLowerCase()]=name; try{ localStorage.setItem('bd_good',JSON.stringify(this.good)); }catch(e){} return; }
       why.push(name+':'+r.why);
     }
     if(run!==this.wrun) return;
-    this.setStat(w+': ใช้เสียงเครื่อง ['+why.join(' | ')+']');
+    this.setStat(w+': Cambridge ไม่ได้ ('+why.join(',')+') ใช้เสียงเครื่อง');
     await this.say(w,'en',0.6);
   },
-  async sayWords(ws,gap){ const run=++this.wrun; for(const w of ws){ if(run!==this.wrun) return; await this.playWord(w,run); await new Promise(r=>setTimeout(r,gap||350)); } },
+  busy:false,
+  async sayWords(ws,gap){ const run=++this.wrun; this.busy=true; for(const w of ws){ if(run!==this.wrun) return; await this.playWord(w,run); await new Promise(r=>setTimeout(r,gap||350)); } if(run===this.wrun) this.busy=false; },
   preload(ws){},
-  cancel(){ this.wrun++; try{ if(this.pl) this.pl.pause(); }catch(e){} this.timers.forEach(clearTimeout); this.timers=[]; if(this.ok){ try{ speechSynthesis.cancel(); }catch(e){} } }
+  cancel(){ this.wrun++; this.busy=false; try{ if(this.pl) this.pl.pause(); }catch(e){} this.timers.forEach(clearTimeout); this.timers=[]; if(this.ok){ try{ speechSynthesis.cancel(); }catch(e){} } }
 };
 const TH_DIGITS = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
 const EN_DIGITS = ['zero','one','two','three','four','five','six','seven','eight','nine'];
@@ -680,7 +673,7 @@ const BlindSynth = {
         this.lastSay=Speak.say(text, lang, m.r);
         break; }
       case 'words': {
-        { const key=(m.w||[]).join(','), now=Date.now(); if(this._lw===key&&now-this._lwT<500){ break; } this._lw=key; this._lwT=now; }
+        { const key=(m.w||[]).join(','), now=Date.now(); if(this._lw===key&&(now-this._lwT<500||Speak.busy)){ break; } this._lw=key; this._lwT=now; }
         Speak.cancel(); Speak.sayWords(m.w||[],m.gap);
         break; }
       case 'morse': this.morse(m.w, m.u||0.16); break;
